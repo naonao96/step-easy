@@ -1,8 +1,11 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
 }
 
 @theme inline {
@@ -20,9 +23,19 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-start-rgb));
   font-family: Arial, Helvetica, sans-serif;
+  background-color: #f0f9ff;
+  background-image: radial-gradient(#c7e9fb 1px, transparent 1px);
+  background-size: 20px 20px;
+  font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
 }
 
 .calendar-grid {
@@ -37,4 +50,55 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.login-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(125, 200, 255, 0.2);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+.login-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 30px rgba(125, 200, 255, 0.3);
+}
+.input-field {
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  background-color: #f0f9ff;
+}
+.input-field:focus {
+  border-color: #7dd3fc;
+  box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.2);
+  background-color: white;
+}
+.login-btn {
+  background: linear-gradient(to right, #7dd3fc, #93c5fd);
+  transition: all 0.3s ease;
+}
+.login-btn:hover {
+  background: linear-gradient(to right, #38bdf8, #60a5fa);
+  transform: translateY(-2px);
+}
+.budgie-wing {
+  animation: flapWings 2s infinite alternate ease-in-out;
+  transform-origin: center right;
+}
+@keyframes flapWings {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(5deg); }
+}
+.cloud {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  opacity: 0.8;
+  z-index: -1;
+}
+.floating {
+  animation: floating 3s infinite alternate ease-in-out;
+}
+@keyframes floating {
+  0% { transform: translateY(0px); }
+  100% { transform: translateY(-5px); }
 }

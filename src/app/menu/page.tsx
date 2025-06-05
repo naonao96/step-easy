@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from "react";
+import { useAuth } from '../contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 interface Task {
   id: number;
@@ -10,12 +12,26 @@ interface Task {
 }
 
 export default function Home() {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const { isLoggedIn, logout } = useAuth();
+  const router = useRouter();
+  const [tasks, setTasks] = useState<Task[]>([
+    { id: 1, name: "プロジェクト企画書を作成する", completed: false, status: "今日まで" },
+    { id: 2, name: "ミーティングの準備", completed: true, status: "完了" },
+    { id: 3, name: "クライアントへの連絡", completed: false, status: "明日まで" },
+    { id: 4, name: "週報の提出", completed: false, status: "金曜日まで" },
+    { id: 5, name: "プレゼン資料の作成", completed: false, status: "期限切れ" },
+  ]);
+
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
+    // 未ログインの場合、ログインページにリダイレクト
+    if (!isLoggedIn) {
+      router.push('/login');
+      return;
+    }
     updateProgress();
-  }, [tasks]);
+  }, [isLoggedIn, router, tasks]);
 
   const updateProgress = () => {
     const completedTasks = tasks.filter(task => task.completed).length;
@@ -49,12 +65,15 @@ export default function Home() {
       return task;
     }));
   };
-  
+
   return (
     <div className="min-h-screen p-4">
       <header className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-blue-700">StepEasy</h1>
-        <button className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+        <button 
+          onClick={logout}
+          className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
+        >
           ログアウト
         </button>
       </header>
@@ -100,6 +119,7 @@ export default function Home() {
               </svg>
               タスク追加
             </button>
+            
             {/* 進捗グラフ */}
             <div className="bg-white rounded-xl shadow-lg p-4 flex flex-col items-center justify-center w-32">
               <h3 className="text-lg font-medium text-gray-700 mb-2">進捗状況</h3>
@@ -128,7 +148,7 @@ export default function Home() {
           </div>
         </div>
         <div className="space-y-6">
-           {/* カレンダー */}
+          {/* カレンダー */}
           <div className="bg-white rounded-xl shadow-lg p-4">
             <h2 className="text-xl font-bold mb-4 text-gray-800">カレンダー</h2>
             <div className="flex justify-between items-center mb-4">
@@ -208,7 +228,7 @@ export default function Home() {
             {/* セキセイインコ（右側） */} 
             <div className="w-24 h-24 flex-shrink-0">
               <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-              {/* 頭 */}
+                {/* 頭 */}
                 <ellipse cx="50" cy="60" rx="30" ry="35" fill="#a3e635" />
                 {/* 目 */}
                 <circle cx="50" cy="30" r="20" fill="#a3e635" />

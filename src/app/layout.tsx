@@ -1,20 +1,13 @@
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import ClientLayout from './ClientLayout';
+import './globals.css';
+import { AuthProvider } from './contexts/AuthContext';
+import type { Metadata } from 'next';
 
-const geistSans = Geist({
-  subsets: ["latin"],
-  variable: "--font-geist-sans",
-});
-
-const geistMono = Geist_Mono({
-  subsets: ["latin"],
-  variable: "--font-geist-mono",
-});
-
-export const metadata = {
-  title: "StepEasy - タスク管理アプリ",
-  description: "シンプルで使いやすいタスク管理アプリケーション",
+export const metadata: Metadata = {
+  title: "StepEasy - タスクを完了へ導く、心理的サポート付き目標管理アプリ",
+  description: "タスクを完了へ導く、心理的サポート付き目標管理アプリ",
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
@@ -24,8 +17,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ClientLayout>{children}</ClientLayout>
+      <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+      </head>
+      <body>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );
