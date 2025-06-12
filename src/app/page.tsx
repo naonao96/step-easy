@@ -10,13 +10,12 @@ export default function Home() {
 
   useEffect(() => {
     // ローディングが完了したら、認証状態に応じてリダイレクト
-    if (isLoading)　return;
+    if (isLoading) return;
     
-    if (isLoggedIn){
+    if (isLoggedIn) {
       router.replace('/menu');
-    }
-    else{
-      router.replace('/login');
+    } else {
+      router.replace('/lp');
     }
   }, [isLoggedIn, isLoading, router]);
 
@@ -26,4 +25,4 @@ export default function Home() {
       <div className="text-gray-600">Loading...</div>
     </div>
   );
-} 
+}

@@ -226,26 +226,7 @@ export default function Home() {
             </div>
             
             {/* セキセイインコ（右側） */} 
-            <div className="w-24 h-24 flex-shrink-0">
-              <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                {/* 頭 */}
-                <ellipse cx="50" cy="60" rx="30" ry="35" fill="#a3e635" />
-                {/* 目 */}
-                <circle cx="50" cy="30" r="20" fill="#a3e635" />
-                {/* 口 */}
-                <path d="M50 35 L40 40 L50 45 Z" fill="#f59e0b" />
-                {/* 目の瞳 */}
-                <circle cx="57" cy="28" r="4" fill="black" />
-                {/* 目の瞳の白い部分 */}
-                <circle cx="58" cy="27" r="1" fill="white" />
-                {/* 羽 */}
-                <path d="M20 60 Q30 40 20 30" stroke="#86efac" strokeWidth="5" fill="none" />
-                <path d="M80 60 Q70 40 80 30" stroke="#86efac" strokeWidth="5" fill="none" />
-                {/* 足 */}
-                <path d="M40 95 L40 85" stroke="#f59e0b" strokeWidth="3" />
-                <path d="M60 95 L60 85" stroke="#f59e0b" strokeWidth="3" />
-              </svg>
-            </div>
+            <img src="TalkToTheBird.png" alt="StepEasy アイコン" className="w-24 h-24 mx-auto mb-4"></img>
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
+import Image from 'next/image';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -57,23 +58,14 @@ export default function Login() {
               <h1 className="text-xl font-bold text-blue-600">StepEasy</h1>
               <p className="text-blue-500 text-xs">タスクを完了へ導く、心理的サポート付き目標管理アプリ</p>
             </div>
-            <div className="floating">
-              {/* セキセイインコのSVG */}
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 150" className="h-16 w-16">
-                <ellipse cx="100" cy="90" rx="40" ry="45" fill="#c2f0c2" />
-                <circle cx="100" cy="50" r="30" fill="#c2f0c2" />
-                <path d="M100 60 L110 70 L100 75 L90 70 Z" fill="#ffcc66" />
-                <circle cx="90" cy="45" r="5" fill="black" />
-                <circle cx="110" cy="45" r="5" fill="black" />
-                <circle cx="88" cy="43" r="2" fill="white" />
-                <circle cx="108" cy="43" r="2" fill="white" />
-                <path d="M70 80 Q60 100 70 120 L80 110 Q75 95 80 80 Z" fill="#a7e9af" />
-                <path d="M130 80 Q140 100 130 120 L120 110 Q125 95 120 80 Z" fill="#a7e9af" />
-                <path d="M85 30 Q100 20 115 30 Q100 40 85 30 Z" fill="#a7e9af" />
-                <path d="M90 135 L85 145 L95 145 Z" fill="#ffcc66" />
-                <path d="M110 135 L105 145 L115 145 Z" fill="#ffcc66" />
-              </svg>
-            </div>
+            <Image
+                src="/SilentBird.png"
+                alt="StepEasy アイコン"
+                width={96}
+                height={96}
+                className="mx-auto mb-4"
+                priority
+              />
           </div>
 
           {/* フォーム部分 */}

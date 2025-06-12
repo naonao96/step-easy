@@ -20,7 +20,7 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
-      <body>
+      <body className="min-h-screen overflow-y-auto">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
