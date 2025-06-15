@@ -1,5 +1,5 @@
 import './globals.css';
-import { AuthProvider } from './contexts/AuthContext';
+import { ClientLayout } from '@/components/providers/ClientLayout';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -17,11 +17,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-      </head>
       <body className="min-h-screen overflow-y-auto">
-        <AuthProvider>{children}</AuthProvider>
+        <ClientLayout>
+          {children}
+        </ClientLayout>
       </body>
     </html>
   );
