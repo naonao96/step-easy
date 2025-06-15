@@ -9,10 +9,7 @@ export const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey);
 
 // クライアントサイド用のクライアント
 export const createBrowserClient = () => {
-  return createClientComponentClient({
-    supabaseUrl,
-    supabaseKey: supabaseAnonKey,
-  });
+  return createClientComponentClient();
 };
 
 export type User = {
