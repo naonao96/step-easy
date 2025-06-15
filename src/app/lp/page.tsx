@@ -1,204 +1,192 @@
-"use client";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { Layout } from '@/components/templates/Layout';
+import Image from 'next/image';
 
 export default function LandingPage() {
   const router = useRouter();
+  const supabase = createClientComponentClient();
+  const [showModal, setShowModal] = useState(false);
 
-  // IntersectionObserverによるfade-inアニメーション
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const observer = new window.IntersectionObserver(entries => {
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          router.replace('/menu');
+        }
+      } catch (error) {
+        console.error('Session check error:', error);
+      }
+    };
+
+    checkSession();
+
+    const observer = new IntersectionObserver(entries => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          entry.target.classList.add("visible");
+          entry.target.classList.add('opacity-100', 'translate-y-0');
           observer.unobserve(entry.target);
         }
       });
     }, { threshold: 0.1 });
-    document.querySelectorAll('.fade').forEach(section => {
+
+    document.querySelectorAll('.fade-section').forEach(section => {
       observer.observe(section);
     });
-    return () => observer.disconnect();
-  }, []);
+  }, [router, supabase.auth]);
 
-  // CTAボタンの遷移
-  const handleStart = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    router.push("/register-select");
+  const handleStart = () => {
+    setShowModal(true);
+  };
+
+  const handleLogin = () => {
+    router.push('/login');
+  };
+
+  const handleGuest = () => {
+    // ゲストモードの場合は直接メニュー画面に遷移
+    router.push('/menu');
   };
 
   return (
-    <div className="h-screen" style={{ background: "var(--blue-light)", minHeight: "100vh"}}>
-      {/* ヘッダー */}
-      <header id="top" style={{ position: "relative", background: "linear-gradient(145deg, #bbdefb, #e3f2fd)", padding: "4em 2em 6em", textAlign: "center", color: "var(--blue-dark)" }}>
-        <a href="#top" className="logo" style={{ position: "absolute", top: "0.5em", left: "0.5em", zIndex: 10 }}>
-          <img src="/logo.png" alt="StepEasy ロゴ" style={{ width: 120, height: "auto", cursor: "pointer" }} />
-        </a>
-        <h1 style={{ fontSize: "2.5rem", marginBottom: "0.5em", fontWeight: "bold" }}>小鳥の一声が、あなたの習慣を運んでいく</h1>
-        <p style={{ fontSize: "1.2rem", marginBottom: "1em" }}>小鳥が、今日もそっと背中を押してくれる</p>
-        {/* 鳥イラスト */}
-        <div style={{ position: "absolute", bottom: -10, left: "50%", transform: "translateX(-50%)", width: 200, height: 200, opacity: 0.9, pointerEvents: "none", zIndex: 1, background: "url('/DontTalkToTheBird.png') no-repeat center bottom / 200px" }} />
-      </header>
+    <Layout>
+      <div className="h-screen bg-blue-50 text-blue-900">
+        <header className="relative bg-gradient-to-br from-blue-100 to-blue-50 py-16 px-8 text-center" id="top">
+          <a href="#top" className="absolute top-2 left-2 z-10">
+            <Image
+              src="/logo.png"
+              alt="StepEasy ロゴ"
+              width={120}
+              height={120}
+              className="cursor-pointer"
+            />
+          </a>
+          <h1 className="text-4xl font-bold mb-4">小鳥の一声が、あなたの習慣を運んでいく</h1>
+          <p className="text-xl mb-4">小鳥が、今日もそっと背中を押してくれる</p>
+          <div className="absolute bottom-[-10px] left-1/2 transform -translate-x-1/2 w-[200px] h-[200px] bg-[url('/DontTalkToTheBird.png')] bg-no-repeat bg-center bg-[length:200px] opacity-90"></div>
+        </header>
 
-      <div className="cta" style={{ textAlign: "center", marginTop: "-2em", zIndex: 2, position: "relative" }}>
-        <button 
-          onClick={handleStart}
-          style={{ 
-            background: "var(--blue-main)", 
-            color: "white", 
-            border: "none", 
-            padding: "1em 2em", 
-            fontSize: "1.1rem", 
-            borderRadius: "2em", 
-            cursor: "pointer", 
-            boxShadow: "0 8px 20px rgba(0,0,0,0.15)", 
-            transition: "transform 0.3s ease, background 0.3s ease" 
-          }}
-          onMouseOver={e => e.currentTarget.style.background = "#0f5bb5"}
-          onMouseOut={e => e.currentTarget.style.background = "var(--blue-main)"}
-        >
-          無料で始める
-        </button>
-        <p>登録は60秒、すぐに使えます</p>
+        <div className="text-center -mt-8 relative z-2">
+          <button 
+            onClick={handleStart}
+            className="bg-blue-600 text-white px-8 py-4 text-lg rounded-full shadow-lg hover:bg-blue-700 hover:-translate-y-1 transition-all duration-300"
+          >
+            無料で始める
+          </button>
+          <p className="mt-2">登録は60秒、すぐに使えます</p>
+        </div>
+
+        <section className="fade-section opacity-0 translate-y-8 transition-all duration-600 py-16 px-8 max-w-4xl mx-auto">
+          <h2 className="text-3xl mb-4 border-l-4 border-blue-300 pl-4">なぜ「小鳥」なのか？</h2>
+          <p className="text-lg">StepEasyは、忙しいあなたの毎日に、静かでやさしい相棒「小鳥」をお届けします。<br />
+          小鳥の声はあなたの状況に共感し、無理なく続けられるよう寄り添います。</p>
+        </section>
+
+        <section className="fade-section opacity-0 translate-y-8 transition-all duration-600 py-16 px-8 max-w-4xl mx-auto">
+          <h2 className="text-3xl mb-4 border-l-4 border-blue-300 pl-4">あなたにも、こんな悩みありませんか？</h2>
+          <ul className="list-disc pl-6 space-y-2">
+            <li>✔ 習慣が続かずに落ち込む</li>
+            <li>✔ 「またできなかった」と自己嫌悪</li>
+            <li>✔ タスクアプリや手帳が続かない</li>
+          </ul>
+          <p className="mt-4"><strong>StepEasy</strong>は、小鳥のやさしい声と共に、あなたの「できた！」を少しずつ育てていきます。</p>
+        </section>
+
+        <section className="fade-section opacity-0 translate-y-8 transition-all duration-600 py-16 px-8 max-w-4xl mx-auto bg-white rounded-2xl shadow-lg">
+          <h2 className="text-3xl mb-4 border-l-4 border-blue-300 pl-4">StepEasyの主な機能</h2>
+          <ul className="list-disc pl-6 space-y-2">
+            <li><strong>タスクのシンプルな管理：</strong>見る・タップするだけの簡単操作</li>
+            <li><strong>達成度や曜日別分析：</strong>習慣の傾向を視覚化</li>
+            <li><strong>未来予測：</strong>続けた場合の成果を予測表示</li>
+            <li><strong>詰め込みすぎアラート：</strong>「無理しすぎ」を防止</li>
+            <li><strong>小鳥の学習：</strong>継続に応じてあなたに合った提案へ</li>
+          </ul>
+        </section>
+
+        <section className="fade-section opacity-0 translate-y-8 transition-all duration-600 py-16 px-8 max-w-4xl mx-auto">
+          <h2 className="text-3xl mb-4 border-l-4 border-blue-300 pl-4">プレミアムで得られること</h2>
+          <ul className="list-disc pl-6 space-y-2">
+            <li>あなたに最適な週間習慣プランの提案</li>
+            <li>行動データからの成功・失敗パターン分析</li>
+            <li>心理的変化の可視化でモチベーションUP</li>
+            <li>小鳥の応援スタイルを選べる（短期／長期／癒し型）</li>
+          </ul>
+        </section>
+
+        <section className="fade-section opacity-0 translate-y-8 transition-all duration-600 py-16 px-8 max-w-4xl mx-auto">
+          <h2 className="text-3xl mb-4 border-l-4 border-blue-300 pl-4">利用者の声</h2>
+          <blockquote className="italic my-4 border-l-4 border-blue-300 pl-4 text-gray-700">「小鳥の声に癒されて、続けるのが楽しくなった」 – 30代女性</blockquote>
+          <blockquote className="italic my-4 border-l-4 border-blue-300 pl-4 text-gray-700">「習慣が初めて1ヶ月以上続いた。すごい」 – 20代男性</blockquote>
+          <blockquote className="italic my-4 border-l-4 border-blue-300 pl-4 text-gray-700">「"今日は休んでいいよ"って小鳥が言ってくれるの、うれしい」 – 40代男性</blockquote>
+        </section>
+
+        <div className="text-center py-8">
+          <button 
+            onClick={handleStart}
+            className="bg-blue-600 text-white px-8 py-4 text-lg rounded-full shadow-lg hover:bg-blue-700 hover:-translate-y-1 transition-all duration-300"
+          >
+            今すぐ無料で始める
+          </button>
+          <p className="mt-2">登録不要・お試しOK</p>
+        </div>
+
+        <section className="fade-section opacity-0 translate-y-8 transition-all duration-600 py-16 px-8 max-w-4xl mx-auto bg-white rounded-2xl shadow-lg">
+          <h2 className="text-3xl mb-4 border-l-4 border-blue-300 pl-4">正式リリースを見逃さないように</h2>
+          <p className="mb-4">あなたのメールアドレスを登録すると、リリース時に小鳥が最初にお知らせします。</p>
+          <input 
+            type="email" 
+            placeholder="メールアドレスを入力" 
+            className="w-3/5 max-w-xs px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <br />
+          <button 
+            onClick={() => router.push('/register')}
+            className="mt-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-300"
+          >
+            ウェイティングリストに登録
+          </button>
+        </section>
+
+        {/* Modal */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+              <h3 className="text-2xl font-bold mb-6 text-center">StepEasyを始める</h3>
+              <div className="space-y-4">
+                <button
+                  onClick={handleLogin}
+                  className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-300"
+                >
+                  ログイン / 新規登録
+                </button>
+                <button
+                  onClick={handleGuest}
+                  className="w-full bg-gray-100 text-gray-700 px-6 py-3 rounded-lg shadow-md hover:bg-gray-200 transition-colors duration-300"
+                >
+                  ゲストモードで始める
+                </button>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="w-full text-gray-500 hover:text-gray-700 transition-colors duration-300"
+                >
+                  キャンセル
+                </button>
+              </div>
+              <p className="mt-4 text-sm text-gray-500 text-center">
+                ゲストモードでは一部機能が制限されます
+              </p>
+            </div>
+          </div>
+        )}
+
+        <footer className="text-center py-8 bg-blue-100 text-gray-700">
+          <p>&copy; 2025 StepEasy - あなた専属の習慣コーチ（小鳥つき）</p>
+        </footer>
       </div>
-
-      {/* なぜ「小鳥」なのか */}
-      <section className="fade" style={{ padding: "4em 2em", maxWidth: 900, margin: "auto" }}>
-        <h2 style={{ fontSize: "1.8rem", marginBottom: "1em", borderLeft: "6px solid var(--accent)", paddingLeft: "0.5em" }}>なぜ「小鳥」なのか？</h2>
-        <p>StepEasyは、忙しいあなたの毎日に、静かでやさしい相棒「小鳥」をお届けします。<br />
-        小鳥の声はあなたの状況に共感し、無理なく続けられるよう寄り添います。</p>
-      </section>
-
-      {/* こんな悩みありませんか？ */}
-      <section className="fade" style={{ padding: "4em 2em", maxWidth: 900, margin: "auto" }}>
-        <h2 style={{ fontSize: "1.8rem", marginBottom: "1em", borderLeft: "6px solid var(--accent)", paddingLeft: "0.5em" }}>あなたにも、こんな悩みありませんか？</h2>
-        <ul style={{ paddingLeft: "1.5em" }}>
-          <li style={{ marginBottom: "0.75em" }}>✔ 習慣が続かずに落ち込む</li>
-          <li style={{ marginBottom: "0.75em" }}>✔ 「またできなかった」と自己嫌悪</li>
-          <li style={{ marginBottom: "0.75em" }}>✔ タスクアプリや手帳が続かない</li>
-        </ul>
-        <p><strong>StepEasy</strong>は、小鳥のやさしい声と共に、あなたの「できた！」を少しずつ育てていきます。</p>
-      </section>
-
-      {/* 主な機能 */}
-      <section className="features fade" style={{ padding: "4em 2em", maxWidth: 900, margin: "auto", background: "var(--white)", borderRadius: "1em", boxShadow: "0 4px 12px rgba(0,0,0,0.08)", paddingTop: "2em", paddingBottom: "2em" }}>
-        <h2 style={{ fontSize: "1.8rem", marginBottom: "1em", borderLeft: "6px solid var(--accent)", paddingLeft: "0.5em" }}>StepEasyの主な機能</h2>
-        <ul style={{ paddingLeft: "1.5em" }}>
-          <li style={{ marginBottom: "0.75em" }}><strong>タスクのシンプルな管理：</strong>見る・タップするだけの簡単操作</li>
-          <li style={{ marginBottom: "0.75em" }}><strong>達成度や曜日別分析：</strong>習慣の傾向を視覚化</li>
-          <li style={{ marginBottom: "0.75em" }}><strong>未来予測：</strong>続けた場合の成果を予測表示</li>
-          <li style={{ marginBottom: "0.75em" }}><strong>詰め込みすぎアラート：</strong>「無理しすぎ」を防止</li>
-          <li style={{ marginBottom: "0.75em" }}><strong>小鳥の学習：</strong>継続に応じてあなたに合った提案へ</li>
-        </ul>
-      </section>
-
-      {/* プレミアムで得られること */}
-      <section className="fade" style={{ padding: "4em 2em", maxWidth: 900, margin: "auto" }}>
-        <h2 style={{ fontSize: "1.8rem", marginBottom: "1em", borderLeft: "6px solid var(--accent)", paddingLeft: "0.5em" }}>プレミアムで得られること</h2>
-        <ul style={{ paddingLeft: "1.5em" }}>
-          <li style={{ marginBottom: "0.75em" }}>あなたに最適な週間習慣プランの提案</li>
-          <li style={{ marginBottom: "0.75em" }}>行動データからの成功・失敗パターン分析</li>
-          <li style={{ marginBottom: "0.75em" }}>心理的変化の可視化でモチベーションUP</li>
-          <li style={{ marginBottom: "0.75em" }}>小鳥の応援スタイルを選べる（短期／長期／癒し型）</li>
-        </ul>
-      </section>
-
-      {/* 利用者の声 */}
-      <section className="fade" style={{ padding: "4em 2em", maxWidth: 900, margin: "auto" }}>
-        <h2 style={{ fontSize: "1.8rem", marginBottom: "1em", borderLeft: "6px solid var(--accent)", paddingLeft: "0.5em" }}>利用者の声</h2>
-        <blockquote style={{ fontStyle: "italic", margin: "1em 0", borderLeft: "4px solid var(--accent)", paddingLeft: "1em", color: "#333" }}>「小鳥の声に癒されて、続けるのが楽しくなった」 – 30代女性</blockquote>
-        <blockquote style={{ fontStyle: "italic", margin: "1em 0", borderLeft: "4px solid var(--accent)", paddingLeft: "1em", color: "#333" }}>「習慣が初めて1ヶ月以上続いた。すごい」 – 20代男性</blockquote>
-        <blockquote style={{ fontStyle: "italic", margin: "1em 0", borderLeft: "4px solid var(--accent)", paddingLeft: "1em", color: "#333" }}>「"今日は休んでいいよ"って小鳥が言ってくれるの、うれしい」 – 40代男性</blockquote>
-      </section>
-
-      <div className="cta" style={{ textAlign: "center", marginTop: "2em", zIndex: 2, position: "relative" }}>
-        <button 
-          onClick={handleStart}
-          style={{ 
-            background: "var(--blue-main)", 
-            color: "white", 
-            border: "none", 
-            padding: "1em 2em", 
-            fontSize: "1.1rem", 
-            borderRadius: "2em", 
-            cursor: "pointer", 
-            boxShadow: "0 8px 20px rgba(0,0,0,0.15)", 
-            transition: "transform 0.3s ease, background 0.3s ease" 
-          }}
-          onMouseOver={e => e.currentTarget.style.background = "#0f5bb5"}
-          onMouseOut={e => e.currentTarget.style.background = "var(--blue-main)"}
-        >
-          今すぐ無料で始める
-        </button>
-        <p>登録不要・お試しOK</p>
-      </div>
-
-      {/* メールアドレス登録 */}
-      <section className="waiting fade" style={{ padding: "4em 2em", maxWidth: 900, margin: "auto", background: "var(--white)", borderRadius: "1em", boxShadow: "0 4px 12px rgba(0,0,0,0.08)", paddingTop: "2em", paddingBottom: "2em" }}>
-        <h2 style={{ fontSize: "1.8rem", marginBottom: "1em", borderLeft: "6px solid var(--accent)", paddingLeft: "0.5em" }}>正式リリースを見逃さないように</h2>
-        <p>あなたのメールアドレスを登録すると、リリース時に小鳥が最初にお知らせします。</p>
-        <input 
-          type="email" 
-          placeholder="メールアドレスを入力" 
-          style={{ 
-            padding: "0.6em", 
-            fontSize: "1rem", 
-            width: "60%", 
-            maxWidth: 300, 
-            marginTop: "1em", 
-            border: "1px solid #ccc", 
-            borderRadius: 4 
-          }} 
-        />
-        <br />
-        <button 
-          style={{ 
-            marginTop: "1em", 
-            background: "var(--blue-main)", 
-            color: "white", 
-            border: "none", 
-            padding: "0.8em 1.5em", 
-            fontSize: "1rem", 
-            borderRadius: "0.5em", 
-            cursor: "pointer", 
-            boxShadow: "0 3px 8px rgba(0,0,0,0.1)" 
-          }}
-        >
-          ウェイティングリストに登録
-        </button>
-      </section>
-
-      <footer style={{ textAlign: "center", padding: "2em", background: "#dceeff", color: "#333" }}>
-        <p>© 2025 StepEasy - あなた専属の習慣コーチ（小鳥つき）</p>
-      </footer>
-
-      {/* グローバルスタイル */}
-      <style jsx global>{`
-        :root {
-          --blue-light: #e9f4fb;
-          --blue-main: #1976d2;
-          --blue-dark: #0d3b66;
-          --accent: #90caf9;
-          --white: #ffffff;
-        }
-        body {
-          font-family: 'Helvetica Neue', sans-serif;
-          background: var(--blue-light);
-          color: var(--blue-dark);
-          line-height: 1.6;
-          scroll-behavior: smooth;
-        }
-        .fade {
-          opacity: 0;
-          transform: translateY(30px);
-          transition: all 0.6s ease-out;
-        }
-        .fade.visible {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      `}</style>
-    </div>
+    </Layout>
   );
-}
+} 
