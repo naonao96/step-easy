@@ -1,19 +1,10 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 // サーバーサイド用のクライアント
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey);
-
-// クライアントサイド用のクライアント
-export const createBrowserClient = () => {
-  return createClientComponentClient({
-    supabaseUrl,
-    supabaseKey: supabaseAnonKey,
-  });
-};
 
 export type User = {
   id: string;

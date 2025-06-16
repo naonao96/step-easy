@@ -20,9 +20,6 @@ export default function ProgressPage() {
     const habitTasks = tasks.filter(task => task.is_habit).length;
     const completedHabits = tasks.filter(task => task.is_habit && task.status === 'done').length;
 
-    const averageCompletionRate = tasks.reduce((acc, task) => acc + task.completion_rate, 0) / totalTasks || 0;
-    const bestStreak = Math.max(...tasks.map(task => task.best_streak), 0);
-
     return {
       totalTasks,
       completedTasks,
@@ -30,8 +27,6 @@ export default function ProgressPage() {
       pendingTasks,
       habitTasks,
       completedHabits,
-      averageCompletionRate,
-      bestStreak,
     };
   }, [tasks]);
 
@@ -93,14 +88,6 @@ export default function ProgressPage() {
             <div>
               <h3 className="text-lg font-medium text-gray-700 mb-2">習慣の記録</h3>
               <ul className="space-y-2">
-                <li className="flex justify-between">
-                  <span className="text-gray-600">最長連続達成</span>
-                  <span className="font-medium">{statistics.bestStreak}日</span>
-                </li>
-                <li className="flex justify-between">
-                  <span className="text-gray-600">平均達成率</span>
-                  <span className="font-medium">{Math.round(statistics.averageCompletionRate)}%</span>
-                </li>
                 <li className="flex justify-between">
                   <span className="text-gray-600">習慣タスク数</span>
                   <span className="font-medium">{statistics.habitTasks}</span>

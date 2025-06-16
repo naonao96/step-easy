@@ -2,27 +2,28 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { supabase } from '@/lib/supabase';
 import { Layout } from '@/components/templates/Layout';
 import Image from 'next/image';
 
 export default function LandingPage() {
   const router = useRouter();
-  const supabase = createClientComponentClient();
   const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
+        if (session && session.user) {
           router.replace('/menu');
         }
       } catch (error) {
         console.error('Session check error:', error);
+      } finally {
+        setLoading(false);
       }
     };
-
     checkSession();
 
     const observer = new IntersectionObserver(entries => {
@@ -37,7 +38,17 @@ export default function LandingPage() {
     document.querySelectorAll('.fade-section').forEach(section => {
       observer.observe(section);
     });
-  }, [router, supabase.auth]);
+  }, [router]);
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-gray-600">Loading...</div>
+        </div>
+      </Layout>
+    );
+  }
 
   const handleStart = () => {
     setShowModal(true);
@@ -54,7 +65,7 @@ export default function LandingPage() {
 
   return (
     <Layout>
-      <div className="h-screen bg-blue-50 text-blue-900">
+      <div className="h-screen overflow-y-auto bg-blue-50 text-blue-900">
         <header className="relative bg-gradient-to-br from-blue-100 to-blue-50 py-16 px-8 text-center" id="top">
           <a href="#top" className="absolute top-2 left-2 z-10">
             <Image
@@ -67,7 +78,6 @@ export default function LandingPage() {
           </a>
           <h1 className="text-4xl font-bold mb-4">小鳥の一声が、あなたの習慣を運んでいく</h1>
           <p className="text-xl mb-4">小鳥が、今日もそっと背中を押してくれる</p>
-          <div className="absolute bottom-[-10px] left-1/2 transform -translate-x-1/2 w-[200px] h-[200px] bg-[url('/DontTalkToTheBird.png')] bg-no-repeat bg-center bg-[length:200px] opacity-90"></div>
         </header>
 
         <div className="text-center -mt-8 relative z-2">
@@ -181,7 +191,8 @@ export default function LandingPage() {
               </p>
             </div>
           </div>
-        )}
+        )
+        }
 
         <footer className="text-center py-8 bg-blue-100 text-gray-700">
           <p>&copy; 2025 StepEasy - あなた専属の習慣コーチ（小鳥つき）</p>

@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 interface AuthUser {
   id: string;
   email: string;
+  isGuest?: boolean;
 }
 
 interface AuthContextType {
@@ -15,6 +16,8 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  signInAsGuest: () => Promise<void>;
+  isGuest: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -101,8 +104,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signInAsGuest = async () => {
+    setUser({ id: 'guest', email: '', isGuest: true });
+    setIsLoading(false);
+  };
+
   const signOut = async () => {
     try {
+      if (user?.isGuest) {
+        setUser(null);
+        router.push('/lp');
+        return;
+      }
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       router.push('/login');
@@ -118,6 +131,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signInWithGoogle,
     signInWithEmail,
     signOut,
+    signInAsGuest,
+    isGuest: !!user?.isGuest,
   };
 
   return (

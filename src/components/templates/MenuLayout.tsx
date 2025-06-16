@@ -7,6 +7,8 @@ interface MenuLayoutProps {
   children: React.ReactNode;
 }
 
+export const dynamic = "force-dynamic";
+
 export const MenuLayout: React.FC<MenuLayoutProps> = ({ children }) => {
   const { user, signOut } = useAuth();
 

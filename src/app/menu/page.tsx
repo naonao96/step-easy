@@ -1,75 +1,130 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTaskStore } from '@/stores/taskStore';
 import { Layout } from '@/components/templates/Layout';
+import { Button } from '@/components/atoms/Button';
+import { Character } from '@/components/molecules/Character';
+import { TaskList } from '@/components/molecules/TaskList';
+import { FaTasks, FaChartLine, FaCog, FaSignOutAlt } from 'react-icons/fa';
 
 export default function MenuPage() {
   const router = useRouter();
-  const supabase = createClientComponentClient();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isGuestMode, setIsGuestMode] = useState(false);
+  const { user, signOut } = useAuth();
+  const { tasks, fetchTasks } = useTaskStore();
+  const [characterMood, setCharacterMood] = React.useState<'happy' | 'normal' | 'sad'>('normal');
+  const [characterMessage, setCharacterMessage] = React.useState<string>('');
 
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          // ゲストモードとして扱う
-          setIsGuestMode(true);
-        }
-      } catch (error) {
-        console.error('Session check error:', error);
-        // エラーの場合もゲストモードとして扱う
-        setIsGuestMode(true);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    if (!user) {
+      router.push('/lp');
+      return;
+    }
+    fetchTasks();
+  }, [user, router, fetchTasks]);
 
-    checkSession();
-  }, [router, supabase.auth]);
+  useEffect(() => {
+    // タスクの状態に応じてキャラクターの表情とメッセージを更新
+    const completedTasks = tasks.filter(task => task.status === 'done').length;
+    const totalTasks = tasks.length;
 
-  if (isLoading) {
-    return (
-      <Layout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-gray-600">Loading...</div>
-        </div>
-      </Layout>
-    );
-  }
+    if (totalTasks === 0) {
+      setCharacterMood('normal');
+      setCharacterMessage('新しいタスクを作成してみましょう！');
+    } else if (completedTasks === totalTasks) {
+      setCharacterMood('happy');
+      setCharacterMessage('すべてのタスクを完了しました！素晴らしいです！');
+    } else if (completedTasks / totalTasks >= 0.7) {
+      setCharacterMood('happy');
+      setCharacterMessage('順調に進んでいますね！');
+    } else if (completedTasks / totalTasks >= 0.3) {
+      setCharacterMood('normal');
+      setCharacterMessage('頑張って続けましょう！');
+    } else {
+      setCharacterMood('sad');
+      setCharacterMessage('少しずつ進めていきましょう。');
+    }
+  }, [tasks]);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      router.push('/lp');
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
+  };
 
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
-        {isGuestMode && (
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-yellow-700">
-                  ゲストモードで利用中です。一部機能が制限されます。
-                  <button
-                    onClick={() => router.push('/login')}
-                    className="ml-2 text-yellow-700 underline hover:text-yellow-600"
-                  >
-                    ログイン
-                  </button>
-                  して全機能を利用できます。
-                </p>
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* キャラクター表示 */}
+          <div className="md:col-span-1">
+            <Character mood={characterMood} message={characterMessage} />
+          </div>
+
+          {/* メインコンテンツ */}
+          <div className="md:col-span-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <Button
+                variant="primary"
+                onClick={() => router.push('/tasks')}
+                className="h-32 flex flex-col items-center justify-center space-y-2"
+              >
+                <span className="w-8 h-8">
+                  {FaTasks({ className: 'w-8 h-8' })}
+                </span>
+                <span>タスク管理</span>
+              </Button>
+
+              <Button
+                variant="primary"
+                onClick={() => router.push('/progress')}
+                className="h-32 flex flex-col items-center justify-center space-y-2"
+              >
+                <span className="w-8 h-8">
+                  {FaChartLine({ className: 'w-8 h-8' })}
+                </span>
+                <span>進捗管理</span>
+              </Button>
+
+              <Button
+                variant="secondary"
+                onClick={() => router.push('/settings')}
+                className="h-32 flex flex-col items-center justify-center space-y-2"
+              >
+                <span className="w-8 h-8">
+                  {FaCog({ className: 'w-8 h-8' })}
+                </span>
+                <span>設定</span>
+              </Button>
+
+              <Button
+                variant="danger"
+                onClick={handleSignOut}
+                className="h-32 flex flex-col items-center justify-center space-y-2"
+              >
+                <span className="w-8 h-8">
+                  {FaSignOutAlt({ className: 'w-8 h-8' })}
+                </span>
+                <span>ログアウト</span>
+              </Button>
+            </div>
+
+            {/* 最近のタスク */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">最近のタスク</h2>
+              <TaskList
+                tasks={tasks.slice(0, 3)}
+                onEdit={(task) => router.push(`/tasks/${task.id}`)}
+                onDelete={() => {}}
+                onComplete={() => {}}
+              />
             </div>
           </div>
-        )}
-        <h1 className="text-3xl font-bold mb-8">メニュー</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* メニュー項目をここに追加 */}
         </div>
       </div>
     </Layout>

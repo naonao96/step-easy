@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../atoms/Button';
-import { Task } from '@/types/task';
+import { Task } from '@/stores/taskStore';
+import dynamic from 'next/dynamic';
+
+// Markdownエディタを動的にインポート
+const MDEditor = dynamic(() => import('@uiw/react-md-editor'), {
+  ssr: false,
+  loading: () => <p>Loading editor...</p>,
+});
 
 interface TaskModalProps {
   isOpen: boolean;

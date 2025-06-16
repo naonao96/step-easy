@@ -1,10 +1,14 @@
+// このファイルは一時的にビルド対象から除外されています。SSR運用時に復活させてください。
+// 元の内容は page.tsx_ に移動しました。 
 'use client';
+export const dynamic = "force-dynamic";
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { AISuggestionCard } from '@/components/molecules/AISuggestionCard';
 import { useTaskStore } from '@/stores/taskStore';
 import { FaRobot, FaLightbulb, FaChartLine } from 'react-icons/fa';
+import { useAuth } from '@/contexts/AuthContext';
 
 const IconWrapper: React.FC<{ icon: React.ComponentType<{ className?: string }>, className?: string }> = ({ icon: Icon, className }) => (
   <Icon className={className} />
@@ -22,6 +26,7 @@ export default function AISupportPage() {
   const [suggestions, setSuggestions] = useState<AISuggestion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { createTask } = useTaskStore();
+  const { user } = useAuth();
 
   useEffect(() => {
     // TODO: 実際のAIサジェスションを取得するAPIを実装
@@ -54,25 +59,20 @@ export default function AISupportPage() {
 
   const handleAcceptSuggestion = async (suggestion: AISuggestion) => {
     if (suggestion.type === 'task' || suggestion.type === 'habit') {
+      if (!user) return;
       await createTask({
+        user_id: user.id,
         title: suggestion.title,
         description: suggestion.description,
         is_habit: suggestion.type === 'habit',
         priority: 'medium',
         status: 'todo',
         due_date: null,
-        completed_at: null,
-        habit_frequency: suggestion.type === 'habit' ? 'daily' : null,
+        completed_at: undefined,
+        habit_frequency: suggestion.type === 'habit' ? 'daily' : undefined,
         streak_count: 0,
-        best_streak: 0,
-        ai_support_count: 0,
-        completion_rate: 0,
-        tags: [],
-        difficulty_level: 1,
-        estimated_minutes: 30,
       });
     }
-    // 採用されたサジェスションをリストから削除
     setSuggestions(suggestions.filter(s => s.id !== suggestion.id));
   };
 
