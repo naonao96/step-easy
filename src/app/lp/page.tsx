@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 import { Layout } from '@/components/templates/Layout';
 import Image from 'next/image';
 
 export default function LandingPage() {
   const router = useRouter();
+  const { signInAsGuest } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -58,24 +60,26 @@ export default function LandingPage() {
     router.push('/login');
   };
 
-  const handleGuest = () => {
-    // ゲストモードの場合は直接メニュー画面に遷移
-    router.push('/menu');
+  const handleGuest = async () => {
+    try {
+      await signInAsGuest();
+      router.push('/menu');
+    } catch (error) {
+      console.error('Guest mode error:', error);
+    }
   };
 
   return (
     <Layout>
-      <div className="h-screen overflow-y-auto bg-blue-50 text-blue-900">
+      <div className="h-screen bg-blue-50 text-blue-900 overflow-y-auto scrollbar-hide">
         <header className="relative bg-gradient-to-br from-blue-100 to-blue-50 py-16 px-8 text-center" id="top">
-          <a href="#top" className="absolute top-2 left-2 z-10">
-            <Image
+        <Image
               src="/logo.png"
               alt="StepEasy ロゴ"
               width={120}
               height={120}
               className="cursor-pointer"
             />
-          </a>
           <h1 className="text-4xl font-bold mb-4">小鳥の一声が、あなたの習慣を運んでいく</h1>
           <p className="text-xl mb-4">小鳥が、今日もそっと背中を押してくれる</p>
         </header>
@@ -90,13 +94,13 @@ export default function LandingPage() {
           <p className="mt-2">登録は60秒、すぐに使えます</p>
         </div>
 
-        <section className="fade-section opacity-0 translate-y-8 transition-all duration-600 py-16 px-8 max-w-4xl mx-auto">
+        <section className="fade-section translate-y-8 transition-all duration-600 py-16 px-8 max-w-4xl mx-auto">
           <h2 className="text-3xl mb-4 border-l-4 border-blue-300 pl-4">なぜ「小鳥」なのか？</h2>
           <p className="text-lg">StepEasyは、忙しいあなたの毎日に、静かでやさしい相棒「小鳥」をお届けします。<br />
           小鳥の声はあなたの状況に共感し、無理なく続けられるよう寄り添います。</p>
         </section>
 
-        <section className="fade-section opacity-0 translate-y-8 transition-all duration-600 py-16 px-8 max-w-4xl mx-auto">
+        <section className="fade-section translate-y-8 transition-all duration-600 py-16 px-8 max-w-4xl mx-auto">
           <h2 className="text-3xl mb-4 border-l-4 border-blue-300 pl-4">あなたにも、こんな悩みありませんか？</h2>
           <ul className="list-disc pl-6 space-y-2">
             <li>✔ 習慣が続かずに落ち込む</li>
@@ -106,7 +110,7 @@ export default function LandingPage() {
           <p className="mt-4"><strong>StepEasy</strong>は、小鳥のやさしい声と共に、あなたの「できた！」を少しずつ育てていきます。</p>
         </section>
 
-        <section className="fade-section opacity-0 translate-y-8 transition-all duration-600 py-16 px-8 max-w-4xl mx-auto bg-white rounded-2xl shadow-lg">
+        <section className="fade-section translate-y-8 transition-all duration-600 py-16 px-8 max-w-4xl mx-auto bg-white rounded-2xl shadow-lg">
           <h2 className="text-3xl mb-4 border-l-4 border-blue-300 pl-4">StepEasyの主な機能</h2>
           <ul className="list-disc pl-6 space-y-2">
             <li><strong>タスクのシンプルな管理：</strong>見る・タップするだけの簡単操作</li>
@@ -117,7 +121,7 @@ export default function LandingPage() {
           </ul>
         </section>
 
-        <section className="fade-section opacity-0 translate-y-8 transition-all duration-600 py-16 px-8 max-w-4xl mx-auto">
+        <section className="fade-section translate-y-8 transition-all duration-600 py-16 px-8 max-w-4xl mx-auto">
           <h2 className="text-3xl mb-4 border-l-4 border-blue-300 pl-4">プレミアムで得られること</h2>
           <ul className="list-disc pl-6 space-y-2">
             <li>あなたに最適な週間習慣プランの提案</li>
@@ -127,7 +131,7 @@ export default function LandingPage() {
           </ul>
         </section>
 
-        <section className="fade-section opacity-0 translate-y-8 transition-all duration-600 py-16 px-8 max-w-4xl mx-auto">
+        <section className="fade-section translate-y-8 transition-all duration-600 py-16 px-8 max-w-4xl mx-auto">
           <h2 className="text-3xl mb-4 border-l-4 border-blue-300 pl-4">利用者の声</h2>
           <blockquote className="italic my-4 border-l-4 border-blue-300 pl-4 text-gray-700">「小鳥の声に癒されて、続けるのが楽しくなった」 – 30代女性</blockquote>
           <blockquote className="italic my-4 border-l-4 border-blue-300 pl-4 text-gray-700">「習慣が初めて1ヶ月以上続いた。すごい」 – 20代男性</blockquote>
@@ -144,7 +148,7 @@ export default function LandingPage() {
           <p className="mt-2">登録不要・お試しOK</p>
         </div>
 
-        <section className="fade-section opacity-0 translate-y-8 transition-all duration-600 py-16 px-8 max-w-4xl mx-auto bg-white rounded-2xl shadow-lg">
+        <section className="fade-section translate-y-8 transition-all duration-600 py-16 px-8 max-w-4xl mx-auto bg-white rounded-2xl shadow-lg">
           <h2 className="text-3xl mb-4 border-l-4 border-blue-300 pl-4">正式リリースを見逃さないように</h2>
           <p className="mb-4">あなたのメールアドレスを登録すると、リリース時に小鳥が最初にお知らせします。</p>
           <input 
