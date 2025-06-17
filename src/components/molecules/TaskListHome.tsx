@@ -30,9 +30,10 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
         </button>
       </div>
 
-      <div className="space-y-2 mb-4">
+      {/* スクロール可能なタスク一覧エリア */}
+      <div className="space-y-2 mb-4 max-h-64 overflow-y-auto">
         {tasks.length > 0 ? (
-          tasks.slice(0, 5).map((task) => (
+          tasks.map((task) => (
             <div
               key={task.id}
               className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
@@ -95,25 +96,14 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
         )}
       </div>
 
-      {/* 全件表示リンク */}
-      {tasks.length > 5 && (
+      {/* タスク管理リンク */}
+      {tasks.length > 0 && (
         <div className="pt-3 border-t border-gray-200">
           <button
             onClick={onViewAll}
             className="w-full text-sm text-blue-600 hover:text-blue-700 py-2"
           >
-            すべてのタスクを見る（他 {tasks.length - 5} 件）
-          </button>
-        </div>
-      )}
-
-      {tasks.length > 0 && tasks.length <= 5 && (
-        <div className="pt-3 border-t border-gray-200">
-          <button
-            onClick={onViewAll}
-            className="w-full text-sm text-gray-500 hover:text-blue-600 py-2"
-          >
-            すべてのタスクを管理する
+            タスクを詳細管理する
           </button>
         </div>
       )}

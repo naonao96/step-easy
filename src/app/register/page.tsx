@@ -20,36 +20,68 @@ export default function RegisterPage() {
     e.preventDefault();
     setError(null);
 
+    console.log('🚀 登録処理開始:', { email, passwordLength: password.length });
+
     if (password !== confirmPassword) {
+      console.log('❌ パスワード不一致');
       setError('パスワードが一致しません');
       return;
     }
 
     if (password.length < 6) {
+      console.log('❌ パスワード文字数不足:', password.length);
       setError('パスワードは6文字以上で入力してください');
       return;
     }
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      console.log('📧 Supabase認証開始...');
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      console.log('🔗 リダイレクトURL:', redirectUrl);
+
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: redirectUrl,
         },
       });
 
-      if (error) throw error;
+      console.log('📊 Supabase認証結果:', { data, error });
 
-      // 登録成功メッセージを表示
+      if (error) {
+        console.error('❌ Supabase認証エラー:', error);
+        throw error;
+      }
+
+      if (data.user) {
+        console.log('✅ ユーザー作成成功:', data.user.id);
+        console.log('📧 確認メール送信状況:', data.user.email_confirmed_at ? '確認済み' : '未確認');
+        
+        // メール確認が無効化されている場合、すぐにログイン状態になる
+        if (data.user.email_confirmed_at) {
+          console.log('🎉 即座にログイン状態になりました');
+          alert('登録が完了しました！メニュー画面に移動します。');
+          router.push('/menu');
+          return;
+        }
+      }
+
+      // メール確認が有効な場合のメッセージ
       alert('確認メールを送信しました。メールをご確認ください。');
       router.push('/login');
-    } catch (error) {
-      console.error('Registration error:', error);
-      setError('登録に失敗しました。もう一度お試しください。');
+    } catch (error: any) {
+      console.error('❌ 登録エラー詳細:', {
+        message: error.message,
+        status: error.status,
+        statusText: error.statusText,
+        error: error
+      });
+      setError(`登録に失敗しました: ${error.message || '不明なエラー'}`);
     } finally {
       setIsLoading(false);
+      console.log('🏁 登録処理終了');
     }
   };
 

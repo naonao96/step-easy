@@ -20,21 +20,45 @@ export default function LoginPage() {
     setError(null);
     setIsLoading(true);
 
+    console.log('🔐 ログイン処理開始:', { email, passwordLength: password.length });
+
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log('📧 Supabaseログイン開始...');
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      console.log('📊 Supabaseログイン結果:', { data, error });
 
-      router.push('/dashboard');
+      if (error) {
+        console.error('❌ ログインエラー:', error);
+        throw error;
+      }
+
+      if (data.user) {
+        console.log('✅ ログイン成功:', {
+          userId: data.user.id,
+          email: data.user.email,
+          emailConfirmed: data.user.email_confirmed_at,
+          lastSignIn: data.user.last_sign_in_at
+        });
+      }
+
+      console.log('🚀 メニュー画面にリダイレクト...');
+      router.push('/menu');
       router.refresh();
-    } catch (error) {
-      console.error('Login error:', error);
-      setError('ログインに失敗しました。メールアドレスとパスワードを確認してください。');
+    } catch (error: any) {
+      console.error('❌ ログインエラー詳細:', {
+        message: error.message,
+        status: error.status,
+        statusText: error.statusText,
+        error: error
+      });
+      setError(`ログインに失敗しました: ${error.message || 'メールアドレスとパスワードを確認してください。'}`);
     } finally {
       setIsLoading(false);
+      console.log('🏁 ログイン処理終了');
     }
   };
 
