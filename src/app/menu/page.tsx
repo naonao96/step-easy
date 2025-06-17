@@ -88,14 +88,14 @@ export default function MenuPage() {
   };
 
   return (
-    <AppLayout>
+    <AppLayout variant="home">
       <div className="px-4 sm:px-6 py-4 sm:py-6">
         {/* 上段：タスク & カレンダー */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <TaskListHome
             tasks={todayTasks}
             onAddTask={() => router.push('/tasks')}
-            onEditTask={(task) => router.push(`/tasks/${task.id}`)}
+            onEditTask={(task) => router.push(`/tasks?id=${task.id}`)}
             onCompleteTask={handleCompleteTask}
             onViewAll={() => router.push('/tasks')}
           />
