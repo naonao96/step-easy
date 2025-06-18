@@ -1,6 +1,7 @@
 import React from 'react';
 import { Task } from '@/stores/taskStore';
 import { Button } from '../atoms/Button';
+import { StreakBadge } from '../atoms/StreakBadge';
 import { FaEdit, FaTrash, FaCheck } from 'react-icons/fa';
 
 interface TaskCardProps {
@@ -62,6 +63,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             期限: {new Date(task.due_date).toLocaleDateString()}
           </span>
         )}
+        <StreakBadge 
+          task={task}
+          size="sm"
+        />
       </div>
 
       {task.status !== 'done' && (

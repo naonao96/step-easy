@@ -99,7 +99,7 @@ export default function TaskEditPage() {
           alert(error);
           return;
         }
-        router.push('/menu');
+      router.push('/menu');
       }
     } catch (error) {
       console.error('保存エラー:', error);
@@ -150,9 +150,9 @@ export default function TaskEditPage() {
         <div className="px-4 sm:px-6 py-4 sm:py-6">
           <div className="max-w-7xl mx-auto">
             <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-4 text-gray-600">読み込み中...</p>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">読み込み中...</p>
               </div>
             </div>
           </div>
@@ -163,26 +163,26 @@ export default function TaskEditPage() {
 
   // プレビューモードの表示
   if (!isEditMode && isExistingTask && task) {
-    return (
-      <AppLayout
+  return (
+    <AppLayout
         title="タスク詳細"
-        showBackButton={true}
-        backUrl="/menu"
-        backLabel="メニューに戻る"
-      >
+      showBackButton={true}
+      backUrl="/menu"
+      backLabel="メニューに戻る"
+    >
         <div className="px-4 sm:px-6 py-4 sm:py-6">
           <div className="max-w-7xl mx-auto">
             <div className="bg-white rounded-lg shadow-md p-6">
               {/* プレビューモードのアクションボタン */}
-              <div className="flex justify-end gap-2 mb-4">
-                <Button
-                  variant="secondary"
-                  size="sm"
+          <div className="flex justify-end gap-2 mb-4">
+            <Button
+              variant="secondary"
+              size="sm"
                   onClick={switchToEditMode}
                   leftIcon={FaEdit}
-                >
+            >
                   編集
-                </Button>
+            </Button>
                 <Button
                   variant={task.status === 'done' ? 'secondary' : 'primary'}
                   size="sm"
@@ -268,76 +268,76 @@ export default function TaskEditPage() {
                   プレビュー
                 </Button>
               )}
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleSave}
-                disabled={isSaving}
-                leftIcon={FaSave}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleSave}
+              disabled={isSaving}
+              leftIcon={FaSave}
+            >
+              {isSaving ? '保存中...' : '保存'}
+            </Button>
+          </div>
+
+          {/* タイトル入力 */}
+          <div className="mb-6">
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="タスクのタイトルを入力..."
+              className="text-2xl font-bold border-0 shadow-none px-0 focus:ring-0"
+            />
+          </div>
+
+          {/* メタデータ */}
+          <div className="flex flex-wrap gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                優先度
+              </label>
+              <select
+                value={priority}
+                onChange={(e) => setPriority(e.target.value as 'low' | 'medium' | 'high')}
+                className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               >
-                {isSaving ? '保存中...' : '保存'}
-              </Button>
+                <option value="low">低</option>
+                <option value="medium">中</option>
+                <option value="high">高</option>
+              </select>
             </div>
-
-            {/* タイトル入力 */}
-            <div className="mb-6">
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="タスクのタイトルを入力..."
-                className="text-2xl font-bold border-0 shadow-none px-0 focus:ring-0"
-              />
+            
+            <div className="flex items-center">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={isHabit}
+                  onChange={(e) => setIsHabit(e.target.checked)}
+                  className="form-checkbox h-4 w-4 text-blue-600 mr-2"
+                />
+                <span className="text-sm text-gray-700">習慣タスク</span>
+              </label>
             </div>
-
-            {/* メタデータ */}
-            <div className="flex flex-wrap gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  優先度
-                </label>
-                <select
-                  value={priority}
-                  onChange={(e) => setPriority(e.target.value as 'low' | 'medium' | 'high')}
-                  className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                >
-                  <option value="low">低</option>
-                  <option value="medium">中</option>
-                  <option value="high">高</option>
-                </select>
-              </div>
-              
-              <div className="flex items-center">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={isHabit}
-                    onChange={(e) => setIsHabit(e.target.checked)}
-                    className="form-checkbox h-4 w-4 text-blue-600 mr-2"
-                  />
-                  <span className="text-sm text-gray-700">習慣タスク</span>
-                </label>
-              </div>
 
               {isExistingTask && task && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant={task.status === 'done' ? 'secondary' : 'primary'}
-                    onClick={handleComplete}
-                    size="sm"
-                  >
-                    {task.status === 'done' ? '未完了に戻す' : '完了にする'}
-                  </Button>
-                  <Button
-                    variant="danger"
-                    onClick={handleDelete}
-                    leftIcon={FaTrash}
-                    size="sm"
-                  >
-                    削除
-                  </Button>
-                </div>
-              )}
-            </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={task.status === 'done' ? 'secondary' : 'primary'}
+                  onClick={handleComplete}
+                  size="sm"
+                >
+                  {task.status === 'done' ? '未完了に戻す' : '完了にする'}
+                </Button>
+                <Button
+                  variant="danger"
+                  onClick={handleDelete}
+                  leftIcon={FaTrash}
+                  size="sm"
+                >
+                  削除
+                </Button>
+              </div>
+            )}
+          </div>
 
             {/* エディターエリア */}
             <div className="bg-gray-50 rounded-lg border mb-6">
@@ -362,18 +362,18 @@ Markdownで自由に書けます！`}
                   style={{ fontFamily: 'Monaco, Menlo, monospace' }}
                 />
               </div>
-            </div>
+          </div>
 
-            {/* ヘルプテキスト */}
+          {/* ヘルプテキスト */}
             <div className="text-sm text-gray-500">
-              <p><strong>使える記法:</strong></p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
-                <div># 見出し → <strong>見出し</strong></div>
-                <div>**太字** → <strong>太字</strong></div>
-                <div>*斜体* → <em>斜体</em></div>
-                <div>- [ ] チェックボックス</div>
-                <div>- リスト項目</div>
-                <div>--- → 区切り線</div>
+            <p><strong>使える記法:</strong></p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+              <div># 見出し → <strong>見出し</strong></div>
+              <div>**太字** → <strong>太字</strong></div>
+              <div>*斜体* → <em>斜体</em></div>
+              <div>- [ ] チェックボックス</div>
+              <div>- リスト項目</div>
+              <div>--- → 区切り線</div>
               </div>
             </div>
           </div>

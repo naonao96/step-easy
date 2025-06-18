@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useAuth } from '@/contexts/AuthContext';
+import { getExpiredStreakTasks } from '@/lib/streakUtils';
 
 export interface Task {
   id: string;
@@ -14,6 +15,14 @@ export interface Task {
   user_id: string;
   is_habit: boolean;
   habit_frequency?: 'daily' | 'weekly' | 'monthly';
+  
+  // 継続日数関連フィールド
+  current_streak: number;        // 現在の継続日数
+  longest_streak: number;        // 最長継続日数
+  last_completed_date: string | null;  // 最後に完了した日付
+  streak_start_date: string | null;    // 現在のストリーク開始日
+  
+  // 互換性のために残す（後で削除予定）
   streak_count?: number;
   completed_at?: string;
 }
@@ -26,6 +35,10 @@ interface TaskStore {
   createTask: (task: Omit<Task, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => Promise<void>;
   updateTask: (id: string, task: Partial<Task>) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
+  // 開発用のダミーデータ作成
+  createDummyTasks: () => Promise<void>;
+  // 期限切れストリークの自動リセット
+  resetExpiredStreaks: () => Promise<void>;
 }
 
 const GUEST_TASK_LIMIT = 3;
@@ -98,7 +111,12 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
           id: `guest-${Date.now()}`,
           user_id: 'guest',
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          // 継続日数関連のデフォルト値
+          current_streak: 0,
+          longest_streak: 0,
+          last_completed_date: null,
+          streak_start_date: null
         };
         
         guestTasks.push(newTask);
@@ -152,11 +170,45 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         const taskIndex = guestTasks.findIndex((t: Task) => t.id === id);
         
         if (taskIndex !== -1) {
-          guestTasks[taskIndex] = {
+          const updatedTask = {
             ...guestTasks[taskIndex],
             ...task,
             updated_at: new Date().toISOString()
           };
+          
+          // ゲストユーザーの場合、タスクが完了状態になった時の継続日数計算
+          if (task.status === 'done' && guestTasks[taskIndex].status !== 'done') {
+            const today = new Date().toISOString().split('T')[0];
+            const lastCompleted = updatedTask.last_completed_date;
+            
+            if (!lastCompleted) {
+              // 初回完了
+              updatedTask.current_streak = 1;
+              updatedTask.longest_streak = Math.max(updatedTask.longest_streak || 0, 1);
+              updatedTask.last_completed_date = today;
+              updatedTask.streak_start_date = today;
+            } else {
+              const daysDiff = Math.floor((new Date(today).getTime() - new Date(lastCompleted).getTime()) / (1000 * 60 * 60 * 24));
+              
+              if (daysDiff === 1) {
+                // 連続日
+                updatedTask.current_streak = (updatedTask.current_streak || 0) + 1;
+                updatedTask.longest_streak = Math.max(updatedTask.longest_streak || 0, updatedTask.current_streak);
+                updatedTask.last_completed_date = today;
+              } else if (daysDiff === 0) {
+                // 同日完了（ストリークは変更なし）
+                updatedTask.last_completed_date = today;
+              } else {
+                // ストリーク切れ
+                updatedTask.current_streak = 1;
+                updatedTask.longest_streak = Math.max(updatedTask.longest_streak || 0, 1);
+                updatedTask.last_completed_date = today;
+                updatedTask.streak_start_date = today;
+              }
+            }
+          }
+          
+          guestTasks[taskIndex] = updatedTask;
           localStorage.setItem('guestTasks', JSON.stringify(guestTasks));
         }
         
@@ -164,6 +216,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         return;
       }
 
+      // 認証済みユーザーの場合、データベースで継続日数を自動計算
       const { error } = await supabase
         .from('tasks')
         .update(task)
@@ -205,6 +258,92 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       set({ error: (error as Error).message });
     } finally {
       set({ loading: false });
+    }
+  },
+
+  // 開発用のダミーデータ作成
+  createDummyTasks: async () => {
+    const dummyTasks = [
+      {
+        title: '朝の運動',
+        description: '30分のジョギングまたはストレッチ',
+        status: 'todo' as const,
+        priority: 'medium' as const,
+        due_date: null,
+        is_habit: true,
+        habit_frequency: 'daily' as const,
+        current_streak: 5,
+        longest_streak: 12,
+        last_completed_date: '2024-12-18',
+        streak_start_date: '2024-12-14'
+      },
+      {
+        title: '読書タイム',
+        description: '技術書を30分読む',
+        status: 'done' as const,
+        priority: 'low' as const,
+        due_date: null,
+        is_habit: true,
+        habit_frequency: 'daily' as const,
+        current_streak: 3,
+        longest_streak: 8,
+        last_completed_date: new Date().toISOString().split('T')[0],
+        streak_start_date: '2024-12-17',
+        completed_at: new Date().toISOString()
+      },
+      {
+        title: 'プロジェクト資料作成',
+        description: '来週のプレゼン用資料を準備',
+        status: 'doing' as const,
+        priority: 'high' as const,
+        due_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 明日
+        is_habit: false,
+        current_streak: 0,
+        longest_streak: 0,
+        last_completed_date: null,
+        streak_start_date: null
+      },
+      {
+        title: '今日のタスク完了テスト',
+        description: 'このタスクを完了して円グラフの動作確認',
+        status: 'todo' as const,
+        priority: 'high' as const,
+        due_date: null,
+        is_habit: false,
+        current_streak: 0,
+        longest_streak: 0,
+        last_completed_date: null,
+        streak_start_date: null
+      }
+    ];
+
+    for (const task of dummyTasks) {
+      await get().createTask(task);
+    }
+  },
+
+  // 期限切れストリークの自動リセット
+  resetExpiredStreaks: async () => {
+    const currentTasks = get().tasks;
+    const expiredTasks = getExpiredStreakTasks(currentTasks);
+    
+    if (expiredTasks.length === 0) return;
+
+    console.log(`期限切れストリークをリセット: ${expiredTasks.length}件`);
+    
+    try {
+      // 各期限切れタスクのストリークをリセット
+      for (const task of expiredTasks) {
+        await get().updateTask(task.id, {
+          current_streak: 0,
+          streak_start_date: null
+        });
+      }
+      
+      console.log('期限切れストリークのリセットが完了しました');
+    } catch (error) {
+      console.error('ストリークリセットエラー:', error);
+      set({ error: (error as Error).message });
     }
   },
 })); 

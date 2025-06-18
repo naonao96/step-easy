@@ -1,16 +1,17 @@
 import React, { useMemo } from 'react';
 import { Task } from '@/stores/taskStore';
-import { FaExclamationTriangle, FaClock, FaCheckCircle, FaCoffee } from 'react-icons/fa';
-
-interface AlertBoxProps {
-  tasks?: Task[];
-}
+import { FaExclamationTriangle, FaClock, FaCheckCircle, FaFire } from 'react-icons/fa';
+import { getRiskyStreakTasks, getExpiredStreakTasks, getActiveStreakTasks } from '@/lib/streakUtils';
 
 interface Alert {
-  type: 'warning' | 'info' | 'success' | 'rest';
+  type: 'success' | 'warning' | 'info' | 'error';
   title: string;
   message: string;
   icon: React.ReactNode;
+}
+
+interface AlertBoxProps {
+  tasks?: Task[];
 }
 
 export const AlertBox: React.FC<AlertBoxProps> = ({ tasks = [] }) => {
@@ -51,6 +52,28 @@ export const AlertBox: React.FC<AlertBoxProps> = ({ tasks = [] }) => {
       });
     }
 
+    // 継続が危険な習慣タスクのチェック
+    const riskyStreaks = getRiskyStreakTasks(tasks);
+    if (riskyStreaks.length > 0) {
+      alerts.push({
+        type: 'warning',
+        title: '継続が危険です！',
+        message: `${riskyStreaks.length}件の習慣が途切れそうです`,
+        icon: FaExclamationTriangle({ className: "w-4 h-4" })
+      });
+    }
+
+    // 期限切れストリークのチェック
+    const expiredStreaks = getExpiredStreakTasks(tasks);
+    if (expiredStreaks.length > 0) {
+      alerts.push({
+        type: 'error',
+        title: 'ストリークが途切れました',
+        message: `${expiredStreaks.length}件の習慣の継続が途切れています`,
+        icon: FaExclamationTriangle({ className: "w-4 h-4" })
+      });
+    }
+
     // 完了タスクの励まし
     const completedToday = tasks.filter(task => 
       task.status === 'done' && 
@@ -67,85 +90,91 @@ export const AlertBox: React.FC<AlertBoxProps> = ({ tasks = [] }) => {
       });
     }
 
-    // 休憩提案（多くのタスクを処理している場合）
-    if (completedToday.length >= 5) {
-      alerts.push({
-        type: 'rest',
-        title: '休憩時間ですね',
-        message: '頑張りすぎです。少し休憩しませんか？',
-        icon: FaCoffee({ className: "w-4 h-4" })
-      });
-    }
+    // 長期継続の達成を祝う
+    const longStreaks = getActiveStreakTasks(tasks).filter(task => 
+      task.current_streak >= 7
+    );
 
-    // デフォルトメッセージ（アラートがない場合）
-    if (alerts.length === 0) {
+    if (longStreaks.length > 0) {
+      const maxStreak = Math.max(...longStreaks.map(task => task.current_streak));
       alerts.push({
-        type: 'info',
-        title: '順調です',
-        message: '今日も一歩ずつ進んでいきましょう！',
-        icon: FaCheckCircle({ className: "w-4 h-4" })
+        type: 'success',
+        title: '素晴らしい継続力！',
+        message: `最長${maxStreak}日継続中！${longStreaks.length}件の習慣を1週間以上継続中`,
+        icon: FaFire({ className: "w-4 h-4" })
       });
     }
 
     return alerts;
   }, [tasks]);
 
-  const getAlertStyles = (type: string) => {
-    switch (type) {
-      case 'warning':
-        return 'bg-red-50 border-red-200 text-red-800';
-      case 'success':
-        return 'bg-green-50 border-green-200 text-green-800';
-      case 'rest':
-        return 'bg-purple-50 border-purple-200 text-purple-800';
-      default:
-        return 'bg-blue-50 border-blue-200 text-blue-800';
-    }
-  };
-
-  const getIconColor = (type: string) => {
-    switch (type) {
-      case 'warning':
-        return 'text-red-500';
-      case 'success':
-        return 'text-green-500';
-      case 'rest':
-        return 'text-purple-500';
-      default:
-        return 'text-blue-500';
-    }
-  };
+  if (alerts.length === 0) {
+    return null;
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-md p-4">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">お知らせ</h3>
-      
+      <h3 className="text-lg font-semibold text-gray-900 mb-3">通知</h3>
       <div className="space-y-3">
-        {alerts.slice(0, 3).map((alert, index) => (
+        {alerts.map((alert, index) => (
           <div
             key={index}
-            className={`p-3 rounded-lg border ${getAlertStyles(alert.type)}`}
+            className={`p-3 rounded-lg border-l-4 ${
+              alert.type === 'success'
+                ? 'bg-green-50 border-green-400'
+                : alert.type === 'warning'
+                ? 'bg-yellow-50 border-yellow-400'
+                : alert.type === 'info'
+                ? 'bg-blue-50 border-blue-400'
+                : 'bg-red-50 border-red-400'
+            }`}
           >
-            <div className="flex items-start gap-3">
-              <div className={`mt-0.5 ${getIconColor(alert.type)}`}>
+            <div className="flex items-start">
+              <div
+                className={`flex-shrink-0 ${
+                  alert.type === 'success'
+                    ? 'text-green-500'
+                    : alert.type === 'warning'
+                    ? 'text-yellow-500'
+                    : alert.type === 'info'
+                    ? 'text-blue-500'
+                    : 'text-red-500'
+                }`}
+              >
                 {alert.icon}
               </div>
-              <div className="flex-1">
-                <h4 className="font-medium text-sm mb-1">{alert.title}</h4>
-                <p className="text-xs opacity-90">{alert.message}</p>
+              <div className="ml-3">
+                <h4
+                  className={`text-sm font-medium ${
+                    alert.type === 'success'
+                      ? 'text-green-800'
+                      : alert.type === 'warning'
+                      ? 'text-yellow-800'
+                      : alert.type === 'info'
+                      ? 'text-blue-800'
+                      : 'text-red-800'
+                  }`}
+                >
+                  {alert.title}
+                </h4>
+                <p
+                  className={`text-sm ${
+                    alert.type === 'success'
+                      ? 'text-green-700'
+                      : alert.type === 'warning'
+                      ? 'text-yellow-700'
+                      : alert.type === 'info'
+                      ? 'text-blue-700'
+                      : 'text-red-700'
+                  }`}
+                >
+                  {alert.message}
+                </p>
               </div>
             </div>
           </div>
         ))}
       </div>
-
-      {alerts.length > 3 && (
-        <div className="mt-3 pt-3 border-t border-gray-200">
-          <p className="text-xs text-gray-500 text-center">
-            他 {alerts.length - 3} 件のお知らせ
-          </p>
-        </div>
-      )}
     </div>
   );
 }; 

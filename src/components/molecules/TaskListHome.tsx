@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Task } from '@/stores/taskStore';
-import { FaPlus, FaCheck, FaEdit } from 'react-icons/fa';
+import { StreakBadge } from '../atoms/StreakBadge';
+import { SortOption } from '../atoms/SortDropdown';
+import { sortTasks, getSavedSortOption, saveSortOption } from '@/lib/sortUtils';
+import { FaPlus, FaCheck, FaEdit, FaFilter } from 'react-icons/fa';
 
 interface TaskListHomeProps {
   tasks?: Task[];
@@ -17,6 +20,24 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
   onCompleteTask,
   onViewAll
 }) => {
+  const [sortOption, setSortOption] = useState<SortOption>('default');
+
+  // ソート設定の読み込み
+  useEffect(() => {
+    setSortOption(getSavedSortOption());
+  }, []);
+
+  // ソート設定の保存
+  const handleSortChange = (newOption: SortOption) => {
+    setSortOption(newOption);
+    saveSortOption(newOption);
+  };
+
+  // ソート済みタスク
+  const sortedTasks = useMemo(() => {
+    return sortTasks(tasks, sortOption);
+  }, [tasks, sortOption]);
+
   return (
     <div className="bg-white rounded-lg shadow-md p-4">
       <div className="flex justify-between items-center mb-4">
@@ -30,22 +51,56 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
         </button>
       </div>
 
+      {/* ソートドロップダウン */}
+      {tasks.length > 1 && (
+        <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-2">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            {FaFilter({ className: "w-4 h-4 text-gray-400" })}
+            <span className="font-medium">並び順</span>
+          </div>
+          <select
+            value={sortOption}
+            onChange={(e) => handleSortChange(e.target.value as SortOption)}
+            className="w-full sm:w-auto rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm py-2 px-3 min-h-[44px] touch-manipulation"
+          >
+            <option value="default">デフォルト</option>
+            <option value="priority_desc">優先度（高い順）</option>
+            <option value="priority_asc">優先度（低い順）</option>
+            <option value="streak_desc">継続日数（長い順）</option>
+            <option value="streak_asc">継続日数（短い順）</option>
+            <option value="due_date_asc">期限日（近い順）</option>
+            <option value="due_date_desc">期限日（遠い順）</option>
+            <option value="created_desc">作成日時（新しい順）</option>
+            <option value="created_asc">作成日時（古い順）</option>
+            <option value="title_asc">あいうえお順</option>
+            <option value="title_desc">あいうえお順（逆）</option>
+          </select>
+        </div>
+      )}
+
       {/* スクロール可能なタスク一覧エリア */}
       <div className="space-y-2 mb-4 max-h-64 overflow-y-auto">
-        {tasks.length > 0 ? (
-          tasks.map((task) => (
+        {sortedTasks.length > 0 ? (
+          sortedTasks.map((task) => (
             <div
               key={task.id}
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+              className={`
+                flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg transition-colors
+                ${task.status === 'done' 
+                  ? 'bg-gray-50 opacity-75 hover:bg-gray-100' 
+                  : 'hover:bg-gray-50'
+                }
+              `}
             >
               {/* 完了チェックボックス */}
               <button
                 onClick={() => onCompleteTask?.(task.id)}
-                className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                className={`flex-shrink-0 w-6 h-6 sm:w-5 sm:h-5 rounded border-2 flex items-center justify-center transition-colors touch-manipulation ${
                   task.status === 'done'
                     ? 'bg-green-500 border-green-500 text-white'
                     : 'border-gray-300 hover:border-blue-500'
                 }`}
+                title={task.status === 'done' ? '未完了に戻す' : '完了にする'}
               >
                 {task.status === 'done' && FaCheck({ className: "w-3 h-3" })}
               </button>
@@ -58,28 +113,45 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
                   {task.title}
                 </p>
                 {task.description && (
-                  <p className="text-xs text-gray-500 truncate">
+                  <p className={`text-xs truncate ${
+                    task.status === 'done' ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
                     {task.description}
                   </p>
                 )}
               </div>
 
-              {/* 優先度表示 */}
-              <div className={`px-2 py-1 text-xs rounded ${
-                task.priority === 'high' ? 'bg-red-100 text-red-700' :
-                task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                'bg-green-100 text-green-700'
-              }`}>
-                {task.priority === 'high' ? '高' : 
-                 task.priority === 'medium' ? '中' : '低'}
+              {/* バッジエリア */}
+              <div className="flex items-center gap-1 sm:gap-2">
+                {/* 継続日数バッジ */}
+                <StreakBadge 
+                  task={task}
+                  size="sm"
+                  showText={false}
+                />
+                
+                {/* 優先度表示 */}
+                <div className={`px-1.5 sm:px-2 py-1 text-xs rounded ${
+                  task.priority === 'high' ? 'bg-red-100 text-red-700' :
+                  task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                  'bg-green-100 text-green-700'
+                }`}>
+                  {task.priority === 'high' ? '高' : 
+                   task.priority === 'medium' ? '中' : '低'}
+                </div>
               </div>
 
               {/* 編集ボタン */}
               <button
                 onClick={() => onEditTask?.(task)}
-                className="flex-shrink-0 p-1 text-gray-400 hover:text-blue-500 transition-colors"
+                className={`flex-shrink-0 p-2 sm:p-1 transition-colors touch-manipulation ${
+                  task.status === 'done' 
+                    ? 'text-gray-400 hover:text-gray-600' 
+                    : 'text-gray-400 hover:text-blue-500'
+                }`}
+                title="編集"
               >
-                {FaEdit({ className: "w-3 h-3" })}
+                {FaEdit({ className: "w-4 h-4 sm:w-3 sm:h-3" })}
               </button>
             </div>
           ))

@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Task } from '@/stores/taskStore';
+import { StreakBadge } from '../atoms/StreakBadge';
+import { getActiveStreakTasks, getRiskyStreakTasks } from '@/lib/streakUtils';
 
 interface ActivityStatsProps {
   tasks?: Task[];
@@ -14,12 +16,23 @@ export const ActivityStats: React.FC<ActivityStatsProps> = ({ tasks = [] }) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
+    // 今日のタスクを定義
     const todayTasks = tasks.filter(task => {
       if (task.due_date) {
+        // 期限があるタスクは期限日で判定（完了・未完了問わず）
         const dueDate = new Date(task.due_date);
         return dueDate.toDateString() === today.toDateString();
+      } else {
+        // 期限がないタスクの場合
+        if (task.status === 'done' && task.completed_at) {
+          // 完了済みの場合は、今日完了したもののみ表示
+          const completedDate = new Date(task.completed_at);
+          return completedDate.toDateString() === today.toDateString();
+        } else {
+          // 未完了の場合は表示（前日以前の未完了タスクも含む）
+          return task.status !== 'done';
+        }
       }
-      return task.status !== 'done'; // 期限がないタスクは未完了のものを今日のタスクとして扱う
     });
 
     const completedTasks = todayTasks.filter(task => task.status === 'done');
@@ -30,6 +43,24 @@ export const ActivityStats: React.FC<ActivityStatsProps> = ({ tasks = [] }) => {
       completed: completedTasks.length,
       total: totalTasks,
       percentage
+    };
+  }, [tasks]);
+
+  // 継続日数統計を計算（修正版）
+  const streakStats = useMemo(() => {
+    const activeStreaks = getActiveStreakTasks(tasks);
+    const riskyStreaks = getRiskyStreakTasks(tasks);
+    const totalActiveStreaks = activeStreaks.length;
+    
+    // 上位3つのストリークを取得（アクティブなもののみ）
+    const topStreaks = activeStreaks
+      .sort((a, b) => (b.current_streak || 0) - (a.current_streak || 0))
+      .slice(0, 3);
+
+    return {
+      totalActiveStreaks,
+      riskyStreaksCount: riskyStreaks.length,
+      topStreaks
     };
   }, [tasks]);
 
@@ -97,7 +128,7 @@ export const ActivityStats: React.FC<ActivityStatsProps> = ({ tasks = [] }) => {
         </div>
 
         {/* 詳細情報 */}
-        <div className="text-center">
+        <div className="text-center mb-4">
           <p className="text-sm text-gray-600 mb-2">
             今日のタスク進捗
           </p>
@@ -112,6 +143,43 @@ export const ActivityStats: React.FC<ActivityStatsProps> = ({ tasks = [] }) => {
             </div>
           </div>
         </div>
+
+        {/* 継続日数統計（修正版） */}
+        {streakStats.totalActiveStreaks > 0 && (
+          <div className="w-full mt-4 p-3 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg border border-orange-100">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-medium text-gray-700">継続中のタスク</h4>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-orange-600 font-medium">
+                  {streakStats.totalActiveStreaks}件
+                </span>
+                {streakStats.riskyStreaksCount > 0 && (
+                  <span className="text-xs text-yellow-600 font-medium bg-yellow-100 px-2 py-1 rounded">
+                    ⚠️ {streakStats.riskyStreaksCount}件注意
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="space-y-1">
+              {streakStats.topStreaks.map(task => (
+                <div key={task.id} className="flex justify-between items-center text-xs">
+                  <span className="text-gray-600 truncate flex-1 mr-2">{task.title}</span>
+                  <StreakBadge 
+                    task={task}
+                    size="sm"
+                    showText={false}
+                    showTimeRemaining={true}
+                  />
+                </div>
+              ))}
+              {streakStats.totalActiveStreaks > 3 && (
+                <div className="text-xs text-gray-500 text-center pt-1">
+                  他 {streakStats.totalActiveStreaks - 3}件
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -18,7 +18,7 @@ import { FaArchive } from 'react-icons/fa';
 export default function MenuPage() {
   const router = useRouter();
   const { user, signOut, shouldShowMigrationModal, setShouldShowMigrationModal, isGuest } = useAuth();
-  const { tasks, fetchTasks, updateTask, deleteTask } = useTaskStore();
+  const { tasks, fetchTasks, updateTask, deleteTask, resetExpiredStreaks } = useTaskStore();
   const [characterMood, setCharacterMood] = React.useState<'happy' | 'normal' | 'sad'>('normal');
   const [characterMessage, setCharacterMessage] = React.useState<string>('');
   const [guestTasks, setGuestTasks] = React.useState<Task[]>([]);
@@ -29,22 +29,42 @@ export default function MenuPage() {
       router.push('/lp');
       return;
     }
-    fetchTasks();
+    
+    const initializeData = async () => {
+      await fetchTasks();
+      // アプリ起動時に期限切れストリークをリセット
+      await resetExpiredStreaks();
+    };
+    
+    initializeData();
     
     // ゲストタスクを取得
     if (shouldShowMigrationModal) {
       setGuestTasks(getGuestTasks());
     }
-  }, [user, router, fetchTasks, shouldShowMigrationModal]);
+  }, [user, router, fetchTasks, resetExpiredStreaks, shouldShowMigrationModal]);
 
   // 今日のタスクをフィルタリング
   const todayTasks = useMemo(() => {
-    const today = new Date().toDateString();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
     return tasks.filter(task => {
       if (task.due_date) {
-        return new Date(task.due_date).toDateString() === today;
+        // 期限があるタスクは期限日で判定（完了・未完了問わず）
+        const dueDate = new Date(task.due_date);
+        return dueDate.toDateString() === today.toDateString();
+      } else {
+        // 期限がないタスクの場合
+        if (task.status === 'done' && task.completed_at) {
+          // 完了済みの場合は、今日完了したもののみ表示
+          const completedDate = new Date(task.completed_at);
+          return completedDate.toDateString() === today.toDateString();
+        } else {
+          // 未完了の場合は表示（前日以前の未完了タスクも含む）
+          return task.status !== 'done';
+        }
       }
-      return task.status !== 'done'; // 期限がないタスクは未完了のものを表示
     });
   }, [tasks]);
 
@@ -88,7 +108,17 @@ export default function MenuPage() {
   }, [statistics]);
 
   const handleCompleteTask = async (id: string) => {
-    await updateTask(id, { status: 'done', completed_at: new Date().toISOString() });
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+    
+    // 完了⇔未完了の切り替え
+    const newStatus = task.status === 'done' ? 'todo' : 'done';
+    const completedAt = newStatus === 'done' ? new Date().toISOString() : undefined;
+    
+    await updateTask(id, { 
+      status: newStatus, 
+      completed_at: completedAt 
+    });
   };
 
   const handleDeleteTask = async (id: string) => {

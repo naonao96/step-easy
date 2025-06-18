@@ -72,96 +72,85 @@ export default function LandingPage() {
   return (
     <Layout>
       <div className="h-screen bg-blue-50 text-blue-900 overflow-y-auto scrollbar-hide">
-        <header className="relative bg-gradient-to-br from-blue-100 to-blue-50 py-16 px-8 text-center" id="top">
-        <Image
-              src="/logo.png"
-              alt="StepEasy ロゴ"
-              width={120}
-              height={120}
-              className="cursor-pointer"
-            />
-          <h1 className="text-4xl font-bold mb-4">小鳥の一声が、あなたの習慣を運んでいく</h1>
-          <p className="text-xl mb-4">小鳥が、今日もそっと背中を押してくれる</p>
-        </header>
-
-        <div className="text-center -mt-8 relative z-2">
+        {/* ヘッダー部 */}
+        <section className="text-center bg-blue-50 py-12">
+          <Image
+            src="/logo.png"
+            alt="StepEasy ロゴ"
+            width={120}
+            height={120}
+            className="mx-auto mb-4"
+          />
+          <h1 className="text-2xl font-bold text-blue-900 mb-2">小鳥の一声が、あなたの習慣を運んでいく</h1>
+          <p className="text-blue-800 mb-4">小鳥が、今日もそっと背中を押してくれる</p>
           <button 
             onClick={handleStart}
-            className="bg-blue-600 text-white px-8 py-4 text-lg rounded-full shadow-lg hover:bg-blue-700 hover:-translate-y-1 transition-all duration-300"
+            className="bg-blue-600 text-white px-6 py-2 rounded-full mb-2 hover:bg-blue-700 transition"
           >
             無料で始める
           </button>
-          <p className="mt-2">登録は60秒、すぐに使えます</p>
-        </div>
-
-        <section className="fade-section translate-y-8 transition-all duration-600 py-16 px-8 max-w-4xl mx-auto">
-          <h2 className="text-3xl mb-4 border-l-4 border-blue-300 pl-4">なぜ「小鳥」なのか？</h2>
-          <p className="text-lg">StepEasyは、忙しいあなたの毎日に、静かでやさしい相棒「小鳥」をお届けします。<br />
-          小鳥の声はあなたの状況に共感し、無理なく続けられるよう寄り添います。</p>
+          <p className="text-sm text-gray-600">登録は60秒、すぐに使えます</p>
         </section>
 
-        <section className="fade-section translate-y-8 transition-all duration-600 py-16 px-8 max-w-4xl mx-auto">
-          <h2 className="text-3xl mb-4 border-l-4 border-blue-300 pl-4">あなたにも、こんな悩みありませんか？</h2>
-          <ul className="list-disc pl-6 space-y-2">
-            <li>✔ 習慣が続かずに落ち込む</li>
-            <li>✔ 「またできなかった」と自己嫌悪</li>
-            <li>✔ タスクアプリや手帳が続かない</li>
-          </ul>
-          <p className="mt-4"><strong>StepEasy</strong>は、小鳥のやさしい声と共に、あなたの「できた！」を少しずつ育てていきます。</p>
+        {/* なぜ「小鳥」なのか？ */}
+        <section className="bg-white px-6 py-12">
+          <h2 className="text-xl font-semibold text-blue-900 mb-4">なぜ「小鳥」なのか？</h2>
+          <p className="text-gray-700 leading-relaxed">
+            StepEasyは、忙しいあなたの毎日に、静かでやさしい相棒「小鳥」をお届けします。
+            小鳥は、あなたの状況や気分に共感し、「ちょっとだけ頑張ろう」と背中を押してくれる存在。
+            毎日の習慣が続くよう、そっと寄り添ってくれます。
+          </p>
         </section>
 
-        <section className="fade-section translate-y-8 transition-all duration-600 py-16 px-8 max-w-4xl mx-auto bg-white rounded-2xl shadow-lg">
-          <h2 className="text-3xl mb-4 border-l-4 border-blue-300 pl-4">StepEasyの主な機能</h2>
-          <ul className="list-disc pl-6 space-y-2">
-            <li><strong>タスクのシンプルな管理：</strong>見る・タップするだけの簡単操作</li>
-            <li><strong>達成度や曜日別分析：</strong>習慣の傾向を視覚化</li>
-            <li><strong>未来予測：</strong>続けた場合の成果を予測表示</li>
-            <li><strong>詰め込みすぎアラート：</strong>「無理しすぎ」を防止</li>
-            <li><strong>小鳥の学習：</strong>継続に応じてあなたに合った提案へ</li>
+        {/* ユーザーの悩み */}
+        <section className="bg-blue-100 px-6 py-12">
+          <h2 className="text-xl font-semibold text-blue-900 mb-4">あなたにも、こんな悩みありませんか？</h2>
+          <ul className="list-disc list-inside text-gray-700 space-y-2">
+            <li>習慣が続かずに落ち込む</li>
+            <li>「またできなかった」と自己嫌悪してしまう</li>
+            <li>タスク管理アプリや手帳が続かない</li>
+            <li>自分のペースがつかめずに挫折を繰り返す</li>
           </ul>
         </section>
 
-        <section className="fade-section translate-y-8 transition-all duration-600 py-16 px-8 max-w-4xl mx-auto">
-          <h2 className="text-3xl mb-4 border-l-4 border-blue-300 pl-4">プレミアムで得られること</h2>
-          <ul className="list-disc pl-6 space-y-2">
-            <li>あなたに最適な週間習慣プランの提案</li>
-            <li>行動データからの成功・失敗パターン分析</li>
-            <li>心理的変化の可視化でモチベーションUP</li>
-            <li>小鳥の応援スタイルを選べる（短期／長期／癒し型）</li>
+        {/* StepEasyでできること */}
+        <section className="bg-white px-6 py-12">
+          <h2 className="text-xl font-semibold text-blue-900 mb-4">StepEasyでできること</h2>
+          <ul className="list-disc list-inside text-gray-700 space-y-2">
+            <li>小鳥のひとことで気持ちに寄り添う（定型／AI）</li>
+            <li>タスク継続日数・曜日傾向を自動で可視化</li>
+            <li>「今日は休んでいいよ」など、やさしいアラート</li>
+            <li>AIが習慣のリズムを提案（プレミアム）</li>
+            <li>応援スタイルを選べる（達成型／癒し型／継続型）</li>
           </ul>
         </section>
 
-        <section className="fade-section translate-y-8 transition-all duration-600 py-16 px-8 max-w-4xl mx-auto">
-          <h2 className="text-3xl mb-4 border-l-4 border-blue-300 pl-4">利用者の声</h2>
-          <blockquote className="italic my-4 border-l-4 border-blue-300 pl-4 text-gray-700">「小鳥の声に癒されて、続けるのが楽しくなった」 – 30代女性</blockquote>
-          <blockquote className="italic my-4 border-l-4 border-blue-300 pl-4 text-gray-700">「習慣が初めて1ヶ月以上続いた。すごい」 – 20代男性</blockquote>
-          <blockquote className="italic my-4 border-l-4 border-blue-300 pl-4 text-gray-700">「"今日は休んでいいよ"って小鳥が言ってくれるの、うれしい」 – 40代男性</blockquote>
+        {/* 利用者の声 */}
+        <section className="bg-blue-50 px-6 py-12">
+          <h2 className="text-xl font-semibold text-blue-900 mb-4">利用者の声</h2>
+          <div className="space-y-4 text-gray-700">
+            <p>「小鳥の声に癒されて、続けるのが楽しくなった」 – 30代女性</p>
+            <p>「習慣が初めて1ヶ月以上続いた。すごい」 – 20代男性</p>
+            <p>「"今日は休んでいいよ"って小鳥が言ってくれるの、うれしい」 – 40代男性</p>
+          </div>
         </section>
 
-        <div className="text-center py-8">
+        {/* 今すぐ体験を */}
+        <section className="bg-white text-center px-6 py-12">
+          <h2 className="text-xl font-semibold text-blue-900 mb-4">今すぐStepEasyを試してみませんか？</h2>
+          <p className="text-gray-700 mb-6">1日続けば、それはもう「変化」の始まり。StepEasyで、やさしいリズムを整えてみましょう。</p>
           <button 
-            onClick={handleStart}
-            className="bg-blue-600 text-white px-8 py-4 text-lg rounded-full shadow-lg hover:bg-blue-700 hover:-translate-y-1 transition-all duration-300"
+            onClick={handleGuest}
+            className="bg-blue-600 text-white px-6 py-3 rounded-full hover:bg-blue-700 transition"
           >
-            今すぐ無料で始める
+            ゲストモードで始める（登録不要）
           </button>
-          <p className="mt-2">登録不要・お試しOK</p>
-        </div>
-
-        <section className="fade-section translate-y-8 transition-all duration-600 py-16 px-8 max-w-4xl mx-auto bg-white rounded-2xl shadow-lg">
-          <h2 className="text-3xl mb-4 border-l-4 border-blue-300 pl-4">正式リリースを見逃さないように</h2>
-          <p className="mb-4">あなたのメールアドレスを登録すると、リリース時に小鳥が最初にお知らせします。</p>
-          <input 
-            type="email" 
-            placeholder="メールアドレスを入力" 
-            className="w-3/5 max-w-xs px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <br />
+          <p className="text-sm text-gray-500 mt-2">※メール登録でリリース通知も受け取れます</p>
           <button 
             onClick={() => router.push('/register')}
-            className="mt-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-300"
+            className="mt-4 bg-gray-100 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-200 transition block mx-auto"
           >
-            ウェイティングリストに登録
+            メール登録でリリース通知を受け取る
           </button>
         </section>
 
@@ -198,8 +187,9 @@ export default function LandingPage() {
         )
         }
 
-        <footer className="text-center py-8 bg-blue-100 text-gray-700">
-          <p>&copy; 2025 StepEasy - あなた専属の習慣コーチ（小鳥つき）</p>
+        {/* フッター */}
+        <footer className="bg-blue-100 text-center text-sm text-gray-600 py-6">
+          © 2025 StepEasy - あなた専属の習慣コーチ（小鳥つき）
         </footer>
       </div>
     </Layout>
