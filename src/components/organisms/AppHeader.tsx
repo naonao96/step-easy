@@ -60,12 +60,12 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
       case 'transparent':
         return 'bg-transparent';
       default:
-        return 'bg-blue-50 border-b border-blue-100';
+        return 'bg-blue border-b border-blue-200';
     }
   };
 
   return (
-    <header className={`flex justify-between items-center px-4 sm:px-6 py-3 sm:py-4 flex-shrink-0 ${getHeaderStyles()} ${className}`}>
+    <header className={`h-20 flex justify-between items-center px-4 sm:px-6 flex-shrink-0 shadow-sm ${getHeaderStyles()} ${className}`}>
       {/* 左側：モバイルメニューボタン + 戻るボタン + タイトル or ロゴ */}
       <div className="flex items-center gap-3">
         {/* モバイルメニューボタン */}
@@ -91,19 +91,18 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           </Button>
         )}
 
-        {/* タイトル or ロゴ */}
-        {title ? (
-          <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
-            {title}
-          </h1>
-        ) : (
-          <div 
-            className="cursor-pointer"
-            onClick={() => router.push('/menu')}
-          >
-            <img src="/logo.png" alt="StepEasy" className="h-7 sm:h-8" />
-          </div>
-        )}
+        {/* ロゴ（常に表示） */}
+        <div 
+          className="cursor-pointer flex items-center gap-3"
+          onClick={() => router.push('/menu')}
+        >
+          <img src="/logo.png" alt="StepEasy" className="h-8 sm:h-10" />
+          {title && (
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
+              {title}
+            </h1>
+          )}
+        </div>
       </div>
 
       {/* 右側：カスタムアクション + アカウント情報 */}

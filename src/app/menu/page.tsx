@@ -166,7 +166,6 @@ export default function MenuPage() {
           <TaskListHome
             tasks={todayTasks}
             onAddTask={() => router.push('/tasks')}
-            onEditTask={(task) => router.push(`/tasks?id=${task.id}`)}
             onCompleteTask={handleCompleteTask}
             onViewAll={() => router.push('/tasks')}
           />

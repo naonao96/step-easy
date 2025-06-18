@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Task } from '@/stores/taskStore';
 import { StreakBadge } from '../atoms/StreakBadge';
+import { ToggleSwitch } from '../atoms/ToggleSwitch';
 import { SortOption } from '../atoms/SortDropdown';
 import { sortTasks, getSavedSortOption, saveSortOption } from '@/lib/sortUtils';
 import { FaPlus, FaCheck, FaEdit, FaFilter } from 'react-icons/fa';
@@ -8,7 +10,6 @@ import { FaPlus, FaCheck, FaEdit, FaFilter } from 'react-icons/fa';
 interface TaskListHomeProps {
   tasks?: Task[];
   onAddTask?: () => void;
-  onEditTask?: (task: Task) => void;
   onCompleteTask?: (id: string) => void;
   onViewAll?: () => void;
 }
@@ -16,10 +17,10 @@ interface TaskListHomeProps {
 export const TaskListHome: React.FC<TaskListHomeProps> = ({
   tasks = [],
   onAddTask,
-  onEditTask,
   onCompleteTask,
   onViewAll
 }) => {
+  const router = useRouter();
   const [sortOption, setSortOption] = useState<SortOption>('default');
 
   // ソート設定の読み込み
@@ -37,6 +38,11 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
   const sortedTasks = useMemo(() => {
     return sortTasks(tasks, sortOption);
   }, [tasks, sortOption]);
+
+  // タスク詳細表示（既存のページ遷移方式）
+  const handleTaskClick = (task: Task) => {
+    router.push(`/tasks?id=${task.id}`);
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-md p-4">
@@ -92,21 +98,38 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
                 }
               `}
             >
-              {/* 完了チェックボックス */}
-              <button
-                onClick={() => onCompleteTask?.(task.id)}
-                className={`flex-shrink-0 w-6 h-6 sm:w-5 sm:h-5 rounded border-2 flex items-center justify-center transition-colors touch-manipulation ${
-                  task.status === 'done'
-                    ? 'bg-green-500 border-green-500 text-white'
-                    : 'border-gray-300 hover:border-blue-500'
-                }`}
-                title={task.status === 'done' ? '未完了に戻す' : '完了にする'}
-              >
-                {task.status === 'done' && FaCheck({ className: "w-3 h-3" })}
-              </button>
+              {/* 完了切り替え - レスポンシブ対応 */}
+              <div className="flex-shrink-0">
+                {/* モバイル: スライドトグル */}
+                <div className="block sm:hidden">
+                  <ToggleSwitch
+                    checked={task.status === 'done'}
+                    onChange={() => onCompleteTask?.(task.id)}
+                    size="sm"
+                  />
+                </div>
+                
+                {/* デスクトップ: 改良チェックボックス */}
+                <div className="hidden sm:block">
+                  <button
+                    onClick={() => onCompleteTask?.(task.id)}
+                    className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${
+                      task.status === 'done'
+                        ? 'bg-green-500 border-green-500 text-white scale-110'
+                        : 'border-gray-300 hover:border-blue-500 hover:scale-105'
+                    }`}
+                    title={task.status === 'done' ? '未完了に戻す' : '完了にする'}
+                  >
+                    {task.status === 'done' && FaCheck({ className: "w-3 h-3" })}
+                  </button>
+                </div>
+              </div>
 
-              {/* タスク内容 */}
-              <div className="flex-1 min-w-0">
+              {/* タスク内容 - クリッカブル */}
+              <div 
+                className="flex-1 min-w-0 cursor-pointer"
+                onClick={() => handleTaskClick(task)}
+              >
                 <p className={`text-sm font-medium truncate ${
                   task.status === 'done' ? 'line-through text-gray-500' : 'text-gray-900'
                 }`}>
@@ -143,7 +166,7 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
 
               {/* 編集ボタン */}
               <button
-                onClick={() => onEditTask?.(task)}
+                onClick={() => router.push(`/tasks?id=${task.id}&edit=true`)}
                 className={`flex-shrink-0 p-2 sm:p-1 transition-colors touch-manipulation ${
                   task.status === 'done' 
                     ? 'text-gray-400 hover:text-gray-600' 
@@ -179,6 +202,7 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
           </button>
         </div>
       )}
+
     </div>
   );
 }; 

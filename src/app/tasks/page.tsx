@@ -147,12 +147,12 @@ export default function TaskEditPage() {
         backUrl="/menu"
         backLabel="メニューに戻る"
       >
-        <div className="px-4 sm:px-6 py-4 sm:py-6">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
           <div className="max-w-7xl mx-auto">
             <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">読み込み中...</p>
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-4 text-gray-600">読み込み中...</p>
               </div>
             </div>
           </div>
@@ -168,29 +168,62 @@ export default function TaskEditPage() {
         title="タスク詳細"
       showBackButton={true}
       backUrl="/menu"
-      backLabel="メニューに戻る"
+      backLabel="メニュー"
     >
         <div className="px-4 sm:px-6 py-4 sm:py-6">
           <div className="max-w-7xl mx-auto">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              {/* プレビューモードのアクションボタン */}
-          <div className="flex justify-end gap-2 mb-4">
-            <Button
-              variant="secondary"
-              size="sm"
-                  onClick={switchToEditMode}
-                  leftIcon={FaEdit}
-            >
-                  編集
-            </Button>
-                <Button
-                  variant={task.status === 'done' ? 'secondary' : 'primary'}
-                  size="sm"
-                  onClick={handleComplete}
-                >
-                  {task.status === 'done' ? '未完了に戻す' : '完了にする'}
-                </Button>
+            <div className="bg-white rounded-lg shadow-md overflow-hidden">
+              {/* アクションバー（カード内） */}
+              <div className="bg-white/60 backdrop-blur-sm border-b border-gray-100/60 px-6 py-3">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                  <div className="flex items-center gap-4 text-xs text-gray-500 font-medium">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>
+                      <span>{new Date(task.created_at).toLocaleDateString('ja-JP', { 
+                        month: 'short', 
+                        day: 'numeric'
+                      })}</span>
+                    </div>
+                    {task.completed_at && (
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                        <span>完了 {new Date(task.completed_at).toLocaleDateString('ja-JP', { 
+                          month: 'short', 
+                          day: 'numeric'
+                        })}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={switchToEditMode}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100/60 rounded-lg transition-all duration-200"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={handleComplete}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
+                        task.status === 'done' 
+                          ? 'text-gray-600 hover:text-gray-800 hover:bg-gray-100/60' 
+                          : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50/80'
+                      }`}
+                    >
+                      {task.status === 'done' ? 'Reopen' : 'Done'}
+                    </button>
+                    <div className="w-px h-3 bg-gray-200 mx-1"></div>
+                    <button
+                      onClick={handleDelete}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-red-500 hover:text-red-600 hover:bg-red-50/80 rounded-lg transition-all duration-200"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
               </div>
+              
+              {/* メインコンテンツ */}
+              <div className="p-6">
 
               {/* タスクタイトル */}
               <div className="mb-6">
@@ -226,17 +259,6 @@ export default function TaskEditPage() {
                   </ReactMarkdown>
                 </div>
               </div>
-
-              {/* 危険なアクション */}
-              <div className="flex justify-end">
-                <Button
-                  variant="danger"
-                  size="sm"
-                  onClick={handleDelete}
-                  leftIcon={FaTrash}
-                >
-                  削除
-                </Button>
               </div>
             </div>
           </div>
@@ -251,33 +273,66 @@ export default function TaskEditPage() {
       title={isExistingTask ? "タスクを編集" : "新しいタスク"}
       showBackButton={true}
       backUrl={isExistingTask ? `/tasks?id=${taskId}` : "/menu"}
-      backLabel={isExistingTask ? "プレビューに戻る" : "メニューに戻る"}
+      backLabel={isExistingTask ? "プレビュー" : "メニュー"}
     >
-      <div className="px-4 sm:px-6 py-4 sm:py-6">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
         <div className="max-w-7xl mx-auto">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            {/* 編集モードのアクションボタン */}
-            <div className="flex justify-end gap-2 mb-4">
-              {isExistingTask && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={switchToPreviewMode}
-                  leftIcon={FaEye}
-                >
-                  プレビュー
-                </Button>
-              )}
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleSave}
-              disabled={isSaving}
-              leftIcon={FaSave}
-            >
-              {isSaving ? '保存中...' : '保存'}
-            </Button>
-          </div>
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            {/* アクションバー（カード内） */}
+            <div className="bg-white/60 backdrop-blur-sm border-b border-gray-100/60 px-6 py-3">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                <div className="flex items-center gap-4 text-xs text-gray-500 font-medium">
+                  {isExistingTask && task && (
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                      <span>編集中 {new Date(task.updated_at).toLocaleDateString('ja-JP', { 
+                        month: 'short', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}</span>
+                    </div>
+                  )}
+                  {!isExistingTask && (
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                      <span>新規作成</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-1">
+                  {isExistingTask && (
+                    <button
+                      onClick={switchToPreviewMode}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100/60 rounded-lg transition-all duration-200"
+                    >
+                      Preview
+                    </button>
+                  )}
+                  <button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50/80 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSaving ? 'Saving...' : 'Save'}
+                  </button>
+                  {isExistingTask && task && (
+                    <>
+                      <div className="w-px h-3 bg-gray-200 mx-1"></div>
+                      <button
+                        onClick={handleDelete}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-red-500 hover:text-red-600 hover:bg-red-50/80 rounded-lg transition-all duration-200"
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {/* メインコンテンツ */}
+            <div className="p-6">
 
           {/* タイトル入力 */}
           <div className="mb-6">
@@ -327,14 +382,6 @@ export default function TaskEditPage() {
                 >
                   {task.status === 'done' ? '未完了に戻す' : '完了にする'}
                 </Button>
-                <Button
-                  variant="danger"
-                  onClick={handleDelete}
-                  leftIcon={FaTrash}
-                  size="sm"
-                >
-                  削除
-                </Button>
               </div>
             )}
           </div>
@@ -375,6 +422,7 @@ Markdownで自由に書けます！`}
               <div>- リスト項目</div>
               <div>--- → 区切り線</div>
               </div>
+            </div>
             </div>
           </div>
         </div>
