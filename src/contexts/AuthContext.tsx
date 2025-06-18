@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
+import { hasGuestTasks, getGuestTasks } from '@/lib/guestMigration';
 
 interface AuthUser {
   id: string;
@@ -18,6 +19,8 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   signInAsGuest: () => Promise<void>;
   isGuest: boolean;
+  shouldShowMigrationModal: boolean;
+  setShouldShowMigrationModal: (show: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,6 +28,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [shouldShowMigrationModal, setShouldShowMigrationModal] = useState(false);
   const router = useRouter();
   const supabase = createClientComponentClient();
 
@@ -57,12 +61,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       async (event, session) => {
         if (mounted) {
           if (session?.user) {
-            setUser({
+            const newUser = {
               id: session.user.id,
               email: session.user.email || '',
-            });
+            };
+            
+            // 新規ログイン時にゲストタスクがあるかチェック
+            if (event === 'SIGNED_IN' && hasGuestTasks()) {
+              setShouldShowMigrationModal(true);
+            }
+            
+            setUser(newUser);
           } else {
             setUser(null);
+            setShouldShowMigrationModal(false);
           }
           setIsLoading(false);
         }
@@ -133,6 +145,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut,
     signInAsGuest,
     isGuest: !!user?.isGuest,
+    shouldShowMigrationModal,
+    setShouldShowMigrationModal,
   };
 
   return (

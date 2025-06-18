@@ -87,7 +87,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             leftIcon={FaArrowLeft}
             className="text-gray-600 hover:text-gray-800"
           >
-            <span className="hidden sm:inline">{backLabel}</span>
+            <span className="text-sm">{backLabel}</span>
           </Button>
         )}
 
@@ -148,8 +148,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             className="text-xs sm:text-sm px-2 py-2 sm:px-3 sm:py-1 bg-red-500 text-white rounded shadow hover:bg-red-600 transition-colors touch-manipulation"
             onClick={handleSignOut}
           >
-            <span className="hidden sm:inline">ログアウト</span>
-            <span className="sm:hidden">OUT</span>
+            ログアウト
           </button>
         )}
       </div>

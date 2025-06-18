@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Task } from '@/stores/taskStore';
 
 interface DayOfWeekChartProps {
@@ -6,6 +7,8 @@ interface DayOfWeekChartProps {
 }
 
 export const DayOfWeekChart: React.FC<DayOfWeekChartProps> = ({ tasks = [] }) => {
+  const router = useRouter();
+
   // 曜日別の完了タスク数を計算
   const weeklyData = useMemo(() => {
     const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
@@ -28,9 +31,21 @@ export const DayOfWeekChart: React.FC<DayOfWeekChartProps> = ({ tasks = [] }) =>
     }));
   }, [tasks]);
 
+  const handleClick = () => {
+    router.push('/progress');
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">曜日別傾向</h3>
+    <div 
+      className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-all duration-200 cursor-pointer group"
+      onClick={handleClick}
+    >
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold text-gray-900">曜日別傾向</h3>
+        <span className="text-xs text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          詳細を見る →
+        </span>
+      </div>
       
       <div className="space-y-3">
         {weeklyData.map((item, index) => (
@@ -40,7 +55,7 @@ export const DayOfWeekChart: React.FC<DayOfWeekChartProps> = ({ tasks = [] }) =>
             </div>
             <div className="flex-1 bg-gray-200 rounded-full h-6 relative">
               <div
-                className="bg-gradient-to-r from-blue-400 to-blue-600 h-6 rounded-full transition-all duration-300 flex items-center justify-end pr-2"
+                className="bg-gradient-to-r from-blue-400 to-blue-600 group-hover:from-blue-500 group-hover:to-blue-700 h-6 rounded-full transition-all duration-300 flex items-center justify-end pr-2"
                 style={{ width: `${Math.max(item.percentage, 5)}%` }}
               >
                 {item.count > 0 && (

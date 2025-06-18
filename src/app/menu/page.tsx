@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTaskStore } from '@/stores/taskStore';
+import { useTaskStore, Task } from '@/stores/taskStore';
 import { AppLayout } from '@/components/templates/AppLayout';
 import { Calendar } from '@/components/molecules/Calendar';
 import { Character } from '@/components/molecules/Character';
@@ -11,13 +11,18 @@ import { ActivityStats } from '@/components/molecules/ActivityStats';
 import { DayOfWeekChart } from '@/components/molecules/DayOfWeekChart';
 import { AlertBox } from '@/components/molecules/AlertBox';
 import { TaskListHome } from '@/components/molecules/TaskListHome';
+import { GuestMigrationModal } from '@/components/molecules/GuestMigrationModal';
+import { getGuestTasks, migrateGuestTasks, clearGuestTasks } from '@/lib/guestMigration';
+import { FaArchive } from 'react-icons/fa';
 
 export default function MenuPage() {
   const router = useRouter();
-  const { user, signOut } = useAuth();
+  const { user, signOut, shouldShowMigrationModal, setShouldShowMigrationModal, isGuest } = useAuth();
   const { tasks, fetchTasks, updateTask, deleteTask } = useTaskStore();
   const [characterMood, setCharacterMood] = React.useState<'happy' | 'normal' | 'sad'>('normal');
   const [characterMessage, setCharacterMessage] = React.useState<string>('');
+  const [guestTasks, setGuestTasks] = React.useState<Task[]>([]);
+  const [migrationError, setMigrationError] = React.useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -25,7 +30,12 @@ export default function MenuPage() {
       return;
     }
     fetchTasks();
-  }, [user, router, fetchTasks]);
+    
+    // ゲストタスクを取得
+    if (shouldShowMigrationModal) {
+      setGuestTasks(getGuestTasks());
+    }
+  }, [user, router, fetchTasks, shouldShowMigrationModal]);
 
   // 今日のタスクをフィルタリング
   const todayTasks = useMemo(() => {
@@ -87,6 +97,37 @@ export default function MenuPage() {
     }
   };
 
+  const handleMigrationConfirm = async () => {
+    if (!user) return;
+    
+    setMigrationError(null);
+    try {
+      const result = await migrateGuestTasks(user.id);
+      
+      if (!result.success) {
+        throw new Error(result.errors.join(', '));
+      }
+      
+      // 移行成功後、ローカルストレージをクリアしてタスクを再取得
+      clearGuestTasks();
+      await fetchTasks();
+    } catch (error) {
+      console.error('移行エラー:', error);
+      setMigrationError((error as Error).message);
+      throw error;
+    }
+  };
+
+  const handleMigrationCancel = () => {
+    setShouldShowMigrationModal(false);
+  };
+
+  const handleMigrationComplete = () => {
+    setShouldShowMigrationModal(false);
+    setGuestTasks([]);
+    setMigrationError(null);
+  };
+
   return (
     <AppLayout variant="home">
       <div className="px-4 sm:px-6 py-4 sm:py-6">
@@ -119,12 +160,45 @@ export default function MenuPage() {
         </div>
 
         {/* 下段：統計・傾向・アラート */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <ActivityStats tasks={tasks} />
           <DayOfWeekChart tasks={tasks} />
           <AlertBox tasks={tasks} />
         </div>
+
+        {/* アーカイブアクセス（ログインユーザーのみ） */}
+        {!isGuest && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  完了タスクアーカイブ
+                </h3>
+                <p className="text-sm text-gray-600">
+                  完了したタスクの履歴を確認できます
+                </p>
+              </div>
+              <button
+                onClick={() => router.push('/archive')}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                {FaArchive({ className: "w-4 h-4" })}
+                <span>履歴を見る</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* ゲストタスク移行モーダル */}
+      <GuestMigrationModal
+        isOpen={shouldShowMigrationModal}
+        guestTasks={guestTasks}
+        onConfirm={handleMigrationConfirm}
+        onCancel={handleMigrationCancel}
+        onComplete={handleMigrationComplete}
+        error={migrationError}
+      />
     </AppLayout>
   );
 }
