@@ -10,7 +10,7 @@ import { FaCalendarAlt, FaCheckCircle, FaUndo, FaTrash, FaFilter } from 'react-i
 
 export default function ArchivePage() {
   const router = useRouter();
-  const { user, isGuest } = useAuth();
+  const { user, isGuest, planType } = useAuth();
   const { tasks, fetchTasks, updateTask, deleteTask } = useTaskStore();
   const [dateFilter, setDateFilter] = useState<'all' | '7days' | '14days' | '30days'>('all');
 
@@ -51,17 +51,16 @@ export default function ArchivePage() {
       }
     });
 
-    // 無料ユーザーは14日間制限
-    // TODO: プレミアムユーザー判定を実装後、条件分岐を追加
-    const isFreeTier = true; // 現在は全員無料扱い
-    if (isFreeTier) {
-      const fourteenDaysAgo = new Date();
-      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-      
-      return filteredTasks.filter(task => 
-        new Date(task.completed_at!) >= fourteenDaysAgo
-      );
-    }
+         // プラン別データ表示制限（実際のデータ削除は別途バックグラウンドで実行）
+     // 無料ユーザーは30日間のみ表示
+     if (!isGuest && planType === 'free') {
+       const thirtyDaysAgo = new Date();
+       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+       
+       return filteredTasks.filter(task => 
+         new Date(task.completed_at!) >= thirtyDaysAgo
+       );
+     }
 
     return filteredTasks;
   }, [tasks, dateFilter]);
@@ -165,7 +164,7 @@ export default function ArchivePage() {
                   完了タスク アーカイブ
                 </h1>
                 <p className="text-gray-600 text-sm">
-                  完了したタスクの履歴を確認できます（無料プランは14日間保存）
+                  完了したタスクの履歴を確認できます（無料プランは30日間保存）
                 </p>
               </div>
               

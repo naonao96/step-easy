@@ -10,6 +10,7 @@ interface AuthUser {
   email: string;
   isGuest?: boolean;
   isPremium?: boolean;
+  planType?: 'guest' | 'free' | 'premium';
 }
 
 interface AuthContextType {
@@ -21,9 +22,16 @@ interface AuthContextType {
   signInAsGuest: () => Promise<void>;
   isGuest: boolean;
   isPremium: boolean;
+  planType: 'guest' | 'free' | 'premium';
   shouldShowMigrationModal: boolean;
   setShouldShowMigrationModal: (show: boolean) => void;
   togglePremiumForDev: () => void;
+  // プラン別制限チェック関数
+  canAddTaskOnDate: (date: Date) => { canAdd: boolean; message: string };
+  canAddPastTask: () => boolean;
+  getDataRetentionDays: () => number;
+  canSetDueDate: () => { canSet: boolean; message: string };
+  getStartDateLimits: () => { min: string | undefined; max: string | undefined; disabled: boolean; message: string };
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -122,7 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInAsGuest = async () => {
-    setUser({ id: 'guest', email: '', isGuest: true });
+    setUser({ id: 'guest', email: '', isGuest: true, planType: 'guest' });
     setIsLoading(false);
   };
 
@@ -150,6 +158,125 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  // プラン別制限チェック関数群
+  const getPlanType = (): 'guest' | 'free' | 'premium' => {
+    if (devPremiumOverride === true) return 'premium';
+    if (devPremiumOverride === false) return 'free';
+    if (!user) return 'guest';
+    if (user.isGuest) return 'guest';
+    return user.planType || 'free';
+  };
+
+  const canAddTaskOnDate = (date: Date): { canAdd: boolean; message: string } => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
+    const daysDifference = Math.floor((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    const planType = getPlanType();
+    
+    // 過去日チェック
+    if (daysDifference < 0) {
+      if (planType === 'premium') {
+        return { canAdd: true, message: '' };
+      }
+      return { 
+        canAdd: false, 
+        message: planType === 'guest' 
+          ? 'ゲストユーザーは過去の日付にタスクを追加できません。ログインしてプレミアム版で過去のタスクも管理しましょう。'
+          : '無料版は過去の日付にタスクを追加できません。プレミアム版にアップグレードしてください。'
+      };
+    }
+    
+    // 今日は全プラン追加可能
+    if (daysDifference === 0) {
+      return { canAdd: true, message: '' };
+    }
+    
+    // 未来日チェック
+    if (planType === 'guest') {
+      return {
+        canAdd: false,
+        message: 'ゲストユーザーは今日のタスクのみ追加できます。ログインして計画的なタスク管理を始めましょう。'
+      };
+    }
+    
+    if (planType === 'free' && daysDifference > 14) {
+      return {
+        canAdd: false,
+        message: '無料版は14日後までのタスクのみ追加できます。プレミアム版にアップグレードして長期計画を立てましょう。'
+      };
+    }
+    
+    return { canAdd: true, message: '' };
+  };
+
+  const canSetDueDate = (): { canSet: boolean; message: string } => {
+    const planType = getPlanType();
+    
+    if (planType === 'guest') {
+      return {
+        canSet: false,
+        message: 'ゲストユーザーは期限日を設定できません。ログインして期限管理機能を利用しましょう。'
+      };
+    }
+    
+    return { canSet: true, message: '' };
+  };
+
+  const getStartDateLimits = () => {
+    const planType = getPlanType();
+    const today = new Date().toISOString().split('T')[0];
+    
+    switch (planType) {
+      case 'guest':
+        return {
+          min: today,
+          max: today,
+          disabled: true,
+          message: '今日のみ設定可能'
+        };
+      case 'free':
+        const maxDate = new Date();
+        maxDate.setDate(maxDate.getDate() + 14);
+        return {
+          min: today,
+          max: maxDate.toISOString().split('T')[0],
+          disabled: false,
+          message: '今日から14日先まで設定可能'
+        };
+      case 'premium':
+        return {
+          min: undefined,
+          max: undefined,
+          disabled: false,
+          message: '制限なし（過去日・未来日どちらでも設定可能）'
+        };
+      default:
+        return {
+          min: today,
+          max: today,
+          disabled: false,
+          message: ''
+        };
+    }
+  };
+
+  const canAddPastTask = (): boolean => {
+    return getPlanType() === 'premium';
+  };
+
+  const getDataRetentionDays = (): number => {
+    const planType = getPlanType();
+    switch (planType) {
+      case 'guest': return 0; // セッション中のみ
+      case 'free': return 30;
+      case 'premium': return -1; // 無制限
+      default: return 30;
+    }
+  };
+
   const value = {
     user,
     isLoading,
@@ -159,9 +286,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signInAsGuest,
     isGuest: !!user?.isGuest,
     isPremium: devPremiumOverride !== null ? devPremiumOverride : !!user?.isPremium,
+    planType: getPlanType(),
     shouldShowMigrationModal,
     setShouldShowMigrationModal,
     togglePremiumForDev,
+    canAddTaskOnDate,
+    canAddPastTask,
+    getDataRetentionDays,
+    canSetDueDate,
+    getStartDateLimits,
   };
 
   return (

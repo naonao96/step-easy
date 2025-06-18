@@ -41,9 +41,19 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, on
   // 各日付のタスク数を計算
   const getTasksForDate = (date: Date) => {
     const dateString = date.toDateString();
-    return tasks.filter(task => 
-      task.due_date && new Date(task.due_date).toDateString() === dateString
-    );
+    return tasks.filter(task => {
+      // 開始日が一致するタスク
+      if (task.start_date && new Date(task.start_date).toDateString() === dateString) {
+        return true;
+      }
+      
+      // 期限日が一致するタスク
+      if (task.due_date && new Date(task.due_date).toDateString() === dateString) {
+        return true;
+      }
+      
+      return false;
+    });
   };
 
   const handleDateClick = (date: Date) => {
@@ -79,7 +89,7 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, on
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
+    <div className="bg-white rounded-lg shadow-md p-4 h-96 flex flex-col">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold text-gray-900">カレンダー</h2>
         <div className="flex items-center gap-2">

@@ -24,7 +24,7 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
   onViewAll
 }) => {
   const router = useRouter();
-  const { isGuest, isPremium, togglePremiumForDev } = useAuth();
+  const { isGuest, isPremium, planType, canAddTaskOnDate, togglePremiumForDev } = useAuth();
   const [sortOption, setSortOption] = useState<SortOption>('default');
 
   // ソート設定の読み込み
@@ -92,47 +92,12 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
   const getAddTaskButtonInfo = () => {
     if (!selectedDate) return { canAdd: true, label: '追加', message: '' };
     
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const selected = new Date(selectedDate);
-    selected.setHours(0, 0, 0, 0);
-    const isToday = selected.toDateString() === today.toDateString();
-    
-    // 今日は全ユーザー追加可能
-    if (isToday) {
-      return { canAdd: true, label: '追加', message: '' };
-    }
-    
-    // ゲストユーザーは今日以外追加不可
-    if (isGuest) {
-      return { 
-        canAdd: false, 
-        label: 'ログインが必要', 
-        message: 'ゲストユーザーは今日のタスクのみ追加できます。ログインして計画的なタスク管理を始めましょう。' 
-      };
-    }
-    
-    // 無料版ログインユーザーも今日以外は追加不可
-    if (!isPremium) {
-      return { 
-        canAdd: false, 
-        label: 'プレミアム版が必要', 
-        message: '無料版は今日のタスクのみ追加できます。プレミアム版にアップグレードして未来のタスクを計画しましょう。' 
-      };
-    }
-    
-    // プレミアム版は過去日以外追加可能
-    const daysDifference = Math.floor((selected.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    if (daysDifference < 0) {
-      return { 
-        canAdd: false, 
-        label: '過去日は追加不可', 
-        message: '過去の日付にはタスクを追加できません。' 
-      };
-    }
-    
-    // プレミアム版は未来日追加可能
-    return { canAdd: true, label: '追加', message: '' };
+    const checkResult = canAddTaskOnDate(selectedDate);
+    return {
+      canAdd: checkResult.canAdd,
+      label: checkResult.canAdd ? '追加' : planType === 'guest' ? 'ログインが必要' : 'プレミアム版が必要',
+      message: checkResult.message
+    };
   };
 
   const handleAddTask = () => {
@@ -146,22 +111,18 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
     if (onAddTask) {
       onAddTask();
     } else {
-      // 選択日を期限として設定
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const isToday = selectedDate && selectedDate.toDateString() === today.toDateString();
-      
-      if (isToday) {
-        router.push('/tasks');
+      // 選択日を開始日として設定
+      if (selectedDate) {
+        const startDate = selectedDate.toISOString().split('T')[0];
+        router.push(`/tasks?start_date=${startDate}`);
       } else {
-        const dueDate = selectedDate?.toISOString().split('T')[0];
-        router.push(`/tasks?due_date=${dueDate}`);
+        router.push('/tasks');
       }
     }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
+    <div className="bg-white rounded-lg shadow-md p-4 h-96 flex flex-col">
       {/* 開発用: プレミアム切り替えボタン (デスクトップのみ) */}
       {process.env.NODE_ENV === 'development' && (
         <div className="hidden md:block mb-2">
@@ -179,7 +140,7 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
         {(() => {
           const { canAdd, label } = getAddTaskButtonInfo();
           return (
-            <button
+        <button
               onClick={handleAddTask}
               disabled={!canAdd}
               className={`flex-shrink-0 ml-2 flex items-center gap-2 px-3 py-1 text-sm rounded-lg transition-colors ${
@@ -188,10 +149,10 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
               title={!canAdd ? getAddTaskButtonInfo().message : ''}
-            >
-              {FaPlus({ className: "w-3 h-3" })}
+        >
+          {FaPlus({ className: "w-3 h-3" })}
               <span className="text-xs sm:text-sm">{label}</span>
-            </button>
+        </button>
           );
         })()}
       </div>
@@ -225,7 +186,7 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
       </div>
 
       {/* スクロール可能なタスク一覧エリア */}
-      <div className="space-y-2 mb-4 max-h-64 overflow-y-auto">
+      <div className="space-y-2 flex-1 overflow-y-auto min-h-0">
         {sortedTasks.length > 0 ? (
           sortedTasks.map((task) => (
             <div
@@ -251,17 +212,17 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
                 
                 {/* デスクトップ: 改良チェックボックス */}
                 <div className="hidden sm:block">
-                  <button
-                    onClick={() => onCompleteTask?.(task.id)}
+              <button
+                onClick={() => onCompleteTask?.(task.id)}
                     className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${
-                      task.status === 'done'
+                  task.status === 'done'
                         ? 'bg-green-500 border-green-500 text-white scale-110'
                         : 'border-gray-300 hover:border-blue-500 hover:scale-105'
-                    }`}
+                }`}
                     title={task.status === 'done' ? '未完了に戻す' : '完了にする'}
-                  >
-                    {task.status === 'done' && FaCheck({ className: "w-3 h-3" })}
-                  </button>
+              >
+                {task.status === 'done' && FaCheck({ className: "w-3 h-3" })}
+              </button>
                 </div>
               </div>
 
@@ -292,15 +253,15 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
                   size="sm"
                   showText={false}
                 />
-                
-                {/* 優先度表示 */}
+
+              {/* 優先度表示 */}
                 <div className={`px-1.5 sm:px-2 py-1 text-xs rounded ${
-                  task.priority === 'high' ? 'bg-red-100 text-red-700' :
-                  task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                  'bg-green-100 text-green-700'
-                }`}>
-                  {task.priority === 'high' ? '高' : 
-                   task.priority === 'medium' ? '中' : '低'}
+                task.priority === 'high' ? 'bg-red-100 text-red-700' :
+                task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                'bg-green-100 text-green-700'
+              }`}>
+                {task.priority === 'high' ? '高' : 
+                 task.priority === 'medium' ? '中' : '低'}
                 </div>
               </div>
 

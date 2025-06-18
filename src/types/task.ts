@@ -5,6 +5,7 @@ export interface Task {
   status: 'todo' | 'doing' | 'done';
   priority: 'low' | 'medium' | 'high';
   due_date: string | null;
+  start_date: string | null;  // 開始日
   created_at: string;
   updated_at: string;
   user_id: string;

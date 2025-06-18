@@ -10,6 +10,7 @@ export interface Task {
   status: 'todo' | 'doing' | 'done';
   priority: 'low' | 'medium' | 'high';
   due_date: string | null;
+  start_date: string | null;  // 開始日
   created_at: string;
   updated_at: string;
   user_id: string;
@@ -39,6 +40,8 @@ interface TaskStore {
   createDummyTasks: () => Promise<void>;
   // 期限切れストリークの自動リセット
   resetExpiredStreaks: () => Promise<void>;
+  // 無料ユーザーの30日経過データクリーンアップ
+  cleanupExpiredData: () => Promise<void>;
 }
 
 const GUEST_TASK_LIMIT = 3;
@@ -112,6 +115,8 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
           user_id: 'guest',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          // 開始日のデフォルト値（今日）
+          start_date: task.start_date || new Date().toISOString().split('T')[0],
           // 継続日数関連のデフォルト値
           current_streak: 0,
           longest_streak: 0,
@@ -270,6 +275,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         status: 'todo' as const,
         priority: 'medium' as const,
         due_date: null,
+        start_date: new Date().toISOString().split('T')[0], // 今日
         is_habit: true,
         habit_frequency: 'daily' as const,
         current_streak: 5,
@@ -283,6 +289,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         status: 'done' as const,
         priority: 'low' as const,
         due_date: null,
+        start_date: new Date().toISOString().split('T')[0], // 今日
         is_habit: true,
         habit_frequency: 'daily' as const,
         current_streak: 3,
@@ -297,6 +304,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         status: 'doing' as const,
         priority: 'high' as const,
         due_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 明日
+        start_date: new Date().toISOString().split('T')[0], // 今日
         is_habit: false,
         current_streak: 0,
         longest_streak: 0,
@@ -309,6 +317,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         status: 'todo' as const,
         priority: 'high' as const,
         due_date: null,
+        start_date: new Date().toISOString().split('T')[0], // 今日
         is_habit: false,
         current_streak: 0,
         longest_streak: 0,
@@ -343,6 +352,57 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       console.log('期限切れストリークのリセットが完了しました');
     } catch (error) {
       console.error('ストリークリセットエラー:', error);
+      set({ error: (error as Error).message });
+    }
+  },
+
+  // 無料ユーザーの30日経過データクリーンアップ
+  cleanupExpiredData: async () => {
+    try {
+      const supabase = createClientComponentClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // ゲストユーザーは処理不要（ローカルストレージ管理）
+      if (!user) {
+        console.log('ゲストユーザー - データクリーンアップは不要');
+        return;
+      }
+
+      // プレミアムユーザーは無制限保存なので処理不要
+      const isGuest = user?.user_metadata?.is_guest;
+      const isPremium = user?.user_metadata?.is_premium;
+      
+      if (isPremium) {
+        console.log('プレミアムユーザー - データクリーンアップは不要');
+        return;
+      }
+
+      // 無料ユーザーのみ30日経過データを削除
+      console.log('無料ユーザー - 30日経過データのクリーンアップを開始');
+      
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const cutoffDate = thirtyDaysAgo.toISOString();
+
+      // 30日以上前に作成されたタスクを削除
+      const { error: deleteError } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('user_id', user.id)
+        .lt('created_at', cutoffDate);
+
+      if (deleteError) {
+        console.error('データクリーンアップエラー:', deleteError);
+        throw deleteError;
+      }
+
+      console.log('データクリーンアップ完了');
+      
+      // タスクリストを再取得
+      await get().fetchTasks();
+      
+    } catch (error) {
+      console.error('データクリーンアップエラー:', error);
       set({ error: (error as Error).message });
     }
   },

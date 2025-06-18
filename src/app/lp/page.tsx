@@ -74,13 +74,13 @@ export default function LandingPage() {
       <div className="h-screen bg-blue-50 text-blue-900 overflow-y-auto scrollbar-hide">
         {/* ヘッダー部 */}
         <section className="text-center bg-blue-50 py-12">
-          <Image
-            src="/logo.png"
-            alt="StepEasy ロゴ"
-            width={120}
-            height={120}
+        <Image
+              src="/logo.png"
+              alt="StepEasy ロゴ"
+              width={120}
+              height={120}
             className="mx-auto mb-4"
-          />
+            />
           <h1 className="text-2xl font-bold text-blue-900 mb-2">小鳥の一声が、あなたの習慣を運んでいく</h1>
           <p className="text-blue-800 mb-4">小鳥が、今日もそっと背中を押してくれる</p>
           <button 

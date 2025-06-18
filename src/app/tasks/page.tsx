@@ -3,9 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTaskStore, type Task } from '@/stores/taskStore';
+import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/templates/AppLayout';
 import { Button } from '@/components/atoms/Button';
 import { Input } from '@/components/atoms/Input';
+import { DatePicker } from '@/components/atoms/DatePicker';
 import { FaSave, FaEye, FaEdit, FaTrash, FaArrowLeft } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
 
@@ -13,10 +15,12 @@ export default function TaskEditPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { tasks, loading, error, fetchTasks, createTask, updateTask, deleteTask } = useTaskStore();
+  const { planType, canAddTaskOnDate } = useAuth();
   
   // URLパラメータから編集モードを判定
   const taskId = searchParams.get('id');
   const isEditParam = searchParams.get('edit') === 'true';
+  const initialStartDate = searchParams.get('start_date') || '';
   const isExistingTask = !!taskId;
   
   // 表示モードの決定: 新規作成は編集、既存タスクはプレビュー（edit=trueで編集）
@@ -31,7 +35,23 @@ export default function TaskEditPage() {
   const [content, setContent] = useState('');
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
   const [isHabit, setIsHabit] = useState(false);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [dueDate, setDueDate] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  // 今日の日付（各種制限チェック用）
+  const today = new Date().toISOString().split('T')[0];
+  
+  // プラン別の最大設定可能日付を計算
+  const getMaxAllowedDate = () => {
+    if (planType === 'guest') return new Date();
+    if (planType === 'free') {
+      const maxDate = new Date();
+      maxDate.setDate(maxDate.getDate() + 14);
+      return maxDate;
+    }
+    return undefined; // プレミアムは無制限
+  };
 
   useEffect(() => {
     fetchTasks();
@@ -46,6 +66,8 @@ export default function TaskEditPage() {
         setContent(foundTask.description || '');
         setPriority(foundTask.priority);
         setIsHabit(foundTask.is_habit || false);
+        setStartDate(foundTask.start_date ? new Date(foundTask.start_date) : new Date());
+        setDueDate(foundTask.due_date ? new Date(foundTask.due_date) : null);
       }
     } else {
       // 新規作成モード
@@ -53,8 +75,41 @@ export default function TaskEditPage() {
       setContent('');
       setPriority('medium');
       setIsHabit(false);
+      setStartDate(initialStartDate ? new Date(initialStartDate) : new Date());
+      setDueDate(null);
     }
-  }, [isExistingTask, taskId, tasks]);
+  }, [isExistingTask, taskId, tasks, initialStartDate, today]);
+
+  // 日付バリデーション関数
+  const validateDates = (): { isValid: boolean; message: string } => {
+    // 開始日のプラン別制限チェック
+    if (startDate) {
+      const checkResult = canAddTaskOnDate(startDate);
+      if (!checkResult.canAdd) {
+        return { isValid: false, message: checkResult.message };
+      }
+    }
+
+    // ゲストユーザーは期限日設定不可
+    if (planType === 'guest' && dueDate) {
+      return {
+        isValid: false,
+        message: 'ゲストユーザーは期限日を設定できません。'
+      };
+    }
+
+    // 期限日は開始日以降に設定
+    if (dueDate && startDate) {
+      if (dueDate < startDate) {
+        return {
+          isValid: false,
+          message: '期限日は開始日以降に設定してください。'
+        };
+      }
+    }
+
+    return { isValid: true, message: '' };
+  };
 
   // モード切り替え関数
   const switchToEditMode = () => {
@@ -77,6 +132,13 @@ export default function TaskEditPage() {
       return;
     }
 
+    // 日付バリデーション
+    const validation = validateDates();
+    if (!validation.isValid) {
+      alert(validation.message);
+      return;
+    }
+
     setIsSaving(true);
     try {
       const taskData = {
@@ -84,7 +146,9 @@ export default function TaskEditPage() {
         description: content,
         priority,
         is_habit: isHabit,
-        status: 'todo' as const
+        status: 'todo' as const,
+        start_date: startDate ? startDate.toISOString().split('T')[0] : null,
+        due_date: dueDate ? dueDate.toISOString().split('T')[0] : null
       };
 
       if (isExistingTask && task) {
@@ -99,7 +163,7 @@ export default function TaskEditPage() {
           alert(error);
           return;
         }
-      router.push('/menu');
+        router.push('/menu');
       }
     } catch (error) {
       console.error('保存エラー:', error);
@@ -394,7 +458,41 @@ export default function TaskEditPage() {
           </div>
 
           {/* メタデータ */}
-          <div className="flex flex-wrap gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+            {/* 開始日 */}
+            <DatePicker
+              label={`開始日 ${
+                planType === 'guest' ? '（今日のみ）' :
+                planType === 'free' ? '（14日先まで）' :
+                '（制限なし）'
+              }`}
+              selected={startDate}
+              onChange={setStartDate}
+              minDate={planType === 'premium' ? undefined : new Date()}
+              maxDate={getMaxAllowedDate()}
+              disabled={planType === 'guest'}
+              placeholderText="開始日を選択..."
+              helpText={
+                planType === 'guest' ? 'ゲストは今日のタスクのみ作成可能' :
+                planType === 'free' ? '14日先まで設定可能' :
+                '制限なし（過去日・未来日両方OK）'
+              }
+              required
+            />
+
+            {/* 期限日（ゲスト以外） */}
+            {planType !== 'guest' && (
+              <DatePicker
+                label="期限日（オプション）"
+                selected={dueDate}
+                onChange={setDueDate}
+                minDate={startDate || new Date()}
+                placeholderText="期限日を選択..."
+                helpText="期限日は開始日以降に設定してください"
+              />
+            )}
+
+            {/* 優先度 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 優先度
@@ -402,7 +500,7 @@ export default function TaskEditPage() {
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as 'low' | 'medium' | 'high')}
-                className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               >
                 <option value="low">低</option>
                 <option value="medium">中</option>
@@ -410,6 +508,7 @@ export default function TaskEditPage() {
               </select>
             </div>
             
+            {/* 習慣タスク設定 */}
             <div className="flex items-center">
               <label className="flex items-center">
                 <input
@@ -422,7 +521,8 @@ export default function TaskEditPage() {
               </label>
             </div>
 
-              {isExistingTask && task && (
+            {/* 完了切り替えボタン（既存タスクのみ） */}
+            {isExistingTask && task && (
               <div className="flex items-center gap-2">
                 <Button
                   variant={task.status === 'done' ? 'secondary' : 'primary'}

@@ -98,11 +98,11 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         >
           <img src="/logo.png" alt="StepEasy" className="h-8 sm:h-10" />
           {title && (
-            <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
-              {title}
-            </h1>
+          <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
+            {title}
+          </h1>
           )}
-        </div>
+          </div>
       </div>
 
       {/* 右側：デスクトップアクション + ユーザー情報 */}
@@ -143,21 +143,21 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
         {/* ログイン/ログアウトボタン（デスクトップのみ） */}
         <div className="hidden md:block">
-          {user?.isGuest ? (
-            <button
-              className="text-xs sm:text-sm px-2 py-2 sm:px-3 sm:py-1 bg-blue-500 text-white rounded shadow hover:bg-blue-600 transition-colors touch-manipulation"
-              onClick={() => router.push('/login')}
-            >
-              ログイン
-            </button>
-          ) : (
-            <button
-              className="text-xs sm:text-sm px-2 py-2 sm:px-3 sm:py-1 bg-red-500 text-white rounded shadow hover:bg-red-600 transition-colors touch-manipulation"
-              onClick={handleSignOut}
-            >
+        {user?.isGuest ? (
+          <button
+            className="text-xs sm:text-sm px-2 py-2 sm:px-3 sm:py-1 bg-blue-500 text-white rounded shadow hover:bg-blue-600 transition-colors touch-manipulation"
+            onClick={() => router.push('/login')}
+          >
+            ログイン
+          </button>
+        ) : (
+          <button
+            className="text-xs sm:text-sm px-2 py-2 sm:px-3 sm:py-1 bg-red-500 text-white rounded shadow hover:bg-red-600 transition-colors touch-manipulation"
+            onClick={handleSignOut}
+          >
               ログアウト
-            </button>
-          )}
+          </button>
+        )}
         </div>
       </div>
     </header>

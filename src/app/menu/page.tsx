@@ -18,7 +18,7 @@ import { FaArchive } from 'react-icons/fa';
 export default function MenuPage() {
   const router = useRouter();
   const { user, signOut, shouldShowMigrationModal, setShouldShowMigrationModal, isGuest } = useAuth();
-  const { tasks, fetchTasks, updateTask, deleteTask, resetExpiredStreaks } = useTaskStore();
+  const { tasks, fetchTasks, updateTask, deleteTask, resetExpiredStreaks, cleanupExpiredData } = useTaskStore();
   const [characterMood, setCharacterMood] = React.useState<'happy' | 'normal' | 'sad'>('normal');
   const [characterMessage, setCharacterMessage] = React.useState<string>('');
   const [guestTasks, setGuestTasks] = React.useState<Task[]>([]);
@@ -41,6 +41,8 @@ export default function MenuPage() {
       await fetchTasks();
       // アプリ起動時に期限切れストリークをリセット
       await resetExpiredStreaks();
+      // 無料ユーザーの30日経過データをクリーンアップ
+      await cleanupExpiredData();
     };
     
     initializeData();
@@ -55,24 +57,48 @@ export default function MenuPage() {
   const selectedDateTasks = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const isToday = selectedDate.toDateString() === today.toDateString();
+    const selectedDateTime = new Date(selectedDate);
+    selectedDateTime.setHours(0, 0, 0, 0);
     
     return tasks.filter(task => {
-      if (task.due_date) {
-        // 期限があるタスクは期限日で判定（完了・未完了問わず）
-        const dueDate = new Date(task.due_date);
-        return dueDate.toDateString() === selectedDate.toDateString();
-      } else {
-        // 期限がないタスクの場合
-        if (task.status === 'done' && task.completed_at) {
-          // 完了済みの場合は、選択日に完了したもののみ表示
-          const completedDate = new Date(task.completed_at);
-          return completedDate.toDateString() === selectedDate.toDateString();
-        } else {
-          // 未完了の場合は今日のみ表示（選択日が今日の場合のみ）
-          return isToday && task.status !== 'done';
+      // 1. 開始日ベースのフィルタリング
+      if (task.start_date) {
+        const taskStartDate = new Date(task.start_date);
+        taskStartDate.setHours(0, 0, 0, 0);
+        
+        // 開始日が選択日と一致するタスク
+        if (taskStartDate.getTime() === selectedDateTime.getTime()) {
+          return true;
         }
       }
+      
+      // 2. 期限日ベースのフィルタリング
+      if (task.due_date) {
+        const taskDueDate = new Date(task.due_date);
+        taskDueDate.setHours(0, 0, 0, 0);
+        
+        // 期限日が選択日と一致するタスク
+        if (taskDueDate.getTime() === selectedDateTime.getTime()) {
+          return true;
+        }
+      }
+      
+      // 3. 開始日も期限日もないタスクの処理
+      if (!task.start_date && !task.due_date) {
+        // 完了済みタスク：完了日が選択日と一致
+        if (task.status === 'done' && task.completed_at) {
+          const completedDate = new Date(task.completed_at);
+          completedDate.setHours(0, 0, 0, 0);
+          return completedDate.getTime() === selectedDateTime.getTime();
+        }
+        
+        // 未完了タスク：今日のみ表示（選択日が今日の場合）
+        if (task.status !== 'done') {
+          return selectedDateTime.getTime() === today.getTime();
+        }
+      }
+      
+      return false;
     });
   }, [tasks, selectedDate]);
 
@@ -171,7 +197,7 @@ export default function MenuPage() {
 
   return (
     <AppLayout variant="home">
-      <div className="px-4 sm:px-6 py-4 sm:py-6">
+      <div className="px-4 sm:px-6 py-4 sm:py-6 max-w-7xl mx-auto w-full">
         {/* 上段：タスク & カレンダー */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <TaskListHome
