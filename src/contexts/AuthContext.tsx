@@ -9,6 +9,7 @@ interface AuthUser {
   id: string;
   email: string;
   isGuest?: boolean;
+  isPremium?: boolean;
 }
 
 interface AuthContextType {
@@ -19,8 +20,10 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   signInAsGuest: () => Promise<void>;
   isGuest: boolean;
+  isPremium: boolean;
   shouldShowMigrationModal: boolean;
   setShouldShowMigrationModal: (show: boolean) => void;
+  togglePremiumForDev: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,6 +32,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [shouldShowMigrationModal, setShouldShowMigrationModal] = useState(false);
+  // 開発用: プレミアム状態のオーバーライド
+  const [devPremiumOverride, setDevPremiumOverride] = useState<boolean | null>(null);
   const router = useRouter();
   const supabase = createClientComponentClient();
 
@@ -137,6 +142,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const togglePremiumForDev = () => {
+    setDevPremiumOverride(prev => {
+      if (prev === null) return true;
+      if (prev === true) return false;
+      return null;
+    });
+  };
+
   const value = {
     user,
     isLoading,
@@ -145,8 +158,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut,
     signInAsGuest,
     isGuest: !!user?.isGuest,
+    isPremium: devPremiumOverride !== null ? devPremiumOverride : !!user?.isPremium,
     shouldShowMigrationModal,
     setShouldShowMigrationModal,
+    togglePremiumForDev,
   };
 
   return (

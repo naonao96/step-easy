@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Task } from '@/stores/taskStore';
+import { useAuth } from '@/contexts/AuthContext';
 import { StreakBadge } from '../atoms/StreakBadge';
 import { ToggleSwitch } from '../atoms/ToggleSwitch';
 import { SortOption } from '../atoms/SortDropdown';
@@ -9,6 +10,7 @@ import { FaPlus, FaCheck, FaEdit, FaFilter } from 'react-icons/fa';
 
 interface TaskListHomeProps {
   tasks?: Task[];
+  selectedDate?: Date;
   onAddTask?: () => void;
   onCompleteTask?: (id: string) => void;
   onViewAll?: () => void;
@@ -16,11 +18,13 @@ interface TaskListHomeProps {
 
 export const TaskListHome: React.FC<TaskListHomeProps> = ({
   tasks = [],
+  selectedDate,
   onAddTask,
   onCompleteTask,
   onViewAll
 }) => {
   const router = useRouter();
+  const { isGuest, isPremium, togglePremiumForDev } = useAuth();
   const [sortOption, setSortOption] = useState<SortOption>('default');
 
   // ソート設定の読み込み
@@ -44,45 +48,181 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
     router.push(`/tasks?id=${task.id}`);
   };
 
+  // 選択日に応じたタイトルを生成
+  const getTitle = () => {
+    if (!selectedDate) return '今日のタスク';
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selected = new Date(selectedDate);
+    selected.setHours(0, 0, 0, 0);
+    
+    if (selected.toDateString() === today.toDateString()) {
+      return '今日のタスク';
+    }
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (selected.toDateString() === tomorrow.toDateString()) {
+      return '明日のタスク';
+    }
+    
+    if (selected.toDateString() === yesterday.toDateString()) {
+      return '昨日のタスク';
+    }
+    
+    // その他の日付
+    const month = selected.getMonth() + 1;
+    const day = selected.getDate();
+    const year = selected.getFullYear();
+    const currentYear = today.getFullYear();
+    
+    if (year === currentYear) {
+      return `${month}月${day}日のタスク`;
+    } else {
+      return `${year}年${month}月${day}日のタスク`;
+    }
+  };
+
+  // タスク追加の制限チェック
+  const getAddTaskButtonInfo = () => {
+    if (!selectedDate) return { canAdd: true, label: '追加', message: '' };
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selected = new Date(selectedDate);
+    selected.setHours(0, 0, 0, 0);
+    const isToday = selected.toDateString() === today.toDateString();
+    
+    // 今日は全ユーザー追加可能
+    if (isToday) {
+      return { canAdd: true, label: '追加', message: '' };
+    }
+    
+    // ゲストユーザーは今日以外追加不可
+    if (isGuest) {
+      return { 
+        canAdd: false, 
+        label: 'ログインが必要', 
+        message: 'ゲストユーザーは今日のタスクのみ追加できます。ログインして計画的なタスク管理を始めましょう。' 
+      };
+    }
+    
+    // 無料版ログインユーザーも今日以外は追加不可
+    if (!isPremium) {
+      return { 
+        canAdd: false, 
+        label: 'プレミアム版が必要', 
+        message: '無料版は今日のタスクのみ追加できます。プレミアム版にアップグレードして未来のタスクを計画しましょう。' 
+      };
+    }
+    
+    // プレミアム版は過去日以外追加可能
+    const daysDifference = Math.floor((selected.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysDifference < 0) {
+      return { 
+        canAdd: false, 
+        label: '過去日は追加不可', 
+        message: '過去の日付にはタスクを追加できません。' 
+      };
+    }
+    
+    // プレミアム版は未来日追加可能
+    return { canAdd: true, label: '追加', message: '' };
+  };
+
+  const handleAddTask = () => {
+    const { canAdd, message } = getAddTaskButtonInfo();
+    
+    if (!canAdd) {
+      alert(message);
+      return;
+    }
+    
+    if (onAddTask) {
+      onAddTask();
+    } else {
+      // 選択日を期限として設定
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const isToday = selectedDate && selectedDate.toDateString() === today.toDateString();
+      
+      if (isToday) {
+        router.push('/tasks');
+      } else {
+        const dueDate = selectedDate?.toISOString().split('T')[0];
+        router.push(`/tasks?due_date=${dueDate}`);
+      }
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-4">
+      {/* 開発用: プレミアム切り替えボタン (デスクトップのみ) */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="hidden md:block mb-2">
+          <button
+            onClick={togglePremiumForDev}
+            className="text-xs px-2 py-1 bg-yellow-100 hover:bg-yellow-200 border border-yellow-300 rounded text-yellow-800"
+          >
+            DEV: Premium {isPremium ? 'ON' : 'OFF'}
+          </button>
+        </div>
+      )}
+      
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">今日のタスク</h2>
-        <button
-          onClick={onAddTask}
-          className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          {FaPlus({ className: "w-3 h-3" })}
-          追加
-        </button>
+        <h2 className="text-lg font-semibold text-gray-900 min-w-0 flex-1 truncate">{getTitle()}</h2>
+        {(() => {
+          const { canAdd, label } = getAddTaskButtonInfo();
+          return (
+            <button
+              onClick={handleAddTask}
+              disabled={!canAdd}
+              className={`flex-shrink-0 ml-2 flex items-center gap-2 px-3 py-1 text-sm rounded-lg transition-colors ${
+                canAdd 
+                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+              title={!canAdd ? getAddTaskButtonInfo().message : ''}
+            >
+              {FaPlus({ className: "w-3 h-3" })}
+              <span className="text-xs sm:text-sm">{label}</span>
+            </button>
+          );
+        })()}
       </div>
 
       {/* ソートドロップダウン */}
-      {tasks.length > 1 && (
-        <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-2">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            {FaFilter({ className: "w-4 h-4 text-gray-400" })}
-            <span className="font-medium">並び順</span>
-          </div>
-          <select
-            value={sortOption}
-            onChange={(e) => handleSortChange(e.target.value as SortOption)}
-            className="w-full sm:w-auto rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm py-2 px-3 min-h-[44px] touch-manipulation"
-          >
-            <option value="default">デフォルト</option>
-            <option value="priority_desc">優先度（高い順）</option>
-            <option value="priority_asc">優先度（低い順）</option>
-            <option value="streak_desc">継続日数（長い順）</option>
-            <option value="streak_asc">継続日数（短い順）</option>
-            <option value="due_date_asc">期限日（近い順）</option>
-            <option value="due_date_desc">期限日（遠い順）</option>
-            <option value="created_desc">作成日時（新しい順）</option>
-            <option value="created_asc">作成日時（古い順）</option>
-            <option value="title_asc">あいうえお順</option>
-            <option value="title_desc">あいうえお順（逆）</option>
-          </select>
+      <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-2">
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          {FaFilter({ className: "w-4 h-4 text-gray-400" })}
+          <span className="font-medium">並び順</span>
         </div>
-      )}
+        <select
+          value={sortOption}
+          onChange={(e) => handleSortChange(e.target.value as SortOption)}
+          disabled={tasks.length <= 1}
+          className={`w-full sm:w-auto rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm py-2 px-3 min-h-[44px] touch-manipulation ${
+            tasks.length <= 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : ''
+          }`}
+        >
+          <option value="default">デフォルト</option>
+          <option value="priority_desc">優先度（高い順）</option>
+          <option value="priority_asc">優先度（低い順）</option>
+          <option value="streak_desc">継続日数（長い順）</option>
+          <option value="streak_asc">継続日数（短い順）</option>
+          <option value="due_date_asc">期限日（近い順）</option>
+          <option value="due_date_desc">期限日（遠い順）</option>
+          <option value="created_desc">作成日時（新しい順）</option>
+          <option value="created_asc">作成日時（古い順）</option>
+          <option value="title_asc">あいうえお順</option>
+          <option value="title_desc">あいうえお順（逆）</option>
+        </select>
+      </div>
 
       {/* スクロール可能なタスク一覧エリア */}
       <div className="space-y-2 mb-4 max-h-64 overflow-y-auto">
@@ -180,7 +320,26 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
           ))
         ) : (
           <div className="text-center py-8 text-gray-500">
-            <p className="text-sm">今日のタスクがありません</p>
+            {/* 空状態でも幅を確保するための透明な要素 */}
+            <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg opacity-0 pointer-events-none mb-4">
+              <div className="flex-shrink-0 w-5 h-5"></div>
+              <div className="flex-1 min-w-0">
+                <div className="h-4 w-32"></div>
+                <div className="h-3 w-24 mt-1"></div>
+              </div>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <div className="w-8 h-5"></div>
+                <div className="w-6 h-5"></div>
+              </div>
+              <div className="flex-shrink-0 w-4 h-4"></div>
+            </div>
+            
+            <p className="text-sm">
+              {selectedDate && new Date().toDateString() === selectedDate.toDateString() 
+                ? '今日のタスクがありません' 
+                : 'この日のタスクがありません'
+              }
+            </p>
             <button
               onClick={onAddTask}
               className="mt-2 text-blue-600 hover:text-blue-700 text-sm"
@@ -190,18 +349,6 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
           </div>
         )}
       </div>
-
-      {/* タスク管理リンク */}
-      {tasks.length > 0 && (
-        <div className="pt-3 border-t border-gray-200">
-          <button
-            onClick={onViewAll}
-            className="w-full text-sm text-blue-600 hover:text-blue-700 py-2"
-          >
-            タスクを詳細管理する
-          </button>
-        </div>
-      )}
 
     </div>
   );

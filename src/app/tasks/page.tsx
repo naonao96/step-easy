@@ -145,9 +145,9 @@ export default function TaskEditPage() {
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
           <div className="max-w-7xl mx-auto">
             <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-4 text-gray-600">読み込み中...</p>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">読み込み中...</p>
               </div>
             </div>
           </div>
@@ -359,11 +359,11 @@ export default function TaskEditPage() {
                     </button>
                   )}
                   <button
-                    onClick={handleSave}
-                    disabled={isSaving}
+              onClick={handleSave}
+              disabled={isSaving}
                     className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50/80 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSaving ? '保存中...' : '保存'}
+            >
+              {isSaving ? '保存中...' : '保存'}
                   </button>
                   {isExistingTask && task && (
                     <>
@@ -378,7 +378,7 @@ export default function TaskEditPage() {
                   )}
                 </div>
               </div>
-            </div>
+          </div>
             
             {/* メインコンテンツ */}
             <div className="p-6">

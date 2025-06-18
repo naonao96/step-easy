@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTaskStore, Task } from '@/stores/taskStore';
@@ -23,6 +23,13 @@ export default function MenuPage() {
   const [characterMessage, setCharacterMessage] = React.useState<string>('');
   const [guestTasks, setGuestTasks] = React.useState<Task[]>([]);
   const [migrationError, setMigrationError] = React.useState<string | null>(null);
+  
+  // 選択された日付を管理（初期値は今日）
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+  });
 
   useEffect(() => {
     if (!user) {
@@ -44,68 +51,72 @@ export default function MenuPage() {
     }
   }, [user, router, fetchTasks, resetExpiredStreaks, shouldShowMigrationModal]);
 
-  // 今日のタスクをフィルタリング
-  const todayTasks = useMemo(() => {
+  // 選択された日付のタスクをフィルタリング
+  const selectedDateTasks = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const isToday = selectedDate.toDateString() === today.toDateString();
     
     return tasks.filter(task => {
       if (task.due_date) {
         // 期限があるタスクは期限日で判定（完了・未完了問わず）
         const dueDate = new Date(task.due_date);
-        return dueDate.toDateString() === today.toDateString();
+        return dueDate.toDateString() === selectedDate.toDateString();
       } else {
         // 期限がないタスクの場合
         if (task.status === 'done' && task.completed_at) {
-          // 完了済みの場合は、今日完了したもののみ表示
+          // 完了済みの場合は、選択日に完了したもののみ表示
           const completedDate = new Date(task.completed_at);
-          return completedDate.toDateString() === today.toDateString();
+          return completedDate.toDateString() === selectedDate.toDateString();
         } else {
-          // 未完了の場合は表示（前日以前の未完了タスクも含む）
-          return task.status !== 'done';
+          // 未完了の場合は今日のみ表示（選択日が今日の場合のみ）
+          return isToday && task.status !== 'done';
         }
       }
     });
-  }, [tasks]);
+  }, [tasks, selectedDate]);
 
   // 統計計算
   const statistics = useMemo(() => {
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter(task => task.status === 'done').length;
-    const todayCompletedTasks = todayTasks.filter(task => task.status === 'done').length;
-    const todayTotalTasks = todayTasks.length;
+    const selectedDateCompletedTasks = selectedDateTasks.filter(task => task.status === 'done').length;
+    const selectedDateTotalTasks = selectedDateTasks.length;
     
     return {
       totalTasks,
       completedTasks,
-      todayCompletedTasks,
-      todayTotalTasks,
+      selectedDateCompletedTasks,
+      selectedDateTotalTasks,
       overallPercentage: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
-      todayPercentage: todayTotalTasks > 0 ? Math.round((todayCompletedTasks / todayTotalTasks) * 100) : 0,
+      selectedDatePercentage: selectedDateTotalTasks > 0 ? Math.round((selectedDateCompletedTasks / selectedDateTotalTasks) * 100) : 0,
     };
-  }, [tasks, todayTasks]);
+  }, [tasks, selectedDateTasks]);
 
   useEffect(() => {
     // タスクの状態に応じてキャラクターの表情とメッセージを更新
-    const { todayCompletedTasks, todayTotalTasks } = statistics;
+    const { selectedDateCompletedTasks, selectedDateTotalTasks } = statistics;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isToday = selectedDate.toDateString() === today.toDateString();
 
-    if (todayTotalTasks === 0) {
+    if (selectedDateTotalTasks === 0) {
       setCharacterMood('normal');
-      setCharacterMessage('新しいタスクを作成してみましょう！');
-    } else if (todayCompletedTasks === todayTotalTasks) {
+      setCharacterMessage(isToday ? '新しいタスクを作成してみましょう！' : 'この日にタスクはありません');
+    } else if (selectedDateCompletedTasks === selectedDateTotalTasks) {
       setCharacterMood('happy');
-      setCharacterMessage('今日のタスクを全て完了しました！素晴らしいです！');
-    } else if (todayCompletedTasks / todayTotalTasks >= 0.7) {
+      setCharacterMessage(isToday ? '今日のタスクを全て完了しました！素晴らしいです！' : 'この日のタスクは全て完了済みです！');
+    } else if (selectedDateCompletedTasks / selectedDateTotalTasks >= 0.7) {
       setCharacterMood('happy');
       setCharacterMessage('順調に進んでいますね！');
-    } else if (todayCompletedTasks / todayTotalTasks >= 0.3) {
+    } else if (selectedDateCompletedTasks / selectedDateTotalTasks >= 0.3) {
       setCharacterMood('normal');
       setCharacterMessage('頑張って続けましょう！');
     } else {
       setCharacterMood('sad');
       setCharacterMessage('少しずつ進めていきましょう。');
     }
-  }, [statistics]);
+  }, [statistics, selectedDate]);
 
   const handleCompleteTask = async (id: string) => {
     const task = tasks.find(t => t.id === id);
@@ -164,16 +175,19 @@ export default function MenuPage() {
         {/* 上段：タスク & カレンダー */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <TaskListHome
-            tasks={todayTasks}
+            tasks={selectedDateTasks}
+            selectedDate={selectedDate}
             onAddTask={() => router.push('/tasks')}
             onCompleteTask={handleCompleteTask}
             onViewAll={() => router.push('/tasks')}
           />
           <Calendar 
             tasks={tasks}
+            selectedDate={selectedDate}
             onDateSelect={(date) => {
-              // 日付クリック時の処理（将来的に実装）
-              console.log('Selected date:', date);
+              const newDate = new Date(date);
+              newDate.setHours(0, 0, 0, 0);
+              setSelectedDate(newDate);
             }}
           />
         </div>

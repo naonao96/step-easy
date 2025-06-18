@@ -1,15 +1,19 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Task } from '@/stores/taskStore';
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 interface CalendarProps {
   tasks?: Task[];
+  selectedDate?: Date;
   onDateSelect?: (date: Date) => void;
 }
 
-export const Calendar: React.FC<CalendarProps> = ({ tasks = [], onDateSelect }) => {
+export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, onDateSelect }) => {
   const today = new Date();
-  const currentMonth = today.getMonth();
-  const currentYear = today.getFullYear();
+  
+  // 表示する年月を state で管理
+  const [currentYear, setCurrentYear] = useState(today.getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(today.getMonth());
 
   // 月の情報を計算
   const monthData = useMemo(() => {
@@ -48,12 +52,58 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], onDateSelect }) 
     }
   };
 
+  // 前月に移動
+  const goToPreviousMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(currentYear - 1);
+    } else {
+      setCurrentMonth(currentMonth - 1);
+    }
+  };
+
+  // 次月に移動
+  const goToNextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(currentYear + 1);
+    } else {
+      setCurrentMonth(currentMonth + 1);
+    }
+  };
+
+  // 今日の月に戻る
+  const goToToday = () => {
+    setCurrentYear(today.getFullYear());
+    setCurrentMonth(today.getMonth());
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold text-gray-900">カレンダー</h2>
-        <div className="text-sm text-gray-500">
-          {monthData.monthName}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={goToPreviousMonth}
+            className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+            title="前月"
+          >
+            {FaChevronLeft({ className: "w-4 h-4" })}
+          </button>
+          <button
+            onClick={goToToday}
+            className="text-sm text-gray-500 hover:text-gray-700 px-2 py-1 hover:bg-gray-100 rounded transition-colors"
+            title="今日の月に戻る"
+          >
+            {monthData.monthName}
+          </button>
+          <button
+            onClick={goToNextMonth}
+            className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+            title="次月"
+          >
+            {FaChevronRight({ className: "w-4 h-4" })}
+          </button>
         </div>
       </div>
 
@@ -76,6 +126,7 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], onDateSelect }) 
         {monthData.days.map((date, index) => {
           const isCurrentMonth = date.getMonth() === currentMonth;
           const isToday = date.toDateString() === today.toDateString();
+          const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
           const dayTasks = getTasksForDate(date);
           const hasOverdueTasks = dayTasks.some(task => 
             task.status !== 'done' && new Date(task.due_date!) < today
@@ -91,11 +142,12 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], onDateSelect }) 
               className={`
                 relative p-2 text-center text-sm cursor-pointer rounded transition-colors
                 ${!isCurrentMonth ? 'text-gray-300' : ''}
-                ${isToday ? 'bg-blue-500 text-white font-bold' : ''}
-                ${!isToday && isCurrentMonth ? 'hover:bg-blue-50' : ''}
-                ${isWeekend && !isToday ? 'text-red-500' : ''}
-                ${hasOverdueTasks ? 'bg-red-100 text-red-700' : ''}
-                ${hasPendingTasks && !hasOverdueTasks ? 'bg-yellow-100 text-yellow-700' : ''}
+                ${isToday && !isSelected ? 'bg-blue-500 text-white font-bold' : ''}
+                ${isSelected ? 'bg-blue-600 text-white font-bold ring-2 ring-blue-300' : ''}
+                ${!isToday && !isSelected && isCurrentMonth ? 'hover:bg-blue-50' : ''}
+                ${isWeekend && !isToday && !isSelected ? 'text-red-500' : ''}
+                ${hasOverdueTasks && !isSelected ? 'bg-red-100 text-red-700' : ''}
+                ${hasPendingTasks && !hasOverdueTasks && !isSelected ? 'bg-yellow-100 text-yellow-700' : ''}
               `}
               onClick={() => handleDateClick(date)}
             >
