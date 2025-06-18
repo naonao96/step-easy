@@ -21,6 +21,14 @@ interface AppLayoutProps {
   // レイアウト設定
   className?: string;
   showMobileNav?: boolean;
+  
+  // コンテキスト依存のアクション（ハンバーガーメニュー用）
+  contextActions?: {
+    label: string;
+    action: () => void;
+    icon?: any;
+    variant?: 'default' | 'primary' | 'danger';
+  }[];
 }
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ 
@@ -33,7 +41,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   rightActions,
   headerVariant = 'default',
   className = '',
-  showMobileNav = true
+  showMobileNav = true,
+  contextActions = []
 }) => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
@@ -53,6 +62,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           <MobileNavigation 
             isOpen={showMobileMenu}
             onClose={() => setShowMobileMenu(false)}
+            contextActions={contextActions}
           />
         )}
         
@@ -84,6 +94,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         <MobileNavigation 
           isOpen={showMobileMenu}
           onClose={() => setShowMobileMenu(false)}
+          contextActions={contextActions}
         />
       )}
       

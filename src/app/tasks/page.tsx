@@ -141,12 +141,7 @@ export default function TaskEditPage() {
 
   if (loading) {
     return (
-      <AppLayout
-        title="読み込み中..."
-        showBackButton={true}
-        backUrl="/menu"
-        backLabel="メニューに戻る"
-      >
+      <AppLayout>
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
           <div className="max-w-7xl mx-auto">
             <div className="bg-white rounded-lg shadow-md p-6">
@@ -163,12 +158,38 @@ export default function TaskEditPage() {
 
   // プレビューモードの表示
   if (!isEditMode && isExistingTask && task) {
+    const previewContextActions = [
+      {
+        label: 'メニューに戻る',
+        action: () => router.push('/menu'),
+        icon: FaArrowLeft
+      },
+      {
+        label: '編集',
+        action: switchToEditMode,
+        icon: FaEdit,
+        variant: 'primary' as const
+      },
+      {
+        label: task.status === 'done' ? '未完了に戻す' : '完了',
+        action: handleComplete,
+        variant: task.status === 'done' ? 'default' as const : 'primary' as const
+      },
+      {
+        label: '削除',
+        action: handleDelete,
+        icon: FaTrash,
+        variant: 'danger' as const
+      }
+    ];
+
   return (
     <AppLayout
-        title="タスク詳細"
+      title="タスク詳細"
       showBackButton={true}
       backUrl="/menu"
-      backLabel="メニュー"
+      backLabel="メニューに戻る"
+      contextActions={previewContextActions}
     >
         <div className="px-4 sm:px-6 py-4 sm:py-6">
           <div className="max-w-7xl mx-auto">
@@ -199,7 +220,7 @@ export default function TaskEditPage() {
                       onClick={switchToEditMode}
                       className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100/60 rounded-lg transition-all duration-200"
                     >
-                      Edit
+                      編集
                     </button>
                     <button
                       onClick={handleComplete}
@@ -209,14 +230,14 @@ export default function TaskEditPage() {
                           : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50/80'
                       }`}
                     >
-                      {task.status === 'done' ? 'Reopen' : 'Done'}
+                      {task.status === 'done' ? '未完了に戻す' : '完了'}
                     </button>
                     <div className="w-px h-3 bg-gray-200 mx-1"></div>
                     <button
                       onClick={handleDelete}
                       className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-red-500 hover:text-red-600 hover:bg-red-50/80 rounded-lg transition-all duration-200"
                     >
-                      Delete
+                      削除
                     </button>
                   </div>
                 </div>
@@ -259,6 +280,7 @@ export default function TaskEditPage() {
                   </ReactMarkdown>
                 </div>
               </div>
+
               </div>
             </div>
           </div>
@@ -268,14 +290,41 @@ export default function TaskEditPage() {
   }
 
   // 編集モードの表示
+  const editContextActions = [
+    {
+      label: 'メニューに戻る',
+      action: () => router.push('/menu'),
+      icon: FaArrowLeft
+    },
+    ...(isExistingTask ? [{
+      label: 'プレビュー',
+      action: switchToPreviewMode,
+      icon: FaEye,
+      variant: 'default' as const
+    }] : []),
+    {
+      label: '保存',
+      action: handleSave,
+      icon: FaSave,
+      variant: 'primary' as const
+    },
+    ...(isExistingTask && task ? [{
+      label: '削除',
+      action: handleDelete,
+      icon: FaTrash,
+      variant: 'danger' as const
+    }] : [])
+  ];
+
   return (
     <AppLayout
       title={isExistingTask ? "タスクを編集" : "新しいタスク"}
       showBackButton={true}
       backUrl={isExistingTask ? `/tasks?id=${taskId}` : "/menu"}
-      backLabel={isExistingTask ? "プレビュー" : "メニュー"}
+      backLabel={isExistingTask ? "プレビューに戻る" : "メニューに戻る"}
+      contextActions={editContextActions}
     >
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
+      <div className="px-4 sm:px-6 py-4 sm:py-6">
         <div className="max-w-7xl mx-auto">
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             {/* アクションバー（カード内） */}
@@ -306,7 +355,7 @@ export default function TaskEditPage() {
                       onClick={switchToPreviewMode}
                       className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100/60 rounded-lg transition-all duration-200"
                     >
-                      Preview
+                      プレビュー
                     </button>
                   )}
                   <button
@@ -314,7 +363,7 @@ export default function TaskEditPage() {
                     disabled={isSaving}
                     className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50/80 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSaving ? 'Saving...' : 'Save'}
+                    {isSaving ? '保存中...' : '保存'}
                   </button>
                   {isExistingTask && task && (
                     <>
@@ -323,7 +372,7 @@ export default function TaskEditPage() {
                         onClick={handleDelete}
                         className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-red-500 hover:text-red-600 hover:bg-red-50/80 rounded-lg transition-all duration-200"
                       >
-                        Delete
+                        削除
                       </button>
                     </>
                   )}
@@ -412,7 +461,7 @@ Markdownで自由に書けます！`}
           </div>
 
           {/* ヘルプテキスト */}
-            <div className="text-sm text-gray-500">
+          <div className="text-sm text-gray-500">
             <p><strong>使える記法:</strong></p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
               <div># 見出し → <strong>見出し</strong></div>
@@ -421,8 +470,9 @@ Markdownで自由に書けます！`}
               <div>- [ ] チェックボックス</div>
               <div>- リスト項目</div>
               <div>--- → 区切り線</div>
-              </div>
             </div>
+          </div>
+
             </div>
           </div>
         </div>

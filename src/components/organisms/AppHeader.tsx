@@ -60,32 +60,32 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
       case 'transparent':
         return 'bg-transparent';
       default:
-        return 'bg-blue border-b border-blue-200';
+        return 'bg-white border-b border-gray-200';
     }
   };
 
   return (
     <header className={`h-20 flex justify-between items-center px-4 sm:px-6 flex-shrink-0 shadow-sm ${getHeaderStyles()} ${className}`}>
-      {/* 左側：モバイルメニューボタン + 戻るボタン + タイトル or ロゴ */}
+      {/* 左側：モバイルハンバーガー + 戻るボタン + タイトル/ロゴ */}
       <div className="flex items-center gap-3">
-        {/* モバイルメニューボタン */}
+        {/* ハンバーガーボタン（モバイルのみ） */}
         {onMobileMenuToggle && (
           <button
             onClick={onMobileMenuToggle}
-            className="md:hidden p-2 text-gray-600 hover:text-gray-800 hover:bg-blue-100 rounded-lg transition-colors"
+            className="md:hidden p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
           >
             {showMobileMenu ? FaTimes({ className: "w-5 h-5" }) : FaBars({ className: "w-5 h-5" })}
           </button>
         )}
 
-        {/* 戻るボタン */}
+        {/* 戻るボタン（デスクトップのみ） */}
         {showBackButton && (
           <Button
             variant="ghost"
             size="sm"
             onClick={handleBack}
             leftIcon={FaArrowLeft}
-            className="text-gray-600 hover:text-gray-800"
+            className="hidden md:flex text-gray-600 hover:text-gray-800"
           >
             <span className="text-sm">{backLabel}</span>
           </Button>
@@ -105,11 +105,11 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         </div>
       </div>
 
-      {/* 右側：カスタムアクション + アカウント情報 */}
+      {/* 右側：デスクトップアクション + ユーザー情報 */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* カスタムアクション */}
+        {/* カスタムアクション（デスクトップのみ） */}
         {rightActions && (
-          <div className="flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-2">
             {rightActions}
           </div>
         )}
@@ -126,30 +126,39 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           </span>
         </div>
 
-        {/* 設定ボタン */}
+        {/* ユーザーアバター（モバイル用） */}
+        <div className="lg:hidden w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
+          <span className="text-white text-sm font-medium">
+            {user?.isGuest ? 'G' : (user?.email?.[0]?.toUpperCase() || 'U')}
+          </span>
+        </div>
+
+        {/* 設定ボタン（デスクトップのみ） */}
         <button
-          className="text-xs sm:text-sm px-2 py-2 sm:px-3 sm:py-1 bg-white border rounded shadow hover:bg-gray-50 transition-colors touch-manipulation hidden sm:inline-block"
+          className="hidden sm:inline-block text-xs sm:text-sm px-2 py-2 sm:px-3 sm:py-1 bg-white border rounded shadow hover:bg-gray-50 transition-colors touch-manipulation"
           onClick={() => router.push('/settings')}
         >
           設定
         </button>
 
-        {/* ログイン/ログアウトボタン */}
-        {user?.isGuest ? (
-          <button
-            className="text-xs sm:text-sm px-2 py-2 sm:px-3 sm:py-1 bg-blue-500 text-white rounded shadow hover:bg-blue-600 transition-colors touch-manipulation"
-            onClick={() => router.push('/login')}
-          >
-            ログイン
-          </button>
-        ) : (
-          <button
-            className="text-xs sm:text-sm px-2 py-2 sm:px-3 sm:py-1 bg-red-500 text-white rounded shadow hover:bg-red-600 transition-colors touch-manipulation"
-            onClick={handleSignOut}
-          >
-            ログアウト
-          </button>
-        )}
+        {/* ログイン/ログアウトボタン（デスクトップのみ） */}
+        <div className="hidden md:block">
+          {user?.isGuest ? (
+            <button
+              className="text-xs sm:text-sm px-2 py-2 sm:px-3 sm:py-1 bg-blue-500 text-white rounded shadow hover:bg-blue-600 transition-colors touch-manipulation"
+              onClick={() => router.push('/login')}
+            >
+              ログイン
+            </button>
+          ) : (
+            <button
+              className="text-xs sm:text-sm px-2 py-2 sm:px-3 sm:py-1 bg-red-500 text-white rounded shadow hover:bg-red-600 transition-colors touch-manipulation"
+              onClick={handleSignOut}
+            >
+              ログアウト
+            </button>
+          )}
+        </div>
       </div>
     </header>
   );

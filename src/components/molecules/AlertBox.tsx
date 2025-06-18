@@ -108,15 +108,28 @@ export const AlertBox: React.FC<AlertBoxProps> = ({ tasks = [] }) => {
     return alerts;
   }, [tasks]);
 
-  if (alerts.length === 0) {
-    return null;
-  }
-
   return (
     <div className="bg-white rounded-lg shadow-md p-4">
       <h3 className="text-lg font-semibold text-gray-900 mb-3">通知</h3>
       <div className="space-y-3">
-        {alerts.map((alert, index) => (
+        {alerts.length === 0 ? (
+          <div className="p-3 rounded-lg bg-gray-50 border-l-4 border-gray-300">
+            <div className="flex items-start">
+              <div className="flex-shrink-0 text-gray-400">
+                {FaCheckCircle({ className: "w-4 h-4" })}
+              </div>
+              <div className="ml-3">
+                <h4 className="text-sm font-medium text-gray-600">
+                  すべて順調です
+                </h4>
+                <p className="text-sm text-gray-500">
+                  現在お知らせはありません
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          alerts.map((alert, index) => (
           <div
             key={index}
             className={`p-3 rounded-lg border-l-4 ${
@@ -173,7 +186,8 @@ export const AlertBox: React.FC<AlertBoxProps> = ({ tasks = [] }) => {
               </div>
             </div>
           </div>
-        ))}
+        ))
+        )}
       </div>
     </div>
   );

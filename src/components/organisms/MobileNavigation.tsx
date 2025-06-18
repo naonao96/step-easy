@@ -17,11 +17,19 @@ import {
 interface MobileNavigationProps {
   isOpen: boolean;
   onClose: () => void;
+  // コンテキスト依存のアクション
+  contextActions?: {
+    label: string;
+    action: () => void;
+    icon?: any;
+    variant?: 'default' | 'primary' | 'danger';
+  }[];
 }
 
 export const MobileNavigation: React.FC<MobileNavigationProps> = ({
   isOpen,
-  onClose
+  onClose,
+  contextActions = []
 }) => {
   const router = useRouter();
   const pathname = usePathname();
@@ -33,6 +41,12 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
       href: '/menu', 
       icon: FaHome,
       description: 'ホーム画面'
+    },
+    { 
+      label: 'タスク', 
+      href: '/tasks', 
+      icon: FaTasks,
+      description: 'タスク管理'
     },
     { 
       label: '進捗', 
@@ -103,6 +117,42 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
               </div>
             </div>
           </div>
+
+          {/* コンテキストアクション */}
+          {contextActions.length > 0 && (
+            <div className="p-4 border-b border-gray-200">
+              <h4 className="text-sm font-medium text-gray-500 mb-3">ページアクション</h4>
+              <div className="space-y-2">
+                {contextActions.map((action, index) => {
+                  const Icon = action.icon;
+                  const getButtonStyles = () => {
+                    switch (action.variant) {
+                      case 'primary':
+                        return 'bg-blue-50 text-blue-700 hover:bg-blue-100';
+                      case 'danger':
+                        return 'bg-red-50 text-red-700 hover:bg-red-100';
+                      default:
+                        return 'bg-gray-50 text-gray-700 hover:bg-gray-100';
+                    }
+                  };
+
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        action.action();
+                        onClose();
+                      }}
+                      className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${getButtonStyles()}`}
+                    >
+                      {Icon && Icon({ className: "w-4 h-4" })}
+                      <span>{action.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* クイックアクション */}
           <div className="p-4 border-b border-gray-200">
