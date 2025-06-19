@@ -32,7 +32,7 @@ export const DayOfWeekChart: React.FC<DayOfWeekChartProps> = ({ tasks = [] }) =>
   }, [tasks]);
 
   const handleClick = () => {
-    router.push('/progress');
+    router.push('/progress?tab=weekly');
   };
 
   return (

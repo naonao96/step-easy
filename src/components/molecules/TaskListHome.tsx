@@ -40,11 +40,11 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
 
   // ソート済みタスク
   const sortedTasks = useMemo(() => {
-    return sortTasks(tasks, sortOption);
+    return sortTasks(tasks as any, sortOption);
   }, [tasks, sortOption]);
 
   // タスク詳細表示（既存のページ遷移方式）
-  const handleTaskClick = (task: Task) => {
+  const handleTaskClick = (task: any) => {
     router.push(`/tasks?id=${task.id}`);
   };
 

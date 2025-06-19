@@ -6,37 +6,101 @@ import { getActiveStreakTasks, getRiskyStreakTasks } from '@/lib/streakUtils';
 
 interface ActivityStatsProps {
   tasks?: Task[];
+  selectedDateTasks?: Task[];
+  selectedDate?: Date;
 }
 
-export const ActivityStats: React.FC<ActivityStatsProps> = ({ tasks = [] }) => {
+export const ActivityStats: React.FC<ActivityStatsProps> = ({ 
+  tasks = [], 
+  selectedDateTasks, 
+  selectedDate 
+}) => {
   const router = useRouter();
+
+  // 選択日に応じたタイトルを生成
+  const getTitle = () => {
+    if (!selectedDate) return '今日の達成度';
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selected = new Date(selectedDate);
+    selected.setHours(0, 0, 0, 0);
+    
+    if (selected.getTime() === today.getTime()) {
+      return '今日の達成度';
+    }
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (selected.getTime() === tomorrow.getTime()) {
+      return '明日の達成度';
+    }
+    
+    if (selected.getTime() === yesterday.getTime()) {
+      return '昨日の達成度';
+    }
+    
+    // その他の日付
+    const month = selected.getMonth() + 1;
+    const day = selected.getDate();
+    return `${month}/${day}の達成度`;
+  };
 
   // 今日の達成度を計算
   const todayStats = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    // 今日のタスクを定義
-    const todayTasks = tasks.filter(task => {
-      if (task.due_date) {
-        // 期限があるタスクは期限日で判定（完了・未完了問わず）
-        const dueDate = new Date(task.due_date);
-        return dueDate.toDateString() === today.toDateString();
+    // 選択された日付のタスクが提供されている場合はそれを使用
+    // そうでなければ従来のロジックで今日のタスクを計算
+    let relevantTasks: Task[];
+    
+    if (selectedDateTasks && selectedDate) {
+      const selectedDateTime = new Date(selectedDate);
+      selectedDateTime.setHours(0, 0, 0, 0);
+      
+      // 選択日が今日の場合は、選択されたタスクを使用
+      if (selectedDateTime.getTime() === today.getTime()) {
+        relevantTasks = selectedDateTasks;
       } else {
-        // 期限がないタスクの場合
-        if (task.status === 'done' && task.completed_at) {
-          // 完了済みの場合は、今日完了したもののみ表示
-          const completedDate = new Date(task.completed_at);
-          return completedDate.toDateString() === today.toDateString();
-        } else {
-          // 未完了の場合は表示（前日以前の未完了タスクも含む）
-          return task.status !== 'done';
-        }
+        // 選択日が今日以外の場合は、従来のロジックで今日のタスクを計算
+        relevantTasks = tasks.filter(task => {
+          if (task.due_date) {
+            const dueDate = new Date(task.due_date);
+            return dueDate.toDateString() === today.toDateString();
+          } else {
+            if (task.status === 'done' && task.completed_at) {
+              const completedDate = new Date(task.completed_at);
+              return completedDate.toDateString() === today.toDateString();
+            } else {
+              return task.status !== 'done';
+            }
+          }
+        });
       }
-    });
+    } else {
+      // 従来のロジック
+      relevantTasks = tasks.filter(task => {
+        if (task.due_date) {
+          const dueDate = new Date(task.due_date);
+          return dueDate.toDateString() === today.toDateString();
+        } else {
+          if (task.status === 'done' && task.completed_at) {
+            const completedDate = new Date(task.completed_at);
+            return completedDate.toDateString() === today.toDateString();
+          } else {
+            return task.status !== 'done';
+          }
+        }
+      });
+    }
 
-    const completedTasks = todayTasks.filter(task => task.status === 'done');
-    const totalTasks = todayTasks.length;
+    const completedTasks = relevantTasks.filter(task => task.status === 'done');
+    const totalTasks = relevantTasks.length;
     const percentage = totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0;
 
     return {
@@ -44,12 +108,12 @@ export const ActivityStats: React.FC<ActivityStatsProps> = ({ tasks = [] }) => {
       total: totalTasks,
       percentage
     };
-  }, [tasks]);
+  }, [tasks, selectedDateTasks, selectedDate]);
 
   // 継続日数統計を計算（修正版）
   const streakStats = useMemo(() => {
-    const activeStreaks = getActiveStreakTasks(tasks);
-    const riskyStreaks = getRiskyStreakTasks(tasks);
+    const activeStreaks = getActiveStreakTasks(tasks as any);
+    const riskyStreaks = getRiskyStreakTasks(tasks as any);
     const totalActiveStreaks = activeStreaks.length;
     
     // 上位3つのストリークを取得（アクティブなもののみ）
@@ -70,7 +134,7 @@ export const ActivityStats: React.FC<ActivityStatsProps> = ({ tasks = [] }) => {
   const strokeDashoffset = circumference - (todayStats.percentage / 100) * circumference;
 
   const handleClick = () => {
-    router.push('/progress');
+    router.push('/progress?tab=today');
   };
 
   return (
@@ -79,7 +143,7 @@ export const ActivityStats: React.FC<ActivityStatsProps> = ({ tasks = [] }) => {
       onClick={handleClick}
     >
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">今日の達成度</h3>
+        <h3 className="text-lg font-semibold text-gray-900">{getTitle()}</h3>
         <span className="text-xs text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           詳細を見る →
         </span>

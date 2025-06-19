@@ -53,7 +53,7 @@ export const AlertBox: React.FC<AlertBoxProps> = ({ tasks = [] }) => {
     }
 
     // 継続が危険な習慣タスクのチェック
-    const riskyStreaks = getRiskyStreakTasks(tasks);
+    const riskyStreaks = getRiskyStreakTasks(tasks as any);
     if (riskyStreaks.length > 0) {
       alerts.push({
         type: 'warning',
@@ -64,7 +64,7 @@ export const AlertBox: React.FC<AlertBoxProps> = ({ tasks = [] }) => {
     }
 
     // 期限切れストリークのチェック
-    const expiredStreaks = getExpiredStreakTasks(tasks);
+    const expiredStreaks = getExpiredStreakTasks(tasks as any);
     if (expiredStreaks.length > 0) {
       alerts.push({
         type: 'error',
@@ -91,12 +91,12 @@ export const AlertBox: React.FC<AlertBoxProps> = ({ tasks = [] }) => {
     }
 
     // 長期継続の達成を祝う
-    const longStreaks = getActiveStreakTasks(tasks).filter(task => 
-      task.current_streak >= 7
+    const longStreaks = getActiveStreakTasks(tasks as any).filter(task => 
+      (task.current_streak || 0) >= 7
     );
 
     if (longStreaks.length > 0) {
-      const maxStreak = Math.max(...longStreaks.map(task => task.current_streak));
+      const maxStreak = Math.max(...longStreaks.map(task => task.current_streak || 0));
       alerts.push({
         type: 'success',
         title: '素晴らしい継続力！',

@@ -8,6 +8,7 @@ import { hasGuestTasks, getGuestTasks } from '@/lib/guestMigration';
 interface AuthUser {
   id: string;
   email: string;
+  displayName?: string;
   isGuest?: boolean;
   isPremium?: boolean;
   planType?: 'guest' | 'free' | 'premium';
@@ -56,6 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser({
               id: session.user.id,
               email: session.user.email || '',
+              displayName: session.user.user_metadata?.display_name || '',
             });
           }
           setIsLoading(false);
@@ -77,6 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const newUser = {
               id: session.user.id,
               email: session.user.email || '',
+              displayName: session.user.user_metadata?.display_name || '',
             };
             
             // 新規ログイン時にゲストタスクがあるかチェック

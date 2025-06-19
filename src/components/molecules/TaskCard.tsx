@@ -1,8 +1,10 @@
 import React from 'react';
-import { Task } from '@/stores/taskStore';
+import { Task } from '@/types/task';
 import { Button } from '../atoms/Button';
 import { StreakBadge } from '../atoms/StreakBadge';
+import { CategoryBadge } from '../atoms/CategoryBadge';
 import { FaEdit, FaTrash, FaCheck } from 'react-icons/fa';
+import { PRIORITY_LABELS } from '@/types/task';
 
 interface TaskCardProps {
   task: Task;
@@ -17,16 +19,29 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onDelete,
   onComplete,
 }) => {
-  const priorityColors = {
-    low: 'bg-green-100 text-green-800',
-    medium: 'bg-yellow-100 text-yellow-800',
-    high: 'bg-red-100 text-red-800',
-  };
-
   const statusColors = {
     todo: 'bg-gray-100 text-gray-800',
     doing: 'bg-blue-100 text-blue-800',
     done: 'bg-green-100 text-green-800',
+  };
+
+  // 優先度ラベルの取得
+  const getPriorityBadge = (priority?: string) => {
+    if (!priority) return null;
+    const priorityData = PRIORITY_LABELS[priority as keyof typeof PRIORITY_LABELS];
+    if (!priorityData) return null;
+    
+    return (
+      <span 
+        className="px-2 py-1 rounded-full text-sm font-medium"
+        style={{ 
+          backgroundColor: priorityData.color + '20', 
+          color: priorityData.color 
+        }}
+      >
+        {priorityData.icon} {priorityData.name}
+      </span>
+    );
   };
 
   return (
@@ -49,20 +64,37 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         </div>
       </div>
 
-      <p className="text-gray-600 mb-4">{task.description}</p>
+      {task.description && (
+        <p className="text-gray-600 mb-4">{task.description}</p>
+      )}
 
       <div className="flex flex-wrap gap-2 mb-4">
-        <span className={`px-2 py-1 rounded-full text-sm ${priorityColors[task.priority]}`}>
-          {task.priority === 'low' ? '低' : task.priority === 'medium' ? '中' : '高'}
-        </span>
+        {/* カテゴリバッジ */}
+        <CategoryBadge category={task.category} size="sm" />
+        
+        {/* 優先度バッジ */}
+        {getPriorityBadge(task.priority)}
+        
+        {/* ステータスバッジ */}
         <span className={`px-2 py-1 rounded-full text-sm ${statusColors[task.status]}`}>
           {task.status === 'todo' ? '未着手' : task.status === 'doing' ? '進行中' : '完了'}
         </span>
+        
+        {/* 期限バッジ */}
         {task.due_date && (
           <span className="px-2 py-1 rounded-full text-sm bg-purple-100 text-purple-800">
             期限: {new Date(task.due_date).toLocaleDateString()}
           </span>
         )}
+        
+        {/* 予想時間バッジ */}
+        {task.estimated_duration && (
+          <span className="px-2 py-1 rounded-full text-sm bg-indigo-100 text-indigo-800">
+            ⏱️ {task.estimated_duration}分
+          </span>
+        )}
+        
+        {/* ストリークバッジ */}
         <StreakBadge 
           task={task}
           size="sm"

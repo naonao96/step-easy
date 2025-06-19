@@ -11,6 +11,7 @@ interface InputProps {
   placeholder?: string;
   name?: string;
   id?: string;
+  disabled?: boolean;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -24,6 +25,7 @@ export const Input: React.FC<InputProps> = ({
   placeholder = '',
   name,
   id,
+  disabled = false,
 }) => {
   const inputClasses = `w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 ${className}`;
 
@@ -43,6 +45,7 @@ export const Input: React.FC<InputProps> = ({
           className={inputClasses}
           required={required}
           placeholder={placeholder}
+          disabled={disabled}
         />
       ) : (
         <input
@@ -54,6 +57,7 @@ export const Input: React.FC<InputProps> = ({
           className={inputClasses}
           required={required}
           placeholder={placeholder}
+          disabled={disabled}
         />
       )}
     </div>

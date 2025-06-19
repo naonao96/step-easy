@@ -334,7 +334,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   // 期限切れストリークの自動リセット
   resetExpiredStreaks: async () => {
     const currentTasks = get().tasks;
-    const expiredTasks = getExpiredStreakTasks(currentTasks);
+    const expiredTasks = getExpiredStreakTasks(currentTasks as any);
     
     if (expiredTasks.length === 0) return;
 

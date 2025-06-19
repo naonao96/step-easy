@@ -79,7 +79,7 @@ export const getTimeRemaining = (task: Task): string | null => {
 export const getExpiredStreakTasks = (tasks: Task[]): Task[] => {
   return tasks.filter(task => 
     task.is_habit && 
-    task.current_streak > 0 && 
+    (task.current_streak || 0) > 0 && 
     !isStreakActive(task)
   );
 };
@@ -90,7 +90,7 @@ export const getExpiredStreakTasks = (tasks: Task[]): Task[] => {
 export const getRiskyStreakTasks = (tasks: Task[]): Task[] => {
   return tasks.filter(task => 
     task.is_habit && 
-    task.current_streak > 0 && 
+    (task.current_streak || 0) > 0 && 
     isStreakActive(task) && 
     isStreakAtRisk(task)
   );
@@ -102,7 +102,7 @@ export const getRiskyStreakTasks = (tasks: Task[]): Task[] => {
 export const getActiveStreakTasks = (tasks: Task[]): Task[] => {
   return tasks.filter(task => 
     task.is_habit && 
-    task.current_streak > 0 && 
+    (task.current_streak || 0) > 0 && 
     isStreakActive(task)
   );
 };

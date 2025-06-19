@@ -13,14 +13,14 @@ import { AlertBox } from '@/components/molecules/AlertBox';
 import { TaskListHome } from '@/components/molecules/TaskListHome';
 import { GuestMigrationModal } from '@/components/molecules/GuestMigrationModal';
 import { getGuestTasks, migrateGuestTasks, clearGuestTasks } from '@/lib/guestMigration';
+import { useCharacterMessage } from '@/hooks/useCharacterMessage';
 import { FaArchive } from 'react-icons/fa';
 
 export default function MenuPage() {
   const router = useRouter();
-  const { user, signOut, shouldShowMigrationModal, setShouldShowMigrationModal, isGuest } = useAuth();
+  const { user, signOut, shouldShowMigrationModal, setShouldShowMigrationModal, isGuest, planType } = useAuth();
   const { tasks, fetchTasks, updateTask, deleteTask, resetExpiredStreaks, cleanupExpiredData } = useTaskStore();
   const [characterMood, setCharacterMood] = React.useState<'happy' | 'normal' | 'sad'>('normal');
-  const [characterMessage, setCharacterMessage] = React.useState<string>('');
   const [guestTasks, setGuestTasks] = React.useState<Task[]>([]);
   const [migrationError, setMigrationError] = React.useState<string | null>(null);
   
@@ -104,43 +104,86 @@ export default function MenuPage() {
 
   // 統計計算
   const statistics = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // 全体統計
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter(task => task.status === 'done').length;
+    
+    // 今日のタスク統計（todayとselectedDateが同じ場合）
+    const todayTasks = tasks.filter(task => {
+      // 期限日ベースの今日のタスク
+      if (task.due_date) {
+        const taskDueDate = new Date(task.due_date);
+        taskDueDate.setHours(0, 0, 0, 0);
+        return taskDueDate.getTime() === today.getTime();
+      }
+      
+      // 開始日ベースの今日のタスク
+      if (task.start_date && !task.due_date) {
+        const taskStartDate = new Date(task.start_date);
+        taskStartDate.setHours(0, 0, 0, 0);
+        return taskStartDate.getTime() <= today.getTime() && task.status !== 'done';
+      }
+      
+      // 完了済みタスクで今日完了したもの
+      if (task.status === 'done' && task.completed_at) {
+        const completedDate = new Date(task.completed_at);
+        completedDate.setHours(0, 0, 0, 0);
+        return completedDate.getTime() === today.getTime();
+      }
+      
+      // 期限・開始日がないタスクで未完了のもの
+      if (!task.start_date && !task.due_date && task.status !== 'done') {
+        return true;
+      }
+      
+      return false;
+    });
+    
+    const todayCompletedTasks = todayTasks.filter(task => task.status === 'done').length;
+    const todayTotalTasks = todayTasks.length;
+    
+    // 選択日のタスク統計
     const selectedDateCompletedTasks = selectedDateTasks.filter(task => task.status === 'done').length;
     const selectedDateTotalTasks = selectedDateTasks.length;
     
     return {
       totalTasks,
       completedTasks,
+      todayCompletedTasks,
+      todayTotalTasks,
       selectedDateCompletedTasks,
       selectedDateTotalTasks,
       overallPercentage: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
+      todayPercentage: todayTotalTasks > 0 ? Math.round((todayCompletedTasks / todayTotalTasks) * 100) : 0,
       selectedDatePercentage: selectedDateTotalTasks > 0 ? Math.round((selectedDateCompletedTasks / selectedDateTotalTasks) * 100) : 0,
     };
   }, [tasks, selectedDateTasks]);
 
+  // AIキャラクターメッセージ
+  const { message: characterMessage, isLoading: isMessageLoading } = useCharacterMessage({
+    userType: planType,
+    userName: user?.displayName,
+    tasks,
+    statistics,
+  });
+
   useEffect(() => {
-    // タスクの状態に応じてキャラクターの表情とメッセージを更新
+    // タスクの状態に応じてキャラクターの表情を更新
     const { selectedDateCompletedTasks, selectedDateTotalTasks } = statistics;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const isToday = selectedDate.toDateString() === today.toDateString();
 
     if (selectedDateTotalTasks === 0) {
       setCharacterMood('normal');
-      setCharacterMessage(isToday ? '新しいタスクを作成してみましょう！' : 'この日にタスクはありません');
     } else if (selectedDateCompletedTasks === selectedDateTotalTasks) {
       setCharacterMood('happy');
-      setCharacterMessage(isToday ? '今日のタスクを全て完了しました！素晴らしいです！' : 'この日のタスクは全て完了済みです！');
     } else if (selectedDateCompletedTasks / selectedDateTotalTasks >= 0.7) {
       setCharacterMood('happy');
-      setCharacterMessage('順調に進んでいますね！');
     } else if (selectedDateCompletedTasks / selectedDateTotalTasks >= 0.3) {
       setCharacterMood('normal');
-      setCharacterMessage('頑張って続けましょう！');
     } else {
       setCharacterMood('sad');
-      setCharacterMessage('少しずつ進めていきましょう。');
     }
   }, [statistics, selectedDate]);
 
@@ -230,7 +273,7 @@ export default function MenuPage() {
 
         {/* 下段：統計・傾向・アラート */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <ActivityStats tasks={tasks} />
+          <ActivityStats tasks={tasks} selectedDateTasks={selectedDateTasks} selectedDate={selectedDate} />
           <DayOfWeekChart tasks={tasks} />
           <AlertBox tasks={tasks} />
         </div>

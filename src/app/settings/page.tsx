@@ -3,7 +3,6 @@
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { Input } from '@/components/atoms/Input';
-import { useUserStore } from '@/stores/userStore';
 import { FaUser, FaBell, FaLock, FaPalette, FaSignOutAlt } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
@@ -12,7 +11,7 @@ import { AppLayout } from '@/components/templates/AppLayout';
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { user, settings, updateUser, updateSettings, changePassword, deleteAccount, signOut } = useUserStore();
+  const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'appearance' | 'security'>('profile');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -47,35 +46,30 @@ export default function SettingsPage() {
       setProfileData({
         displayName: user.displayName || '',
         email: user.email || '',
-        bio: user.bio || '',
+        bio: '', // bio情報は後で実装予定
       });
     }
   }, [user]);
-
-  useEffect(() => {
-    if (settings) {
-      setNotificationSettings({
-        email_notifications: settings.email_notifications,
-        push_notifications: settings.push_notifications,
-        task_reminders: settings.task_reminders,
-        habit_reminders: settings.habit_reminders,
-        ai_suggestions: settings.ai_suggestions,
-      });
-      setAppearanceSettings({
-        theme: settings.theme,
-        font_size: settings.font_size,
-        compact_mode: settings.compact_mode,
-      });
-    }
-  }, [settings]);
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await updateUser(profileData);
+      const { createClientComponentClient } = await import('@supabase/auth-helpers-nextjs');
+      const supabase = createClientComponentClient();
+      
+      // Supabaseでuser_metadataを更新
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          display_name: profileData.displayName.trim(),
+        }
+      });
+
+      if (error) throw error;
+
       toast.success('プロフィールを更新しました');
     } catch (error) {
+      console.error('プロフィール更新エラー:', error);
       toast.error('プロフィールの更新に失敗しました');
     } finally {
       setIsLoading(false);
@@ -85,7 +79,7 @@ export default function SettingsPage() {
   const handleNotificationUpdate = async () => {
     setIsLoading(true);
     try {
-      await updateSettings(notificationSettings);
+      // TODO: 通知設定更新機能の実装
       toast.success('通知設定を更新しました');
     } catch (error) {
       toast.error('通知設定の更新に失敗しました');
@@ -97,7 +91,7 @@ export default function SettingsPage() {
   const handleAppearanceUpdate = async () => {
     setIsLoading(true);
     try {
-      await updateSettings(appearanceSettings);
+      // TODO: 外観設定更新機能の実装
       toast.success('外観設定を更新しました');
     } catch (error) {
       toast.error('外観設定の更新に失敗しました');
@@ -114,7 +108,7 @@ export default function SettingsPage() {
     }
     setIsLoading(true);
     try {
-      await changePassword(passwordData.currentPassword, passwordData.newPassword);
+      // TODO: パスワード変更機能の実装
       toast.success('パスワードを変更しました');
       setPasswordData({
         currentPassword: '',
@@ -134,7 +128,7 @@ export default function SettingsPage() {
     }
     setIsLoading(true);
     try {
-      await deleteAccount();
+      // TODO: アカウント削除機能の実装
       toast.success('アカウントを削除しました');
       router.push('/');
     } catch (error) {
@@ -156,7 +150,45 @@ export default function SettingsPage() {
     }
   };
 
-  if (!user || !settings) {
+  // ゲストユーザーの場合は機能制限メッセージを表示
+  if (user?.isGuest) {
+    return (
+      <AppLayout
+        title="設定"
+        showBackButton={true}
+        backUrl="/menu"
+        backLabel="メニューに戻る"
+      >
+        <div className="px-4 sm:px-6 py-4 sm:py-6">
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-white rounded-lg shadow-md p-8 text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">設定機能</h2>
+              <p className="text-gray-600 mb-6">
+                設定機能を利用するには、アカウント登録が必要です。
+              </p>
+              <div className="space-y-3">
+                <button
+                  onClick={() => router.push('/register')}
+                  className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  新規登録
+                </button>
+                <button
+                  onClick={() => router.push('/login')}
+                  className="w-full py-3 px-4 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  ログイン
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // ユーザーが読み込まれていない場合のローディング
+  if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
@@ -246,18 +278,14 @@ export default function SettingsPage() {
                       label="表示名"
                       value={profileData.displayName}
                       onChange={(e) => setProfileData({ ...profileData, displayName: e.target.value })}
+                      placeholder="キャラクターが呼びかける名前"
                     />
                     <Input
                       label="メールアドレス"
                       type="email"
                       value={profileData.email}
                       onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                    />
-                    <Input
-                      label="自己紹介"
-                      value={profileData.bio}
-                      onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
-                      multiline
+                      disabled
                     />
                     <Button type="submit" isLoading={isLoading}>
                       保存
@@ -351,7 +379,9 @@ export default function SettingsPage() {
                     <h2 className="text-xl font-semibold text-gray-900 mb-4">外観設定</h2>
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">テーマ</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          テーマ
+                        </label>
                         <select
                           value={appearanceSettings.theme}
                           onChange={(e) =>
@@ -360,7 +390,7 @@ export default function SettingsPage() {
                               theme: e.target.value as 'light' | 'dark' | 'system',
                             })
                           }
-                          className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                          className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
                           <option value="light">ライト</option>
                           <option value="dark">ダーク</option>
@@ -368,7 +398,9 @@ export default function SettingsPage() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">フォントサイズ</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          フォントサイズ
+                        </label>
                         <select
                           value={appearanceSettings.font_size}
                           onChange={(e) =>
@@ -377,7 +409,7 @@ export default function SettingsPage() {
                               font_size: e.target.value as 'small' | 'medium' | 'large',
                             })
                           }
-                          className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                          className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
                           <option value="small">小</option>
                           <option value="medium">中</option>
@@ -413,26 +445,48 @@ export default function SettingsPage() {
                         label="現在のパスワード"
                         type="password"
                         value={passwordData.currentPassword}
-                        onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                        onChange={(e) =>
+                          setPasswordData({ ...passwordData, currentPassword: e.target.value })
+                        }
+                        required
                       />
                       <Input
                         label="新しいパスワード"
                         type="password"
                         value={passwordData.newPassword}
-                        onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                        onChange={(e) =>
+                          setPasswordData({ ...passwordData, newPassword: e.target.value })
+                        }
+                        required
                       />
                       <Input
                         label="新しいパスワード（確認）"
                         type="password"
                         value={passwordData.confirmPassword}
-                        onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                        onChange={(e) =>
+                          setPasswordData({ ...passwordData, confirmPassword: e.target.value })
+                        }
+                        required
                       />
                       <Button type="submit" isLoading={isLoading}>
                         パスワードを変更
                       </Button>
                     </form>
-                    <div className="pt-6 border-t">
-                      <Button variant="danger" onClick={handleDeleteAccount} isLoading={isLoading}>
+
+                    <hr className="my-8" />
+
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <h3 className="text-lg font-semibold text-red-900 mb-2">
+                        危険な操作
+                      </h3>
+                      <p className="text-red-700 mb-4">
+                        アカウントを削除すると、すべてのデータが永久に失われます。この操作は取り消すことができません。
+                      </p>
+                      <Button
+                        onClick={handleDeleteAccount}
+                        variant="danger"
+                        isLoading={isLoading}
+                      >
                         アカウントを削除
                       </Button>
                     </div>

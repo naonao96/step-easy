@@ -4,7 +4,7 @@ import { SortOption } from '@/components/atoms/SortDropdown';
 /**
  * 優先度を数値に変換（ソート用）
  */
-const getPriorityValue = (priority: 'low' | 'medium' | 'high'): number => {
+const getPriorityValue = (priority?: 'low' | 'medium' | 'high'): number => {
   switch (priority) {
     case 'high': return 3;
     case 'medium': return 2;

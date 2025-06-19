@@ -28,8 +28,8 @@ export const TaskList: React.FC<TaskListProps> = ({
       {tasks.map((task) => (
         <TaskCard
           key={task.id}
-          task={task}
-          onEdit={onEdit}
+          task={task as any}
+          onEdit={onEdit as any}
           onDelete={onDelete}
           onComplete={onComplete}
         />

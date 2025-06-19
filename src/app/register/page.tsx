@@ -11,6 +11,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function RegisterPage() {
     e.preventDefault();
     setError(null);
 
-    console.log('🚀 登録処理開始:', { email, passwordLength: password.length });
+    console.log('🚀 登録処理開始:', { email, displayName, passwordLength: password.length });
 
     if (password !== confirmPassword) {
       console.log('❌ パスワード不一致');
@@ -31,6 +32,12 @@ export default function RegisterPage() {
     if (password.length < 6) {
       console.log('❌ パスワード文字数不足:', password.length);
       setError('パスワードは6文字以上で入力してください');
+      return;
+    }
+
+    if (displayName.trim().length < 1) {
+      console.log('❌ ユーザー名未入力');
+      setError('ユーザー名を入力してください');
       return;
     }
 
@@ -45,6 +52,9 @@ export default function RegisterPage() {
         password,
         options: {
           emailRedirectTo: redirectUrl,
+          data: {
+            display_name: displayName.trim(),
+          }
         },
       });
 
@@ -57,6 +67,7 @@ export default function RegisterPage() {
 
       if (data.user) {
         console.log('✅ ユーザー作成成功:', data.user.id);
+        console.log('👤 ユーザー名設定:', displayName);
         console.log('📧 確認メール送信状況:', data.user.email_confirmed_at ? '確認済み' : '未確認');
         
         // メール確認が無効化されている場合、すぐにログイン状態になる
@@ -100,6 +111,14 @@ export default function RegisterPage() {
 
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
+              <Input
+                label="ユーザー名"
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="キャラクターが呼びかける名前"
+                required
+              />
               <Input
                 label="メールアドレス"
                 type="email"
