@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useTaskStore, type Task } from '@/stores/taskStore';
+import { useTaskStore } from '@/stores/taskStore';
+import { type Task } from '@/types/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/templates/AppLayout';
 import { Button } from '@/components/atoms/Button';
@@ -10,6 +11,8 @@ import { Input } from '@/components/atoms/Input';
 import { DatePicker } from '@/components/atoms/DatePicker';
 import { FaSave, FaEye, FaEdit, FaTrash, FaArrowLeft } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
+import { TaskTimer } from '@/components/molecules/TaskTimer';
+import { TaskExecutionHistory } from '@/components/molecules/TaskExecutionHistory';
 
 export default function TaskEditPage() {
   const router = useRouter();
@@ -37,6 +40,7 @@ export default function TaskEditPage() {
   const [isHabit, setIsHabit] = useState(false);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [dueDate, setDueDate] = useState<Date | null>(null);
+  const [estimatedDuration, setEstimatedDuration] = useState<number | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
 
   // 今日の日付（各種制限チェック用）
@@ -61,13 +65,14 @@ export default function TaskEditPage() {
     if (isExistingTask && tasks.length > 0) {
       const foundTask = tasks.find(t => t.id === taskId);
       if (foundTask) {
-        setTask(foundTask);
+        setTask(foundTask as Task);
         setTitle(foundTask.title);
         setContent(foundTask.description || '');
         setPriority(foundTask.priority);
         setIsHabit(foundTask.is_habit || false);
         setStartDate(foundTask.start_date ? new Date(foundTask.start_date) : new Date());
         setDueDate(foundTask.due_date ? new Date(foundTask.due_date) : null);
+        setEstimatedDuration(foundTask.estimated_duration);
       }
     } else {
       // 新規作成モード
@@ -77,6 +82,7 @@ export default function TaskEditPage() {
       setIsHabit(false);
       setStartDate(initialStartDate ? new Date(initialStartDate) : new Date());
       setDueDate(null);
+      setEstimatedDuration(undefined);
     }
   }, [isExistingTask, taskId, tasks, initialStartDate, today]);
 
@@ -148,7 +154,8 @@ export default function TaskEditPage() {
         is_habit: isHabit,
         status: 'todo' as const,
         start_date: startDate ? startDate.toISOString().split('T')[0] : null,
-        due_date: dueDate ? dueDate.toISOString().split('T')[0] : null
+        due_date: dueDate ? dueDate.toISOString().split('T')[0] : null,
+        estimated_duration: estimatedDuration
       };
 
       if (isExistingTask && task) {
@@ -156,7 +163,7 @@ export default function TaskEditPage() {
         // 保存後はプレビューモードに切り替え
         switchToPreviewMode();
       } else {
-        await createTask(taskData as Omit<Task, 'id' | 'created_at' | 'updated_at' | 'user_id'>);
+        await createTask(taskData as any);
         // エラーがある場合はストアのエラーを確認
         const error = useTaskStore.getState().error;
         if (error) {
@@ -345,6 +352,21 @@ export default function TaskEditPage() {
                 </div>
               </div>
 
+              {/* 実行タイマー */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">実行ログ</h3>
+                <div className="space-y-4">
+                  <TaskTimer 
+                    task={task} 
+                    onExecutionComplete={() => {
+                      // 実行完了後にタスクデータを再読み込み
+                      fetchTasks();
+                    }}
+                  />
+                  <TaskExecutionHistory task={task} />
+                </div>
+              </div>
+
               </div>
             </div>
           </div>
@@ -506,6 +528,25 @@ export default function TaskEditPage() {
                 <option value="medium">中</option>
                 <option value="high">高</option>
               </select>
+            </div>
+
+            {/* 予想所要時間 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                予想所要時間（分）
+              </label>
+              <input
+                type="number"
+                value={estimatedDuration?.toString() || ''}
+                onChange={(e) => setEstimatedDuration(e.target.value ? parseInt(e.target.value) : undefined)}
+                placeholder="例: 30"
+                min="1"
+                max="1440"
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                タスクの完了にかかる予想時間を入力してください
+              </p>
             </div>
             
             {/* 習慣タスク設定 */}

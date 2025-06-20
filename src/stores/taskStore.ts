@@ -23,6 +23,10 @@ export interface Task {
   last_completed_date: string | null;  // 最後に完了した日付
   streak_start_date: string | null;    // 現在のストリーク開始日
   
+  // 実行時間関連フィールド
+  estimated_duration?: number;   // 予想所要時間（分）
+  actual_duration?: number;      // 実際の所要時間（分）
+  
   // 互換性のために残す（後で削除予定）
   streak_count?: number;
   completed_at?: string;

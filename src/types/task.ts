@@ -94,4 +94,20 @@ export interface StreakStats {
   longestCurrentStreak: number;
   averageStreakLength: number;
   tasksWithStreaks: Task[];
+}
+
+// 実行ログ機能のための型定義
+export interface TaskExecutionSession {
+  id: string;
+  task_id: string;
+  start_time: string; // ISO string
+  end_time?: string; // ISO string
+  duration?: number; // 秒数
+  is_active: boolean;
+}
+
+export interface ActiveTaskExecution {
+  task_id: string;
+  start_time: Date;
+  elapsed_seconds: number;
 } 
