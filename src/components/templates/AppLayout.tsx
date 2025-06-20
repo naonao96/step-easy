@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { AppHeader } from '@/components/organisms/AppHeader';
 import { MobileNavigation } from '@/components/organisms/MobileNavigation';
+import { MobileBottomNavigation } from '@/components/organisms/MobileBottomNavigation';
 import { LeftSidebar } from '@/components/organisms/LeftSidebar';
 
 import { Task } from '@/types/task';
@@ -36,6 +37,11 @@ interface AppLayoutProps {
     icon?: any;
     variant?: 'default' | 'primary' | 'danger';
   }[];
+
+  // モバイル専用設定
+  showBottomNav?: boolean;
+  showFAB?: boolean;
+  onFABClick?: () => void;
 }
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ 
@@ -51,7 +57,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   showNotifications = true,
   className = '',
   showMobileNav = true,
-  contextActions = []
+  contextActions = [],
+  showBottomNav = true,
+  showFAB = true,
+  onFABClick
 }) => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
@@ -81,10 +90,20 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           />
         )}
         
-        {/* メインコンテンツエリア（ヘッダー + サイドバー分の余白確保） */}
-        <main className={`pt-20 lg:ml-16 overflow-y-auto min-h-screen ${className}`}>
+        {/* メインコンテンツエリア */}
+        <main className={`pt-20 lg:ml-16 overflow-y-auto min-h-screen ${
+          showBottomNav ? 'pb-16 md:pb-0' : ''
+        } ${className}`}>
           {children}
         </main>
+
+        {/* モバイル専用ボトムナビゲーション */}
+        {showBottomNav && (
+          <MobileBottomNavigation 
+            showAddButton={showFAB}
+            onAddClick={onFABClick}
+          />
+        )}
       </div>
     );
   }
@@ -119,10 +138,20 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         />
       )}
       
-      {/* メインコンテンツエリア（ヘッダー + サイドバー分の余白確保） */}
-      <main className={`pt-20 lg:ml-16 overflow-y-auto min-h-screen ${className}`}>
+      {/* メインコンテンツエリア */}
+      <main className={`pt-20 lg:ml-16 overflow-y-auto min-h-screen ${
+        showBottomNav ? 'pb-16 md:pb-0' : ''
+      } ${className}`}>
         {children}
       </main>
+
+      {/* モバイル専用ボトムナビゲーション */}
+      {showBottomNav && (
+        <MobileBottomNavigation 
+          showAddButton={showFAB}
+          onAddClick={onFABClick}
+        />
+      )}
     </div>
   );
 }; 
