@@ -5,6 +5,7 @@ import { StreakBadge } from '../atoms/StreakBadge';
 import { CategoryBadge } from '../atoms/CategoryBadge';
 import { FaEdit, FaTrash, FaCheck } from 'react-icons/fa';
 import { PRIORITY_LABELS } from '@/types/task';
+import { formatDurationShort } from '@/lib/timeUtils';
 
 interface TaskCardProps {
   task: Task;
@@ -90,7 +91,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         {/* 予想時間バッジ */}
         {task.estimated_duration && (
           <span className="px-2 py-1 rounded-full text-sm bg-indigo-100 text-indigo-800">
-            ⏱️ {task.estimated_duration}分
+            ⏱️ {formatDurationShort(task.estimated_duration)}
           </span>
         )}
         

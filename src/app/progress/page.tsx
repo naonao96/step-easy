@@ -5,11 +5,12 @@ import { useTaskStore } from '@/stores/taskStore';
 import { AppLayout } from '@/components/templates/AppLayout';
 import { ProgressCard } from '@/components/molecules/ProgressCard';
 import { CategoryBadge } from '@/components/atoms/CategoryBadge';
+import { DetailedHeatmap } from '@/components/molecules/DetailedHeatmap';
 // Removed react-icons import due to type issues
 import { DEFAULT_CATEGORIES, Task } from '@/types/task';
 import { useSearchParams } from 'next/navigation';
 
-type TabType = 'today' | 'weekly' | 'overall';
+type TabType = 'today' | 'category' | 'heatmap' | 'overall';
 
 export default function ProgressPage() {
   const { tasks: storeTasks, fetchTasks } = useTaskStore();
@@ -24,7 +25,7 @@ export default function ProgressPage() {
   // クエリパラメータからデフォルトタブを設定
   useEffect(() => {
     const tab = searchParams.get('tab') as TabType;
-    if (tab && ['today', 'weekly', 'overall'].includes(tab)) {
+    if (tab && ['today', 'category', 'heatmap', 'overall'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -36,22 +37,79 @@ export default function ProgressPage() {
     
     // 今日のタスクを取得
     const todayTasks = tasks.filter(task => {
-      if (task.due_date) {
-        const dueDate = new Date(task.due_date);
-        dueDate.setHours(0, 0, 0, 0);
-        return dueDate.getTime() === today.getTime();
+      // 期間タスクの処理（開始日と期限日の両方がある場合）
+      if (task.start_date && task.due_date) {
+        const taskStartDate = new Date(task.start_date);
+        const taskDueDate = new Date(task.due_date);
+        taskStartDate.setHours(0, 0, 0, 0);
+        taskDueDate.setHours(0, 0, 0, 0);
+        
+        // 今日が期間内にある場合
+        if (today.getTime() >= taskStartDate.getTime() && 
+            today.getTime() <= taskDueDate.getTime()) {
+          // 未完了の場合は表示
+          if (task.status !== 'done') {
+            return true;
+          }
+          // 完了済みの場合は完了日が今日の場合のみ表示
+          if (task.status === 'done' && task.completed_at) {
+            const completedDate = new Date(task.completed_at);
+            completedDate.setHours(0, 0, 0, 0);
+            return completedDate.getTime() === today.getTime();
+          }
+        }
+        return false;
       }
       
+      // 開始日のみのタスク
       if (task.start_date && !task.due_date) {
-        const startDate = new Date(task.start_date);
-        startDate.setHours(0, 0, 0, 0);
-        return startDate.getTime() === today.getTime() && task.status !== 'done';
+        const taskStartDate = new Date(task.start_date);
+        taskStartDate.setHours(0, 0, 0, 0);
+        
+        // 開始日以降で未完了の場合は表示
+        if (today.getTime() >= taskStartDate.getTime() && task.status !== 'done') {
+          return true;
+        }
+        // 完了済みの場合は完了日が今日の場合のみ表示
+        if (task.status === 'done' && task.completed_at) {
+          const completedDate = new Date(task.completed_at);
+          completedDate.setHours(0, 0, 0, 0);
+          return completedDate.getTime() === today.getTime();
+        }
+        return false;
       }
       
-      if (task.status === 'done' && task.completed_at) {
-        const completedDate = new Date(task.completed_at);
-        completedDate.setHours(0, 0, 0, 0);
-        return completedDate.getTime() === today.getTime();
+      // 期限日のみのタスク
+      if (!task.start_date && task.due_date) {
+        const taskDueDate = new Date(task.due_date);
+        taskDueDate.setHours(0, 0, 0, 0);
+        
+        // 期限日まで（今日以降）で未完了の場合は表示
+        if (today.getTime() <= taskDueDate.getTime() && task.status !== 'done') {
+          return true;
+        }
+        // 完了済みの場合は完了日が今日の場合のみ表示
+        if (task.status === 'done' && task.completed_at) {
+          const completedDate = new Date(task.completed_at);
+          completedDate.setHours(0, 0, 0, 0);
+          return completedDate.getTime() === today.getTime();
+        }
+        return false;
+      }
+      
+      // 開始日も期限日もないタスクの処理
+      if (!task.start_date && !task.due_date) {
+        // 完了済みタスクで今日完了したもの
+        if (task.status === 'done' && task.completed_at) {
+          const completedDate = new Date(task.completed_at);
+          completedDate.setHours(0, 0, 0, 0);
+          return completedDate.getTime() === today.getTime();
+        }
+        
+        // 未完了タスク
+        if (task.status !== 'done') {
+          return true;
+        }
       }
       
       return false;
@@ -77,44 +135,54 @@ export default function ProgressPage() {
     };
   }, [tasks]);
 
-  // 曜日別詳細統計
-  const weeklyStats = useMemo(() => {
-    const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
-    const completedTasks = tasks.filter(task => task.status === 'done' && task.completed_at);
+  // カテゴリ別詳細統計
+  const categoryStats = useMemo(() => {
+    const completedTasks = tasks.filter(task => task.status === 'done');
     
-    const dayStats = weekDays.map((day, index) => {
-      const dayTasks = completedTasks.filter(task => {
-        const completedDate = new Date(task.completed_at!);
-        return completedDate.getDay() === index;
+    const stats = DEFAULT_CATEGORIES.map(category => {
+      const categoryTasks = tasks.filter(task => task.category === category.id);
+      const categoryCompletedTasks = completedTasks.filter(task => task.category === category.id);
+      
+      // 時系列データ（過去30日）
+      const last30Days = Array.from({ length: 30 }, (_, i) => {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+        return date;
+      }).reverse();
+
+      const dailyStats = last30Days.map(date => {
+        const dateStr = date.toISOString().split('T')[0];
+        const dayCompletedTasks = categoryCompletedTasks.filter(task => {
+          if (!task.completed_at) return false;
+          const completedDate = new Date(task.completed_at);
+          return completedDate.toISOString().split('T')[0] === dateStr;
+        });
+        
+        return {
+          date: dateStr,
+          count: dayCompletedTasks.length
+        };
       });
 
-      // 時間帯別分析
-      const hourStats = Array.from({ length: 24 }, (_, hour) => {
-        const hourCount = dayTasks.filter(task => {
-          const completedDate = new Date(task.completed_at!);
-          return completedDate.getHours() === hour;
-        }).length;
-        return { hour, count: hourCount };
-      }).filter(stat => stat.count > 0);
+      // 平均完了時間の計算
+      const avgCompletionTime = categoryCompletedTasks.length > 0 ? 
+        categoryCompletedTasks.reduce((sum, task) => {
+          return sum + (task.actual_duration || task.estimated_duration || 0);
+        }, 0) / categoryCompletedTasks.length : 0;
 
       return {
-        day,
-        dayIndex: index,
-        count: dayTasks.length,
-        hourStats,
-        peakHour: hourStats.reduce((max, current) => 
-          current.count > max.count ? current : max, 
-          { hour: 0, count: 0 }
-        )
+        ...category,
+        totalTasks: categoryTasks.length,
+        completedTasks: categoryCompletedTasks.length,
+        percentage: categoryTasks.length > 0 ? Math.round((categoryCompletedTasks.length / categoryTasks.length) * 100) : 0,
+        dailyStats,
+        avgCompletionTime: Math.round(avgCompletionTime)
       };
-    });
+    }).filter(stat => stat.totalTasks > 0);
 
-    const maxCount = Math.max(...dayStats.map(d => d.count), 1);
-    
-    return dayStats.map(item => ({
-      ...item,
-      percentage: (item.count / maxCount) * 100
-    }));
+    // 完了率でソート（降順）
+    return stats.sort((a, b) => b.percentage - a.percentage);
   }, [tasks]);
 
   // 全体統計
@@ -138,7 +206,8 @@ export default function ProgressPage() {
 
   const tabs = [
     { id: 'today', label: '今日の詳細', icon: <span className="text-blue-500">📊</span> },
-    { id: 'weekly', label: '曜日別分析', icon: <span className="text-blue-500">📅</span> },
+    { id: 'category', label: 'カテゴリ別分析', icon: <span className="text-blue-500">📊</span> },
+    { id: 'heatmap', label: 'ヒートマップ', icon: <span className="text-blue-500">🔥</span> },
     { id: 'overall', label: '全体統計', icon: <span className="text-blue-500">📈</span> }
   ];
 
@@ -148,6 +217,7 @@ export default function ProgressPage() {
       showBackButton={true}
       backUrl="/menu"
       backLabel="メニューに戻る"
+      tasks={tasks as any}
     >
       <div className="px-4 sm:px-6 py-4 sm:py-6">
         <div className="max-w-7xl mx-auto">
@@ -252,39 +322,66 @@ export default function ProgressPage() {
             </div>
           )}
 
-          {activeTab === 'weekly' && (
+          {activeTab === 'category' && (
             <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-900">曜日別詳細分析</h2>
+              <h2 className="text-xl font-semibold text-gray-900">カテゴリ別詳細分析</h2>
               
-              {/* 曜日別チャート */}
+              {/* カテゴリ別統計一覧 */}
               <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">曜日別完了タスク数</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">カテゴリ別完了率</h3>
                 <div className="space-y-4">
-                  {weeklyStats.map((item) => (
-                    <div key={item.day} className="space-y-2">
+                  {categoryStats.map((category, index) => (
+                    <div key={category.id} className="space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 text-sm font-medium text-gray-600 text-center">
-                            {item.day}
-                          </div>
-                          <div className="flex-1 bg-gray-200 rounded-full h-8 relative">
-                            <div
-                              className="bg-gradient-to-r from-blue-400 to-blue-600 h-8 rounded-full transition-all duration-300 flex items-center justify-end pr-3"
-                              style={{ width: `${Math.max(item.percentage, 5)}%` }}
-                            >
-                              {item.count > 0 && (
-                                <span className="text-white text-sm font-medium">
-                                  {item.count}
-                                </span>
-                              )}
-                            </div>
+                          {index === 0 && <span className="text-lg">🏆</span>}
+                          {index === 1 && <span className="text-lg">🥈</span>}
+                          {index === 2 && <span className="text-lg">🥉</span>}
+                          <CategoryBadge category={category.id} size="md" />
+                          <div className="text-sm text-gray-600">
+                            {category.completedTasks}/{category.totalTasks} 完了
                           </div>
                         </div>
-                        {item.peakHour.count > 0 && (
-                          <span className="text-xs text-gray-500 ml-4">
-                            ピーク: {item.peakHour.hour}時
+                        <div className="flex items-center gap-3">
+                          {category.avgCompletionTime > 0 && (
+                            <span className="text-xs text-gray-500">
+                              平均 {category.avgCompletionTime}分
+                            </span>
+                          )}
+                          <span className={`font-bold text-lg ${
+                            category.percentage === 100 ? 'text-green-600' :
+                            category.percentage >= 75 ? 'text-blue-600' :
+                            category.percentage >= 50 ? 'text-amber-600' : 'text-gray-500'
+                          }`}>
+                            {category.percentage}%
                           </span>
-                        )}
+                        </div>
+                      </div>
+                      
+                      {/* プログレスバー */}
+                      <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div
+                          className={`h-3 rounded-full transition-all duration-300 ${
+                            category.percentage === 100 ? 'bg-green-500' :
+                            category.percentage >= 75 ? 'bg-blue-500' :
+                            category.percentage >= 50 ? 'bg-amber-500' : 'bg-gray-400'
+                          }`}
+                          style={{ width: `${category.percentage}%` }}
+                        />
+                      </div>
+
+                      {/* 30日間のトレンド（簡易表示） */}
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-gray-500 mr-2">30日間:</span>
+                        {category.dailyStats.slice(-14).map((day, dayIndex) => (
+                          <div
+                            key={day.date}
+                            className={`w-2 h-2 rounded-sm ${
+                              day.count > 0 ? 'bg-blue-500' : 'bg-gray-200'
+                            }`}
+                            title={`${day.date}: ${day.count}件完了`}
+                          />
+                        ))}
                       </div>
                     </div>
                   ))}
@@ -294,27 +391,35 @@ export default function ProgressPage() {
               {/* 分析サマリー */}
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">分析サマリー</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="p-4 bg-blue-50 rounded-lg">
-                    <h4 className="font-medium text-blue-900 mb-2">最も生産的な曜日</h4>
+                    <h4 className="font-medium text-blue-900 mb-2">最も生産的なカテゴリ</h4>
                     <p className="text-blue-700">
-                      {weeklyStats.reduce((max, current) => 
-                        current.count > max.count ? current : max,
-                        { day: '不明', count: 0 }
-                      ).day}曜日 ({weeklyStats.reduce((max, current) => 
-                        current.count > max.count ? current : max,
-                        { day: '不明', count: 0 }
-                      ).count}件完了)
+                      {categoryStats[0]?.name || '該当なし'}
+                      {categoryStats[0] && ` (${categoryStats[0].percentage}%)`}
                     </p>
                   </div>
                   <div className="p-4 bg-green-50 rounded-lg">
-                    <h4 className="font-medium text-green-900 mb-2">週間完了総数</h4>
+                    <h4 className="font-medium text-green-900 mb-2">活動カテゴリ数</h4>
                     <p className="text-green-700">
-                      {weeklyStats.reduce((sum, day) => sum + day.count, 0)}件
+                      {categoryStats.length}/{DEFAULT_CATEGORIES.length} カテゴリ
+                    </p>
+                  </div>
+                  <div className="p-4 bg-purple-50 rounded-lg">
+                    <h4 className="font-medium text-purple-900 mb-2">総完了タスク</h4>
+                    <p className="text-purple-700">
+                      {categoryStats.reduce((sum, cat) => sum + cat.completedTasks, 0)}件
                     </p>
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'heatmap' && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold text-gray-900">完了時間ヒートマップ</h2>
+              <DetailedHeatmap tasks={tasks as any} />
             </div>
           )}
 

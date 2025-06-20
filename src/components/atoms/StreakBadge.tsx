@@ -2,6 +2,7 @@ import React from 'react';
 import { Task } from '@/types/task';
 import { getStreakStatus, getTimeRemaining } from '@/lib/streakUtils';
 
+
 interface StreakBadgeProps {
   task: Task;
   size?: 'sm' | 'md' | 'lg';

@@ -3,15 +3,17 @@
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { Input } from '@/components/atoms/Input';
-import { FaUser, FaBell, FaLock, FaPalette, FaSignOutAlt } from 'react-icons/fa';
+import { FaUser, FaBell, FaLock, FaPalette, FaSignOutAlt, FaInfoCircle } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/templates/AppLayout';
+import { useTaskStore } from '@/stores/taskStore';
 
 export default function SettingsPage() {
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const { tasks, fetchTasks } = useTaskStore();
   const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'appearance' | 'security'>('profile');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -40,6 +42,16 @@ export default function SettingsPage() {
     newPassword: '',
     confirmPassword: '',
   });
+
+  // ヘルプリンク用の関数
+  const openHelp = (section: string) => {
+    // window.postMessage を使って親のヘルプパネルを開く
+    window.dispatchEvent(new CustomEvent('openHelp', { detail: { section } }));
+  };
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
 
   useEffect(() => {
     if (user) {
@@ -158,6 +170,7 @@ export default function SettingsPage() {
         showBackButton={true}
         backUrl="/menu"
         backLabel="メニューに戻る"
+        tasks={tasks as any}
       >
         <div className="px-4 sm:px-6 py-4 sm:py-6">
           <div className="max-w-2xl mx-auto">
@@ -205,6 +218,7 @@ export default function SettingsPage() {
       showBackButton={true}
       backUrl="/menu"
       backLabel="メニューに戻る"
+      tasks={tasks as any}
     >
       <div className="px-4 sm:px-6 py-4 sm:py-6">
         <div className="max-w-7xl mx-auto">
@@ -273,7 +287,17 @@ export default function SettingsPage() {
               <div className="bg-white rounded-lg shadow-md p-6">
                 {activeTab === 'profile' && (
                   <form onSubmit={handleProfileUpdate} className="space-y-6">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-4">プロフィール設定</h2>
+                    <div className="flex items-center gap-2 mb-4">
+                      <h2 className="text-xl font-semibold text-gray-900">プロフィール設定</h2>
+                      <button
+                        type="button"
+                        onClick={() => openHelp('tasks')}
+                        className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
+                        title="プロフィール設定のヘルプ"
+                      >
+                        {FaInfoCircle({ className: "w-4 h-4" })}
+                      </button>
+                    </div>
                     <Input
                       label="表示名"
                       value={profileData.displayName}
@@ -295,7 +319,17 @@ export default function SettingsPage() {
 
                 {activeTab === 'notifications' && (
                   <div className="space-y-6">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-4">通知設定</h2>
+                    <div className="flex items-center gap-2 mb-4">
+                      <h2 className="text-xl font-semibold text-gray-900">通知設定</h2>
+                      <button
+                        type="button"
+                        onClick={() => openHelp('tasks')}
+                        className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
+                        title="通知設定のヘルプ"
+                      >
+                        {FaInfoCircle({ className: "w-4 h-4" })}
+                      </button>
+                    </div>
                     <div className="space-y-4">
                       <label className="flex items-center space-x-3">
                         <input
@@ -376,7 +410,17 @@ export default function SettingsPage() {
 
                 {activeTab === 'appearance' && (
                   <div className="space-y-6">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-4">外観設定</h2>
+                    <div className="flex items-center gap-2 mb-4">
+                      <h2 className="text-xl font-semibold text-gray-900">外観設定</h2>
+                      <button
+                        type="button"
+                        onClick={() => openHelp('faq')}
+                        className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
+                        title="外観設定のヘルプ"
+                      >
+                        {FaInfoCircle({ className: "w-4 h-4" })}
+                      </button>
+                    </div>
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -439,7 +483,17 @@ export default function SettingsPage() {
 
                 {activeTab === 'security' && (
                   <div className="space-y-6">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-4">セキュリティ設定</h2>
+                    <div className="flex items-center gap-2 mb-4">
+                      <h2 className="text-xl font-semibold text-gray-900">セキュリティ設定</h2>
+                      <button
+                        type="button"
+                        onClick={() => openHelp('faq')}
+                        className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
+                        title="セキュリティ設定のヘルプ"
+                      >
+                        {FaInfoCircle({ className: "w-4 h-4" })}
+                      </button>
+                    </div>
                     <form onSubmit={handlePasswordChange} className="space-y-4">
                       <Input
                         label="現在のパスワード"

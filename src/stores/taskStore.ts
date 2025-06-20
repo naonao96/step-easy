@@ -27,6 +27,9 @@ export interface Task {
   estimated_duration?: number;   // 予想所要時間（分）
   actual_duration?: number;      // 実際の所要時間（分）
   
+  // カテゴリ
+  category?: string;             // カテゴリ（work, health, study, personal, hobby, other）
+  
   // 互換性のために残す（後で削除予定）
   streak_count?: number;
   completed_at?: string;

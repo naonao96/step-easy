@@ -145,7 +145,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                       }}
                       className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${getButtonStyles()}`}
                     >
-                      {Icon && Icon({ className: "w-4 h-4" })}
+                      {Icon && <Icon className="w-4 h-4" />}
                       <span>{action.label}</span>
                     </button>
                   );

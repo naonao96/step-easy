@@ -3,6 +3,9 @@
 import React, { useState } from 'react';
 import { AppHeader } from '@/components/organisms/AppHeader';
 import { MobileNavigation } from '@/components/organisms/MobileNavigation';
+import { LeftSidebar } from '@/components/organisms/LeftSidebar';
+
+import { Task } from '@/types/task';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -17,6 +20,10 @@ interface AppLayoutProps {
   backLabel?: string;
   rightActions?: React.ReactNode;
   headerVariant?: 'default' | 'minimal' | 'transparent';
+  
+  // 通知機能
+  tasks?: Task[];
+  showNotifications?: boolean;
   
   // レイアウト設定
   className?: string;
@@ -40,6 +47,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   backLabel = '戻る',
   rightActions,
   headerVariant = 'default',
+  tasks = [],
+  showNotifications = true,
   className = '',
   showMobileNav = true,
   contextActions = []
@@ -49,13 +58,19 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   // ホームバリアント（メニュー画面用）
   if (variant === 'home') {
     return (
-      <div className="h-screen bg-blue-50 flex flex-col">
-        {/* シンプルなヘッダー（ロゴとアカウント情報のみ） */}
+      <div className="h-screen bg-blue-50">
+        {/* 固定ヘッダー */}
         <AppHeader 
           variant="default"
+          tasks={tasks}
+          showNotifications={showNotifications}
           showMobileMenu={showMobileMenu}
           onMobileMenuToggle={showMobileNav ? () => setShowMobileMenu(!showMobileMenu) : undefined}
+          className="fixed top-0 left-0 right-0 z-50"
         />
+        
+        {/* 左サイドバー（デスクトップのみ） */}
+        <LeftSidebar className="hidden lg:block" />
         
         {/* モバイルナビゲーション */}
         {showMobileNav && (
@@ -66,8 +81,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           />
         )}
         
-        {/* メインコンテンツエリア（既存のスタイルを維持） */}
-        <main className={`flex-1 overflow-y-auto ${className}`}>
+        {/* メインコンテンツエリア（ヘッダー + サイドバー分の余白確保） */}
+        <main className={`pt-20 lg:ml-16 overflow-y-auto min-h-screen ${className}`}>
           {children}
         </main>
       </div>
@@ -76,8 +91,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 
   // 通常バリアント（タスク管理画面など用）
   return (
-    <div className="h-screen bg-blue-50 flex flex-col">
-      {/* 拡張されたヘッダー */}
+    <div className="h-screen bg-blue-50">
+      {/* 固定ヘッダー */}
       <AppHeader 
         title={title}
         showBackButton={showBackButton}
@@ -85,9 +100,15 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         backLabel={backLabel}
         rightActions={rightActions}
         variant={headerVariant}
+        tasks={tasks}
+        showNotifications={showNotifications}
         showMobileMenu={showMobileMenu}
         onMobileMenuToggle={showMobileNav ? () => setShowMobileMenu(!showMobileMenu) : undefined}
+        className="fixed top-0 left-0 right-0 z-50"
       />
+      
+      {/* 左サイドバー（デスクトップのみ） */}
+      <LeftSidebar className="hidden lg:block" />
       
       {/* モバイルナビゲーション */}
       {showMobileNav && (
@@ -98,8 +119,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         />
       )}
       
-      {/* メインコンテンツエリア */}
-      <main className={`flex-1 overflow-y-auto ${className}`}>
+      {/* メインコンテンツエリア（ヘッダー + サイドバー分の余白確保） */}
+      <main className={`pt-20 lg:ml-16 overflow-y-auto min-h-screen ${className}`}>
         {children}
       </main>
     </div>

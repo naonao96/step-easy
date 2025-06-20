@@ -9,6 +9,8 @@ import { AppLayout } from '@/components/templates/AppLayout';
 import { Button } from '@/components/atoms/Button';
 import { Input } from '@/components/atoms/Input';
 import { DatePicker } from '@/components/atoms/DatePicker';
+import { DurationInput } from '@/components/atoms/DurationInput';
+import { CategorySelector } from '@/components/atoms/CategorySelector';
 import { FaSave, FaEye, FaEdit, FaTrash, FaArrowLeft } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
 import { TaskTimer } from '@/components/molecules/TaskTimer';
@@ -24,6 +26,7 @@ export default function TaskEditPage() {
   const taskId = searchParams.get('id');
   const isEditParam = searchParams.get('edit') === 'true';
   const initialStartDate = searchParams.get('start_date') || '';
+  const isHabitDefault = searchParams.get('habit') === 'true';
   const isExistingTask = !!taskId;
   
   // 表示モードの決定: 新規作成は編集、既存タスクはプレビュー（edit=trueで編集）
@@ -38,9 +41,11 @@ export default function TaskEditPage() {
   const [content, setContent] = useState('');
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
   const [isHabit, setIsHabit] = useState(false);
+  const [habitFrequency, setHabitFrequency] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [estimatedDuration, setEstimatedDuration] = useState<number | undefined>(undefined);
+  const [category, setCategory] = useState<string>('other');
   const [isSaving, setIsSaving] = useState(false);
 
   // 今日の日付（各種制限チェック用）
@@ -70,21 +75,25 @@ export default function TaskEditPage() {
         setContent(foundTask.description || '');
         setPriority(foundTask.priority);
         setIsHabit(foundTask.is_habit || false);
+        setHabitFrequency(foundTask.habit_frequency || 'daily');
         setStartDate(foundTask.start_date ? new Date(foundTask.start_date) : new Date());
         setDueDate(foundTask.due_date ? new Date(foundTask.due_date) : null);
         setEstimatedDuration(foundTask.estimated_duration);
+        setCategory(foundTask.category || 'other');
       }
     } else {
       // 新規作成モード
       setTitle('');
       setContent('');
       setPriority('medium');
-      setIsHabit(false);
-      setStartDate(initialStartDate ? new Date(initialStartDate) : new Date());
-      setDueDate(null);
-      setEstimatedDuration(undefined);
+      setIsHabit(isHabitDefault);
+      setHabitFrequency('daily');
+              setStartDate(initialStartDate ? new Date(initialStartDate) : new Date());
+        setDueDate(null);
+        setEstimatedDuration(undefined);
+        setCategory('other');
     }
-  }, [isExistingTask, taskId, tasks, initialStartDate, today]);
+  }, [isExistingTask, taskId, tasks, initialStartDate, isHabitDefault, today]);
 
   // 日付バリデーション関数
   const validateDates = (): { isValid: boolean; message: string } => {
@@ -152,10 +161,12 @@ export default function TaskEditPage() {
         description: content,
         priority,
         is_habit: isHabit,
+        habit_frequency: isHabit ? habitFrequency : undefined,
         status: 'todo' as const,
         start_date: startDate ? startDate.toISOString().split('T')[0] : null,
         due_date: dueDate ? dueDate.toISOString().split('T')[0] : null,
-        estimated_duration: estimatedDuration
+        estimated_duration: estimatedDuration,
+        category: category
       };
 
       if (isExistingTask && task) {
@@ -212,7 +223,7 @@ export default function TaskEditPage() {
 
   if (loading) {
     return (
-      <AppLayout>
+      <AppLayout tasks={tasks as any}>
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
           <div className="max-w-7xl mx-auto">
             <div className="bg-white rounded-lg shadow-md p-6">
@@ -261,6 +272,7 @@ export default function TaskEditPage() {
       backUrl="/menu"
       backLabel="メニューに戻る"
       contextActions={previewContextActions}
+      tasks={tasks as any}
     >
         <div className="px-4 sm:px-6 py-4 sm:py-6">
           <div className="max-w-7xl mx-auto">
@@ -409,6 +421,7 @@ export default function TaskEditPage() {
       backUrl={isExistingTask ? `/tasks?id=${taskId}` : "/menu"}
       backLabel={isExistingTask ? "プレビューに戻る" : "メニューに戻る"}
       contextActions={editContextActions}
+      tasks={tasks as any}
     >
       <div className="px-4 sm:px-6 py-4 sm:py-6">
         <div className="max-w-7xl mx-auto">
@@ -530,36 +543,109 @@ export default function TaskEditPage() {
               </select>
             </div>
 
-            {/* 予想所要時間 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                予想所要時間（分）
-              </label>
-              <input
-                type="number"
-                value={estimatedDuration?.toString() || ''}
-                onChange={(e) => setEstimatedDuration(e.target.value ? parseInt(e.target.value) : undefined)}
-                placeholder="例: 30"
-                min="1"
-                max="1440"
-                className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            {/* カテゴリ選択 */}
+            <div className="md:col-span-2">
+              <CategorySelector
+                value={category}
+                onChange={setCategory}
+                label="カテゴリ"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                タスクの完了にかかる予想時間を入力してください
-              </p>
+            </div>
+
+            {/* 予想所要時間 */}
+            <div className="md:col-span-2">
+              <DurationInput
+                value={estimatedDuration}
+                onChange={setEstimatedDuration}
+                label="予想所要時間"
+              />
             </div>
             
             {/* 習慣タスク設定 */}
-            <div className="flex items-center">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={isHabit}
-                  onChange={(e) => setIsHabit(e.target.checked)}
-                  className="form-checkbox h-4 w-4 text-blue-600 mr-2"
-                />
-                <span className="text-sm text-gray-700">習慣タスク</span>
-              </label>
+            <div className="md:col-span-2">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={isHabit}
+                    onChange={(e) => setIsHabit(e.target.checked)}
+                    className="form-checkbox h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0"
+                  />
+                  <div className="flex-1">
+                    <label className="text-sm font-medium text-blue-900 mb-2 block">
+                      🔥 習慣タスクとして設定する
+                    </label>
+                    <div className="text-xs text-blue-700 space-y-1">
+                      <p className="font-medium">継続的に繰り返したいタスクの場合にチェック:</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 ml-2">
+                        <div>✅ 毎日の運動・読書</div>
+                        <div>✅ 週次レビュー・掃除</div>
+                        <div>✅ 月次目標確認</div>
+                        <div>✅ 日記・瞑想</div>
+                      </div>
+                      <p className="mt-2 pt-2 border-t border-blue-300">
+                        <strong>💡 効果:</strong> ストリーク（継続日数）がカウントされ、継続をサポートします
+                      </p>
+                    </div>
+                    <div className="text-xs text-blue-600 mt-2 pt-2 border-t border-blue-300">
+                      <strong>⚠️ 通常タスクの場合:</strong> プレゼン資料作成、メール返信など一回で完了するもの
+                    </div>
+                  </div>
+                </div>
+                
+                {/* 習慣頻度設定（習慣タスクの場合のみ表示） */}
+                {isHabit && (
+                  <div className="mt-3 p-3 bg-white rounded-lg border border-blue-200">
+                    <label className="block text-sm font-medium text-blue-900 mb-2">
+                      📅 実行頻度を選択してください
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                             <label className="flex items-center p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                         <input
+                           type="radio"
+                           name="habitFrequency"
+                           value="daily"
+                           checked={habitFrequency === 'daily'}
+                           onChange={(e) => setHabitFrequency(e.target.value as 'daily' | 'weekly' | 'monthly')}
+                           className="form-radio h-4 w-4 text-blue-600 mr-2"
+                         />
+                         <div>
+                           <div className="text-sm font-medium text-gray-900">毎日</div>
+                           <div className="text-xs text-gray-500">24時間ごと</div>
+                         </div>
+                       </label>
+                       <label className="flex items-center p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                         <input
+                           type="radio"
+                           name="habitFrequency"
+                           value="weekly"
+                           checked={habitFrequency === 'weekly'}
+                           onChange={(e) => setHabitFrequency(e.target.value as 'daily' | 'weekly' | 'monthly')}
+                           className="form-radio h-4 w-4 text-blue-600 mr-2"
+                         />
+                         <div>
+                           <div className="text-sm font-medium text-gray-900">週1回</div>
+                           <div className="text-xs text-gray-500">7日ごと</div>
+                         </div>
+                       </label>
+                       <label className="flex items-center p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                         <input
+                           type="radio"
+                           name="habitFrequency"
+                           value="monthly"
+                           checked={habitFrequency === 'monthly'}
+                           onChange={(e) => setHabitFrequency(e.target.value as 'daily' | 'weekly' | 'monthly')}
+                           className="form-radio h-4 w-4 text-blue-600 mr-2"
+                         />
+                         <div>
+                           <div className="text-sm font-medium text-gray-900">月1回</div>
+                           <div className="text-xs text-gray-500">30日ごと</div>
+                         </div>
+                       </label>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* 完了切り替えボタン（既存タスクのみ） */}

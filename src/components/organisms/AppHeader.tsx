@@ -1,10 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/atoms/Button';
-import { FaArrowLeft, FaBars, FaTimes } from 'react-icons/fa';
+import { NotificationDropdown } from '@/components/molecules/NotificationDropdown';
+import { HelpPanel } from '@/components/molecules/HelpPanel';
+import { FaArrowLeft, FaBars, FaTimes, FaSignOutAlt, FaUser, FaQuestionCircle } from 'react-icons/fa';
+import { Task } from '@/types/task';
 
 interface AppHeaderProps {
   // ページ固有の設定
@@ -15,6 +18,10 @@ interface AppHeaderProps {
   
   // 右側のアクション
   rightActions?: React.ReactNode;
+  
+  // 通知機能
+  tasks?: Task[];
+  showNotifications?: boolean;
   
   // モバイルメニュー制御
   showMobileMenu?: boolean;
@@ -31,6 +38,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   backUrl = '/menu',
   backLabel = '戻る',
   rightActions,
+  tasks = [],
+  showNotifications = true,
   showMobileMenu = false,
   onMobileMenuToggle,
   variant = 'default',
@@ -38,6 +47,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 }) => {
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const [showHelpPanel, setShowHelpPanel] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
 
   const handleSignOut = async () => {
     try {
@@ -51,6 +63,36 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   const handleBack = () => {
     router.push(backUrl);
   };
+
+  // アカウントメニューを閉じる（外側クリック時）
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (accountMenuRef.current && !accountMenuRef.current.contains(event.target as Node)) {
+        setShowAccountMenu(false);
+      }
+    };
+
+    if (showAccountMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showAccountMenu]);
+
+  // ヘルプパネル開く指示をリッスン
+  useEffect(() => {
+    const handleOpenHelp = (event: any) => {
+      setShowHelpPanel(true);
+      // タブの切り替えは実装後に対応
+    };
+
+    window.addEventListener('openHelp', handleOpenHelp);
+    return () => {
+      window.removeEventListener('openHelp', handleOpenHelp);
+    };
+  }, []);
 
   // バリアント別のスタイル
   const getHeaderStyles = () => {
@@ -105,8 +147,22 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           </div>
       </div>
 
-      {/* 右側：デスクトップアクション + ユーザー情報 */}
+      {/* 右側：通知 + デスクトップアクション + ユーザー情報 */}
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* 通知ドロップダウン */}
+        {showNotifications && tasks.length > 0 && (
+          <NotificationDropdown tasks={tasks} />
+        )}
+
+        {/* ヘルプボタン */}
+        <button
+          onClick={() => setShowHelpPanel(true)}
+          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          title="ヘルプ"
+        >
+          {FaQuestionCircle({ className: "w-5 h-5" })}
+        </button>
+
         {/* カスタムアクション（デスクトップのみ） */}
         {rightActions && (
           <div className="hidden md:flex items-center gap-2">
@@ -114,52 +170,97 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           </div>
         )}
 
-        {/* アカウント情報（デスクトップのみ） */}
-        <div className="flex items-center gap-2 hidden lg:flex">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
-            <span className="text-white text-sm font-medium">
-              {user?.isGuest ? 'G' : (user?.email?.[0]?.toUpperCase() || 'U')}
+        {/* アカウントドロップダウン（デスクトップのみ） */}
+        <div className="relative hidden lg:flex" ref={accountMenuRef}>
+          <button
+            onClick={() => setShowAccountMenu(!showAccountMenu)}
+            className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
+              <span className="text-white text-sm font-medium">
+                {user?.isGuest ? 'G' : (user?.email?.[0]?.toUpperCase() || 'U')}
+              </span>
+            </div>
+            <span className="text-sm text-gray-700 font-medium max-w-32 truncate">
+              {user?.isGuest ? 'ゲストユーザー' : (user?.displayName || user?.email?.split('@')[0] || 'ユーザー')}
             </span>
-          </div>
-          <span className="text-sm text-gray-700 font-medium max-w-32 truncate">
-            {user?.isGuest ? 'ゲストユーザー' : (user?.email?.split('@')[0] || 'ユーザー')}
-          </span>
+          </button>
+
+          {/* ドロップダウンメニュー */}
+          {showAccountMenu && (
+            <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+              {user?.isGuest ? (
+                <button
+                  onClick={() => {
+                    setShowAccountMenu(false);
+                    router.push('/login');
+                  }}
+                  className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  {FaUser({ className: "w-4 h-4" })}
+                  ログイン
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setShowAccountMenu(false);
+                    handleSignOut();
+                  }}
+                  className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  {FaSignOutAlt({ className: "w-4 h-4" })}
+                  ログアウト
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ユーザーアバター（モバイル用） */}
-        <div className="lg:hidden w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
+        <button
+          onClick={() => setShowAccountMenu(!showAccountMenu)}
+          className="lg:hidden w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center"
+        >
           <span className="text-white text-sm font-medium">
             {user?.isGuest ? 'G' : (user?.email?.[0]?.toUpperCase() || 'U')}
           </span>
-        </div>
-
-        {/* 設定ボタン（デスクトップのみ） */}
-        <button
-          className="hidden sm:inline-block text-xs sm:text-sm px-2 py-2 sm:px-3 sm:py-1 bg-white border rounded shadow hover:bg-gray-50 transition-colors touch-manipulation"
-          onClick={() => router.push('/settings')}
-        >
-          設定
         </button>
 
-        {/* ログイン/ログアウトボタン（デスクトップのみ） */}
-        <div className="hidden md:block">
-        {user?.isGuest ? (
-          <button
-            className="text-xs sm:text-sm px-2 py-2 sm:px-3 sm:py-1 bg-blue-500 text-white rounded shadow hover:bg-blue-600 transition-colors touch-manipulation"
-            onClick={() => router.push('/login')}
-          >
-            ログイン
-          </button>
-        ) : (
-          <button
-            className="text-xs sm:text-sm px-2 py-2 sm:px-3 sm:py-1 bg-red-500 text-white rounded shadow hover:bg-red-600 transition-colors touch-manipulation"
-            onClick={handleSignOut}
-          >
-              ログアウト
-          </button>
+        {/* モバイル用ドロップダウンメニュー */}
+        {showAccountMenu && (
+          <div className="absolute lg:hidden right-4 top-16 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+            {user?.isGuest ? (
+              <button
+                onClick={() => {
+                  setShowAccountMenu(false);
+                  router.push('/login');
+                }}
+                className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                {FaUser({ className: "w-4 h-4" })}
+                ログイン
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setShowAccountMenu(false);
+                  handleSignOut();
+                }}
+                className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                {FaSignOutAlt({ className: "w-4 h-4" })}
+                ログアウト
+              </button>
+            )}
+          </div>
         )}
-        </div>
       </div>
+
+      {/* ヘルプパネル */}
+      <HelpPanel 
+        isOpen={showHelpPanel} 
+        onClose={() => setShowHelpPanel(false)} 
+      />
     </header>
   );
 }; 

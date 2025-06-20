@@ -8,10 +8,14 @@ import { AppLayout } from '@/components/templates/AppLayout';
 import { Calendar } from '@/components/molecules/Calendar';
 import { Character } from '@/components/molecules/Character';
 import { ActivityStats } from '@/components/molecules/ActivityStats';
-import { DayOfWeekChart } from '@/components/molecules/DayOfWeekChart';
+import { CategoryStats } from '@/components/molecules/CategoryStats';
+import { HeatmapChart } from '@/components/molecules/HeatmapChart';
 import { AlertBox } from '@/components/molecules/AlertBox';
 import { TaskListHome } from '@/components/molecules/TaskListHome';
 import { GuestMigrationModal } from '@/components/molecules/GuestMigrationModal';
+
+import { Button } from '@/components/atoms/Button';
+
 import { getGuestTasks, migrateGuestTasks, clearGuestTasks } from '@/lib/guestMigration';
 import { useCharacterMessage } from '@/hooks/useCharacterMessage';
 import { FaArchive } from 'react-icons/fa';
@@ -23,6 +27,9 @@ export default function MenuPage() {
   const [characterMood, setCharacterMood] = React.useState<'happy' | 'normal' | 'sad'>('normal');
   const [guestTasks, setGuestTasks] = React.useState<Task[]>([]);
   const [migrationError, setMigrationError] = React.useState<string | null>(null);
+  const [greeting, setGreeting] = useState('');
+  const [contentHeight, setContentHeight] = useState(28); // rem単位
+
   
   // 選択された日付を管理（初期値は今日）
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
@@ -61,29 +68,69 @@ export default function MenuPage() {
     selectedDateTime.setHours(0, 0, 0, 0);
     
     return tasks.filter(task => {
-      // 1. 開始日ベースのフィルタリング
-      if (task.start_date) {
+      // 期間タスクの処理（開始日と期限日の両方がある場合）
+      if (task.start_date && task.due_date) {
+        const taskStartDate = new Date(task.start_date);
+        const taskDueDate = new Date(task.due_date);
+        taskStartDate.setHours(0, 0, 0, 0);
+        taskDueDate.setHours(0, 0, 0, 0);
+        
+        // 選択日が期間内にある場合
+        if (selectedDateTime.getTime() >= taskStartDate.getTime() && 
+            selectedDateTime.getTime() <= taskDueDate.getTime()) {
+          // 未完了の場合は表示
+          if (task.status !== 'done') {
+            return true;
+          }
+          // 完了済みの場合は完了日のみ表示
+          if (task.status === 'done' && task.completed_at) {
+            const completedDate = new Date(task.completed_at);
+            completedDate.setHours(0, 0, 0, 0);
+            return completedDate.getTime() === selectedDateTime.getTime();
+          }
+        }
+        return false;
+      }
+      
+      // 開始日のみのタスク
+      if (task.start_date && !task.due_date) {
         const taskStartDate = new Date(task.start_date);
         taskStartDate.setHours(0, 0, 0, 0);
         
-        // 開始日が選択日と一致するタスク
-        if (taskStartDate.getTime() === selectedDateTime.getTime()) {
+        // 開始日以降で未完了の場合は表示
+        if (selectedDateTime.getTime() >= taskStartDate.getTime() && task.status !== 'done') {
           return true;
         }
+        // 完了済みの場合は完了日のみ表示
+        if (task.status === 'done' && task.completed_at) {
+          const completedDate = new Date(task.completed_at);
+          completedDate.setHours(0, 0, 0, 0);
+          return completedDate.getTime() === selectedDateTime.getTime();
+        }
+        return false;
       }
       
-      // 2. 期限日ベースのフィルタリング
-      if (task.due_date) {
+      // 期限日のみのタスク
+      if (!task.start_date && task.due_date) {
         const taskDueDate = new Date(task.due_date);
         taskDueDate.setHours(0, 0, 0, 0);
         
-        // 期限日が選択日と一致するタスク
-        if (taskDueDate.getTime() === selectedDateTime.getTime()) {
+        // 期限日まで（今日以降）で未完了の場合は表示
+        if (selectedDateTime.getTime() <= taskDueDate.getTime() && 
+            selectedDateTime.getTime() >= today.getTime() &&
+            task.status !== 'done') {
           return true;
         }
+        // 完了済みの場合は完了日のみ表示
+        if (task.status === 'done' && task.completed_at) {
+          const completedDate = new Date(task.completed_at);
+          completedDate.setHours(0, 0, 0, 0);
+          return completedDate.getTime() === selectedDateTime.getTime();
+        }
+        return false;
       }
       
-      // 3. 開始日も期限日もないタスクの処理
+      // 開始日も期限日もないタスクの処理
       if (!task.start_date && !task.due_date) {
         // 完了済みタスク：完了日が選択日と一致
         if (task.status === 'done' && task.completed_at) {
@@ -113,30 +160,79 @@ export default function MenuPage() {
     
     // 今日のタスク統計（todayとselectedDateが同じ場合）
     const todayTasks = tasks.filter(task => {
-      // 期限日ベースの今日のタスク
-      if (task.due_date) {
+      // 期間タスクの処理（開始日と期限日の両方がある場合）
+      if (task.start_date && task.due_date) {
+        const taskStartDate = new Date(task.start_date);
         const taskDueDate = new Date(task.due_date);
+        taskStartDate.setHours(0, 0, 0, 0);
         taskDueDate.setHours(0, 0, 0, 0);
-        return taskDueDate.getTime() === today.getTime();
+        
+        // 今日が期間内にある場合
+        if (today.getTime() >= taskStartDate.getTime() && 
+            today.getTime() <= taskDueDate.getTime()) {
+          // 未完了の場合は表示
+          if (task.status !== 'done') {
+            return true;
+          }
+          // 完了済みの場合は完了日が今日の場合のみ表示
+          if (task.status === 'done' && task.completed_at) {
+            const completedDate = new Date(task.completed_at);
+            completedDate.setHours(0, 0, 0, 0);
+            return completedDate.getTime() === today.getTime();
+          }
+        }
+        return false;
       }
       
-      // 開始日ベースの今日のタスク
+      // 開始日のみのタスク
       if (task.start_date && !task.due_date) {
         const taskStartDate = new Date(task.start_date);
         taskStartDate.setHours(0, 0, 0, 0);
-        return taskStartDate.getTime() <= today.getTime() && task.status !== 'done';
+        
+        // 開始日以降で未完了の場合は表示
+        if (today.getTime() >= taskStartDate.getTime() && task.status !== 'done') {
+          return true;
+        }
+        // 完了済みの場合は完了日が今日の場合のみ表示
+        if (task.status === 'done' && task.completed_at) {
+          const completedDate = new Date(task.completed_at);
+          completedDate.setHours(0, 0, 0, 0);
+          return completedDate.getTime() === today.getTime();
+        }
+        return false;
       }
       
-      // 完了済みタスクで今日完了したもの
-      if (task.status === 'done' && task.completed_at) {
-        const completedDate = new Date(task.completed_at);
-        completedDate.setHours(0, 0, 0, 0);
-        return completedDate.getTime() === today.getTime();
+      // 期限日のみのタスク
+      if (!task.start_date && task.due_date) {
+        const taskDueDate = new Date(task.due_date);
+        taskDueDate.setHours(0, 0, 0, 0);
+        
+        // 期限日まで（今日以降）で未完了の場合は表示
+        if (today.getTime() <= taskDueDate.getTime() && task.status !== 'done') {
+          return true;
+        }
+        // 完了済みの場合は完了日が今日の場合のみ表示
+        if (task.status === 'done' && task.completed_at) {
+          const completedDate = new Date(task.completed_at);
+          completedDate.setHours(0, 0, 0, 0);
+          return completedDate.getTime() === today.getTime();
+        }
+        return false;
       }
       
-      // 期限・開始日がないタスクで未完了のもの
-      if (!task.start_date && !task.due_date && task.status !== 'done') {
-        return true;
+      // 開始日も期限日もないタスクの処理
+      if (!task.start_date && !task.due_date) {
+        // 完了済みタスクで今日完了したもの
+        if (task.status === 'done' && task.completed_at) {
+          const completedDate = new Date(task.completed_at);
+          completedDate.setHours(0, 0, 0, 0);
+          return completedDate.getTime() === today.getTime();
+        }
+        
+        // 未完了タスク
+        if (task.status !== 'done') {
+          return true;
+        }
       }
       
       return false;
@@ -238,68 +334,68 @@ export default function MenuPage() {
     setMigrationError(null);
   };
 
+  // 時間帯による挨拶の設定
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      setGreeting('おはようございます');
+    } else if (hour < 18) {
+      setGreeting('こんにちは');
+    } else {
+      setGreeting('こんばんは');
+    }
+  }, []);
+
   return (
-    <AppLayout variant="home">
+    <AppLayout variant="home" tasks={tasks as any} showNotifications={true}>
       <div className="px-4 sm:px-6 py-4 sm:py-6 max-w-7xl mx-auto w-full">
-        {/* 上段：タスク & カレンダー */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <TaskListHome
-            tasks={selectedDateTasks}
-            selectedDate={selectedDate}
-            onAddTask={() => router.push('/tasks')}
-            onCompleteTask={handleCompleteTask}
-            onViewAll={() => router.push('/tasks')}
-          />
-          <Calendar 
-            tasks={tasks}
-            selectedDate={selectedDate}
-            onDateSelect={(date) => {
-              const newDate = new Date(date);
-              newDate.setHours(0, 0, 0, 0);
-              setSelectedDate(newDate);
-            }}
-          />
-        </div>
-
-        {/* 中段：キャラクター吹き出し */}
-        <div className="mb-6">
-          <div className="block md:hidden">
-            <Character mood={characterMood} message={characterMessage} layout="vertical" />
-          </div>
-          <div className="hidden md:block">
-            <Character mood={characterMood} message={characterMessage} layout="horizontal" />
-          </div>
-        </div>
-
-        {/* 下段：統計・傾向・アラート */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <ActivityStats tasks={tasks} selectedDateTasks={selectedDateTasks} selectedDate={selectedDate} />
-          <DayOfWeekChart tasks={tasks} />
-          <AlertBox tasks={tasks} />
-        </div>
-
-        {/* アーカイブアクセス（ログインユーザーのみ） */}
-        {!isGuest && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                  完了タスクアーカイブ
-                </h3>
-                <p className="text-sm text-gray-600">
-                  完了したタスクの履歴を確認できます
-                </p>
-              </div>
-              <button
-                onClick={() => router.push('/archive')}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                {FaArchive({ className: "w-4 h-4" })}
-                <span>履歴を見る</span>
-              </button>
+        {/* メインコンテンツエリア（サイドバーは左固定で分離） */}
+        <div>
+          <div>
+            {/* 上段：タスク & カレンダー */}
+            <div 
+              className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8"
+              style={{ minHeight: `${contentHeight}rem` }}
+            >
+              <TaskListHome
+                tasks={selectedDateTasks as any}
+                selectedDate={selectedDate}
+                onAddTask={() => router.push('/tasks')}
+                onCompleteTask={handleCompleteTask}
+                height={contentHeight}
+              />
+              <Calendar 
+                tasks={tasks}
+                selectedDate={selectedDate}
+                onDateSelect={(date) => {
+                  const newDate = new Date(date);
+                  newDate.setHours(0, 0, 0, 0);
+                  setSelectedDate(newDate);
+                }}
+                onHeightChange={setContentHeight}
+              />
             </div>
+
+            {/* 中段：キャラクター吹き出し */}
+            <div className="mb-6">
+              <div className="block md:hidden">
+                <Character mood={characterMood} message={characterMessage} layout="vertical" />
+              </div>
+              <div className="hidden md:block">
+                <Character mood={characterMood} message={characterMessage} layout="horizontal" />
+              </div>
+            </div>
+
+            {/* 下段：統計・傾向（アラートはサイドバーに移動） */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 md:grid-cols-2 gap-4 mb-6">
+              <ActivityStats tasks={tasks} selectedDateTasks={selectedDateTasks} selectedDate={selectedDate} />
+              <CategoryStats tasks={tasks} />
+              <HeatmapChart tasks={tasks} />
+            </div>
+
+
           </div>
-        )}
+        </div>
       </div>
 
       {/* ゲストタスク移行モーダル */}

@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { FaPlay, FaPause, FaStop, FaClock } from 'react-icons/fa';
 import { useExecutionStore } from '@/stores/executionStore';
 import { Task } from '@/types/task';
+import { formatDurationShort } from '@/lib/timeUtils';
 
 interface TaskTimerProps {
   task: Task;
@@ -67,7 +68,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({ task, onExecutionComplete 
       {/* 予想時間表示 */}
       {task.estimated_duration && (
         <div className="text-sm text-gray-500">
-          / {task.estimated_duration}分
+          目標: {formatDurationShort(task.estimated_duration)}
         </div>
       )}
 
