@@ -73,7 +73,7 @@ export const TaskCardMobile: React.FC<TaskCardMobileProps> = ({
             )}
           </div>
           {onTap && (
-            <FaChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0 ml-3" />
+            FaChevronRight ({className:"w-4 h-4 text-gray-400 flex-shrink-0 ml-3"})
           )}
         </div>
 
