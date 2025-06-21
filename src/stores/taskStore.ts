@@ -54,11 +54,11 @@ interface TaskStore {
 const GUEST_TASK_LIMIT = 3;
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
-  tasks: [],
-  loading: false,
-  error: null,
+    tasks: [],
+    loading: false,
+    error: null,
 
-  fetchTasks: async () => {
+    fetchTasks: async () => {
     set({ loading: true, error: null });
     try {
       const supabase = createClientComponentClient();

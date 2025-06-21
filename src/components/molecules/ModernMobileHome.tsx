@@ -5,6 +5,8 @@ import { CategoryBadge } from '@/components/atoms/CategoryBadge';
 import { Character } from './Character';
 import { StreakBadge } from '@/components/atoms/StreakBadge';
 import { useAuth } from '@/contexts/AuthContext';
+import { MobileTaskTimer } from './MobileTaskTimer';
+import { MobileTaskHistory } from './MobileTaskHistory';
 import ReactMarkdown from 'react-markdown';
 import { 
   FaPlus, 
@@ -19,7 +21,8 @@ import {
   FaChevronLeft,
   FaHome,
   FaTimes,
-  FaTrash
+  FaTrash,
+  FaChartBar
 } from 'react-icons/fa';
 
 interface ModernMobileHomeProps {
@@ -40,6 +43,7 @@ interface ModernMobileHomeProps {
   onDeleteTask: (id: string) => void;
   onDateSelect: (date: Date) => void;
   onTabChange?: (tab: 'tasks' | 'habits') => void;
+  onTaskUpdate?: () => Promise<void>; // データ更新関数を追加
 }
 
 type TabType = 'tasks' | 'habits';
@@ -54,12 +58,15 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   onCompleteTask,
   onDeleteTask,
   onDateSelect,
-  onTabChange
+  onTabChange,
+  onTaskUpdate
 }) => {
   const router = useRouter();
   const { isGuest, isPremium, planType, canAddTaskOnDate } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('tasks');
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+
+
 
   // 今日かどうかの判定
   const today = new Date();
@@ -160,17 +167,11 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
     setExpandedTaskId(expandedTaskId === taskId ? null : taskId);
   };
 
-  // タスク完了切り替え（展開表示用）
-  const handleCompleteTaskFromExpanded = async (taskId: string) => {
-    await onCompleteTask(taskId);
-  };
 
-  // タスク削除（展開表示用）
-  const handleDeleteTaskFromExpanded = async (taskId: string) => {
-    if (window.confirm('このタスクを削除してもよろしいですか？')) {
-      await onDeleteTask(taskId);
-      setExpandedTaskId(null); // 展開を閉じる
-    }
+
+  // 進捗ページに移動
+  const handleNavigateToProgress = () => {
+    router.push('/progress');
   };
 
   return (
@@ -427,15 +428,21 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
                     )}
 
                     {/* 日程情報 */}
-                    {(task.start_date || task.due_date) && (
+                    {(task.start_date || (task.due_date && planType !== 'guest')) && (
                       <div>
-                        <h4 className="text-xs font-medium text-gray-700 mb-1">日程</h4>
-                        <div className="space-y-1 text-xs text-gray-600">
+                        <h4 className="text-xs font-medium text-gray-700 mb-1">📅 日程情報</h4>
+                        <div className="bg-purple-50 rounded p-2 space-y-1">
                           {task.start_date && (
-                            <div>開始: {new Date(task.start_date).toLocaleDateString('ja-JP')}</div>
+                            <div className="flex items-center gap-2 text-xs text-purple-700">
+                              <span>🚀</span>
+                              <span>開始日: {new Date(task.start_date).toLocaleDateString('ja-JP')}</span>
+                            </div>
                           )}
-                          {task.due_date && (
-                            <div>期限: {new Date(task.due_date).toLocaleDateString('ja-JP')}</div>
+                          {task.due_date && planType !== 'guest' && (
+                            <div className="flex items-center gap-2 text-xs text-purple-700">
+                              <span>🎯</span>
+                              <span>期限日: {new Date(task.due_date).toLocaleDateString('ja-JP')}</span>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -457,34 +464,31 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
                       </div>
                     )}
 
-                    {/* アクションボタン */}
-                    <div className="flex gap-2 pt-2">
-                      <button
-                        onClick={() => handleCompleteTaskFromExpanded(task.id)}
-                        className={`flex-1 px-3 py-2 text-xs font-medium rounded transition-colors ${
-                          task.status === 'done'
-                            ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                            : 'bg-green-100 text-green-700 hover:bg-green-200'
-                        }`}
-                      >
-                        {task.status === 'done' ? '未完了' : '完了'}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setExpandedTaskId(null);
-                          router.push(`/tasks?id=${task.id}&edit=true`);
+                    {/* タイマー・実行情報 */}
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-medium text-gray-700">タイマー・実行情報</h4>
+                      <MobileTaskTimer 
+                        task={task as any} 
+                        onExecutionComplete={async () => {
+                          // データのみを再取得（ページリロードを避ける）
+                          try {
+                            console.log('タスク実行完了 - データ更新中...');
+                            
+                            // 親コンポーネントのデータ更新を呼び出す
+                            if (onTaskUpdate) {
+                              await onTaskUpdate();
+                            }
+                            
+                            console.log('データ更新完了');
+                          } catch (error) {
+                            console.error('データ更新エラー:', error);
+                          }
                         }}
-                        className="flex-1 px-3 py-2 text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 rounded transition-colors"
-                      >
-                        編集
-                      </button>
-                      <button
-                        onClick={() => handleDeleteTaskFromExpanded(task.id)}
-                        className="flex-1 px-3 py-2 text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 rounded transition-colors"
-                      >
-                        削除
-                      </button>
+                      />
+                      <MobileTaskHistory task={task as any} />
                     </div>
+
+
                   </div>
                 </div>
               )}
@@ -569,11 +573,31 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
                             })()}
                           </p>
                         </div>
+                        
+                        {/* 詳細分析ボタン */}
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                                                    <button
+                            onClick={() => handleNavigateToProgress()}
+                            className="w-full bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg p-3 transition-colors"
+                          >
+                            <div className="flex items-center justify-between">
+                               <div className="flex items-center gap-2">
+                                 {React.createElement(FaChartBar as React.ComponentType<any>, { className: "w-4 h-4 text-blue-600" })}
+                                 <span className="text-sm font-medium text-blue-900">詳細統計</span>
+                               </div>
+                               <div className="text-xs text-blue-600">
+                                 進捗ページで確認
+                               </div>
+                             </div>
+                          </button>
+                        </div>
                       </div>
             </div>
           </div>
         </div>
       </div>
+
+      
 
 
     </div>

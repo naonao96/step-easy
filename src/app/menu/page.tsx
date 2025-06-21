@@ -265,7 +265,7 @@ export default function MenuPage() {
 
   // AIキャラクターメッセージ
   const { message: characterMessage, isLoading: isMessageLoading } = useCharacterMessage({
-    userType: planType,
+    userType: user?.isGuest ? 'guest' : planType,
     userName: user?.displayName,
     tasks,
     statistics,
@@ -377,6 +377,7 @@ export default function MenuPage() {
           onDeleteTask={handleDeleteTask}
           onDateSelect={setSelectedDate}
           onTabChange={setCurrentMobileTab}
+          onTaskUpdate={fetchTasks} // データ更新関数を追加
         />
       </div>
 

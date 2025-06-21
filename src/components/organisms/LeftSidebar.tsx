@@ -2,7 +2,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
 import { RunningTaskWidget } from '@/components/molecules/RunningTaskWidget'
+import { ExecutionHistoryWidget } from '@/components/molecules/ExecutionHistoryWidget'
 import { 
   FaClock, 
   FaPlus, 
@@ -20,6 +22,7 @@ interface LeftSidebarProps {
 export function LeftSidebar({ className = '' }: LeftSidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const router = useRouter()
+  const { isGuest, planType } = useAuth()
   const { activeExecution, isRunning } = useExecutionStore()
   const { tasks } = useTaskStore()
   
@@ -40,29 +43,41 @@ export function LeftSidebar({ className = '' }: LeftSidebarProps) {
     }
   }
 
-  // アクションアイテムの定義（統一されたアイコン）
-  const actionItems = [
-    {
-      icon: () => FaPlus({ className: 'w-6 h-6 shrink-0 text-green-500 hover:text-green-600' }),
-      label: '新しいタスク',
-      href: '/tasks'
-    },
-    {
-      icon: () => FaChartBar({ className: 'w-6 h-6 shrink-0 text-blue-500 hover:text-blue-600' }),
-      label: '進捗確認',
-      href: '/progress'
-    },
-    {
-      icon: () => FaArchive({ className: 'w-6 h-6 shrink-0 text-purple-500 hover:text-purple-600' }),
-      label: 'アーカイブ',
-      href: '/archive'
-    },
-    {
-      icon: () => FaCog({ className: 'w-6 h-6 shrink-0 text-gray-500 hover:text-gray-600' }),
-      label: '設定',
-      href: '/settings'
+  // プラン別でアクションアイテムをフィルタリング
+  const getAvailableActionItems = () => {
+    const baseItems = [
+      {
+        icon: () => FaPlus({ className: 'w-6 h-6 shrink-0 text-green-500 hover:text-green-600' }),
+        label: '新しいタスク',
+        href: '/tasks'
+      },
+      {
+        icon: () => FaChartBar({ className: 'w-6 h-6 shrink-0 text-blue-500 hover:text-blue-600' }),
+        label: '進捗確認',
+        href: '/progress'
+      }
+    ];
+
+    // ゲストユーザー以外はアーカイブと設定を追加
+    if (!isGuest) {
+      baseItems.push(
+        {
+          icon: () => FaArchive({ className: 'w-6 h-6 shrink-0 text-purple-500 hover:text-purple-600' }),
+          label: 'アーカイブ',
+          href: '/archive'
+        },
+        {
+          icon: () => FaCog({ className: 'w-6 h-6 shrink-0 text-gray-500 hover:text-gray-600' }),
+          label: '設定',
+          href: '/settings'
+        }
+      );
     }
-  ]
+
+    return baseItems;
+  };
+
+  const actionItems = getAvailableActionItems();
 
   const handleActionClick = (href: string) => {
     router.push(href)
@@ -102,6 +117,13 @@ export function LeftSidebar({ className = '' }: LeftSidebarProps) {
           </div>
         )}
 
+        {/* 展開時：実行履歴（直近5件） */}
+        {isExpanded && !isGuest && (
+          <div className="mb-6">
+            <ExecutionHistoryWidget />
+          </div>
+        )}
+
         {/* アクションアイテム */}
         <div className="flex flex-col space-y-4">
           {actionItems.map((item, index) => (
@@ -122,6 +144,18 @@ export function LeftSidebar({ className = '' }: LeftSidebarProps) {
             </button>
           ))}
         </div>
+
+        {/* ゲストユーザー向けメッセージ（展開時のみ表示） */}
+        {isExpanded && isGuest && (
+          <div className="mt-auto pt-4 border-t border-gray-100">
+            <div className="bg-blue-50 rounded-lg p-3">
+              <p className="text-xs text-blue-700 text-center">
+                📚 アーカイブと設定は<br/>
+                ログイン後に利用可能
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -11,7 +11,8 @@ import {
   FaSignInAlt,
   FaSignOutAlt,
   FaPlus,
-  FaTimes
+  FaTimes,
+  FaArchive
 } from 'react-icons/fa';
 
 interface MobileNavigationProps {
@@ -33,28 +34,45 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
 }) => {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isGuest } = useAuth();
 
-  const navigationItems = [
-    { 
-      label: 'メニュー', 
-      href: '/menu', 
-      icon: FaHome,
-      description: 'ホーム画面'
-    },
-    { 
-      label: 'タスク', 
-      href: '/tasks', 
-      icon: FaTasks,
-      description: 'タスク管理'
-    },
-    { 
-      label: '進捗', 
-      href: '/progress', 
-      icon: FaChartBar,
-      description: '統計とレポート'
-    },
-  ];
+  // プラン別でナビゲーションアイテムをフィルタリング
+  const getAvailableNavigationItems = () => {
+    const baseItems = [
+      { 
+        label: 'メニュー', 
+        href: '/menu', 
+        icon: FaHome,
+        description: 'ホーム画面'
+      },
+      { 
+        label: 'タスク', 
+        href: '/tasks', 
+        icon: FaTasks,
+        description: 'タスク管理'
+      },
+      { 
+        label: '進捗', 
+        href: '/progress', 
+        icon: FaChartBar,
+        description: '統計とレポート'
+      }
+    ];
+
+    // ゲストユーザー以外はアーカイブを追加
+    if (!isGuest) {
+      baseItems.push({
+        label: 'アーカイブ', 
+        href: '/archive', 
+        icon: FaArchive,
+        description: '完了タスクの履歴'
+      });
+    }
+
+    return baseItems;
+  };
+
+  const navigationItems = getAvailableNavigationItems();
 
   const handleNavigate = (href: string) => {
     router.push(href);
@@ -211,16 +229,29 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
 
           {/* フッター */}
           <div className="border-t border-gray-200 p-4 space-y-2">
-            <button
-              onClick={() => {
-                router.push('/settings');
-                onClose();
-              }}
-              className="w-full flex items-center gap-3 px-2 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
-            >
-              {FaCog({ className: "w-5 h-5 text-gray-400" })}
-              <span className="text-gray-700">設定</span>
-            </button>
+            {/* 設定（ゲストユーザーには制限メッセージ） */}
+            {isGuest ? (
+              <div className="px-2 py-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  {FaCog({ className: "w-5 h-5 text-gray-400" })}
+                  <div>
+                    <span className="text-gray-500 text-sm">設定</span>
+                    <p className="text-xs text-gray-400">ログイン後に利用可能</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  router.push('/settings');
+                  onClose();
+                }}
+                className="w-full flex items-center gap-3 px-2 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
+              >
+                {FaCog({ className: "w-5 h-5 text-gray-400" })}
+                <span className="text-gray-700">設定</span>
+              </button>
+            )}
             
             {user?.isGuest ? (
               <button

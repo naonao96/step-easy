@@ -2,13 +2,15 @@
 
 import React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import { IconType } from 'react-icons/lib';
 import { 
   FaHome, 
   FaTasks, 
   FaChartBar, 
   FaCog,
-  FaPlus
+  FaPlus,
+  FaArchive
 } from 'react-icons/fa';
 
 interface BottomNavItem {
@@ -31,29 +33,48 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
 }) => {
   const router = useRouter();
   const pathname = usePathname();
+  const { isGuest, canAddTaskOnDate } = useAuth();
 
-  const navItems: BottomNavItem[] = [
-    {
-      label: 'ホーム',
-      href: '/menu',
-      icon: FaHome,
-    },
-    {
-      label: 'タスク',
-      href: '/tasks',
-      icon: FaTasks,
-    },
-    {
-      label: '進捗',
-      href: '/progress',
-      icon: FaChartBar,
-    },
-    {
-      label: '設定',
-      href: '/settings',
-      icon: FaCog,
-    },
-  ];
+  // プラン別でナビゲーションアイテムをフィルタリング
+  const getAvailableNavItems = (): BottomNavItem[] => {
+    const baseItems: BottomNavItem[] = [
+      {
+        label: 'ホーム',
+        href: '/menu',
+        icon: FaHome,
+      },
+      {
+        label: 'タスク',
+        href: '/tasks',
+        icon: FaTasks,
+      }
+    ];
+
+    // ゲストユーザー以外は進捗、アーカイブ、設定を追加
+    if (!isGuest) {
+      baseItems.push(
+        {
+          label: '進捗',
+          href: '/progress',
+          icon: FaChartBar,
+        },
+        {
+          label: 'アーカイブ',
+          href: '/archive',
+          icon: FaArchive,
+        },
+        {
+          label: '設定',
+          href: '/settings',
+          icon: FaCog,
+        }
+      );
+    }
+
+    return baseItems;
+  };
+
+  const navItems = getAvailableNavItems();
 
   const handleNavigate = (href: string) => {
     router.push(href);
@@ -63,6 +84,12 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
     if (onAddClick) {
       onAddClick();
     } else {
+      // タスク追加制限をチェック
+      const { canAdd, message } = canAddTaskOnDate(new Date());
+      if (!canAdd) {
+        alert(message);
+        return;
+      }
       router.push('/tasks');
     }
   };
@@ -113,6 +140,7 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
         <button
           onClick={handleAddClick}
           className="md:hidden fixed bottom-20 right-4 z-50 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"
+          title="新しいタスクを追加"
         >
           {React.createElement(FaPlus as React.ComponentType<any>, { className: "w-6 h-6" })}
         </button>

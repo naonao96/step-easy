@@ -6,6 +6,11 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey);
 
+// クライアント作成関数をエクスポート
+export function createClient() {
+  return createSupabaseClient(supabaseUrl, supabaseAnonKey);
+}
+
 export type User = {
   id: string;
   email: string;

@@ -25,6 +25,30 @@ const MESSAGE_LIMITS = {
   }
 };
 
+// シンプルなメモリキャッシュ（本番環境ではRedisなどを推奨）
+const messageCache = new Map<string, { message: string; timestamp: number }>();
+const CACHE_DURATION = 10 * 60 * 1000; // 10分
+
+// レート制限エラーの判定
+function isRateLimitError(error: any): boolean {
+  const errorMessage = error?.message?.toLowerCase() || '';
+  const errorString = error?.toString?.()?.toLowerCase() || '';
+  
+  return (
+    errorMessage.includes('rate limit') ||
+    errorMessage.includes('quota') ||
+    errorMessage.includes('429') ||
+    errorString.includes('rate limit') ||
+    errorString.includes('quota') ||
+    error?.status === 429
+  );
+}
+
+// 指数バックオフでの待機
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 // スマートトリム関数：自然な切れ目で文章をカット
 function smartTrim(text: string, targetLength: number): string {
   if (text.length <= targetLength) return text;
@@ -55,13 +79,13 @@ function smartTrim(text: string, targetLength: number): string {
   return text.substring(0, targetLength - 3) + '...';
 }
 
-// リトライ付きメッセージ生成
+// レート制限対応リトライ付きメッセージ生成
 async function generateWithRetry(
   model: any, 
   prompt: string, 
   targetLength: number, 
   maxLength: number, 
-  maxRetries: number = 2
+  maxRetries: number = 3
 ): Promise<string> {
   let attempt = 0;
   let bestMessage = '';
@@ -72,8 +96,12 @@ async function generateWithRetry(
         ? prompt 
         : prompt + `\n\n重要：前回のメッセージが長すぎました。必ず${targetLength}文字以内で、より簡潔にまとめてください。`;
       
+      console.log(`Gemini API attempt ${attempt + 1}/${maxRetries + 1}`);
+      
       const result = await model.generateContent(currentPrompt);
       const message = result.response.text().trim();
+      
+      console.log(`Generated message length: ${message.length}`);
       
       // 許容範囲内なら成功
       if (message.length <= maxLength) {
@@ -86,8 +114,21 @@ async function generateWithRetry(
       
       attempt++;
     } catch (error) {
-      console.error(`Retry attempt ${attempt} failed:`, error);
+      console.error(`Gemini API attempt ${attempt + 1} failed:`, error);
+      
+      // レート制限エラーの場合は指数バックオフで待機
+      if (isRateLimitError(error)) {
+        const waitTime = Math.pow(2, attempt) * 1000 + Math.random() * 1000; // 1-2秒, 2-4秒, 4-8秒...
+        console.log(`Rate limit detected, waiting ${Math.round(waitTime)}ms before retry`);
+        await delay(waitTime);
+      }
+      
       attempt++;
+      
+      // 最後の試行でもエラーの場合はエラーを投げる
+      if (attempt > maxRetries) {
+        throw error;
+      }
     }
   }
   
@@ -158,14 +199,27 @@ export async function POST(req: NextRequest) {
 
 async function generateFreeMessage(userName?: string) {
   try {
+    // キャッシュキーの生成
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const cacheKey = `free_${userName || 'anonymous'}_${today}`;
+    
+    // キャッシュチェック
+    const cached = messageCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      console.log('Returning cached message for free user');
+      return NextResponse.json({ message: cached.message });
+    }
+
     if (!process.env.GEMINI_API_KEY) {
       throw new Error('Gemini API key not configured');
     }
 
+    console.log('Generating new message for free user:', userName || 'anonymous');
+
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    const today = new Date().toLocaleDateString('ja-JP', {
+    const todayFormatted = new Date().toLocaleDateString('ja-JP', {
       weekday: 'long',
       month: 'long', 
       day: 'numeric'
@@ -175,7 +229,7 @@ async function generateFreeMessage(userName?: string) {
     
     const prompt = `
 あなたは優しいタスク管理アプリのキャラクターです。
-今日は${today}です。
+今日は${todayFormatted}です。
 ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
 
 【重要】以下の条件でメッセージを生成してください：
@@ -189,7 +243,7 @@ ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
 例：「${userGreeting}今日は晴れて気持ちの良い一日ですね！新しいタスクにチャレンジするのにぴったりです。一歩ずつゆっくりと進んでいきましょう。」
 `;
 
-    // 新システム：リトライ付き生成
+    // レート制限対応リトライ付き生成
     const finalMessage = await generateWithRetry(
       model, 
       prompt, 
@@ -200,27 +254,64 @@ ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
     // 最終安全チェック
     const truncatedMessage = finalMessage || 'メッセージの生成に失敗しました。';
 
+    // キャッシュに保存
+    messageCache.set(cacheKey, {
+      message: truncatedMessage,
+      timestamp: Date.now()
+    });
+
+    console.log('Successfully generated and cached free message');
     return NextResponse.json({ message: truncatedMessage });
   } catch (error) {
-    console.error('Gemini API error:', error);
-    // フォールバック
-    const fallbackMessage = userName 
-      ? `${userName}さん、今日も一緒に頑張りましょう！新しいタスクを作成してみませんか？`
-      : '今日も一緒に頑張りましょう！新しいタスクを作成してみませんか？';
+    console.error('Gemini API error (Free):', error);
+    console.error('Error type:', error?.constructor?.name);
+    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Gemini API key configured:', !!process.env.GEMINI_API_KEY);
+    
+    // エラータイプに応じたフォールバック
+    let fallbackMessage;
+    if (isRateLimitError(error)) {
+      fallbackMessage = userName 
+        ? `${userName}さん、現在メッセージ生成が混雑しています。少し時間をおいてから再度お試しください。`
+        : '現在メッセージ生成が混雑しています。少し時間をおいてから再度お試しください。';
+    } else {
+      fallbackMessage = userName 
+        ? `${userName}さん、今日も一緒に頑張りましょう！新しいタスクを作成してみませんか？`
+        : '今日も一緒に頑張りましょう！新しいタスクを作成してみませんか？';
+    }
+    
     return NextResponse.json({ message: fallbackMessage });
   }
 }
 
 async function generatePremiumMessage(userName?: string, tasks?: any[], statistics?: any) {
   try {
+    // キャッシュキーの生成（統計情報も含める）
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const statsHash = statistics ? 
+      `${statistics.selectedDatePercentage}_${statistics.todayPercentage}_${statistics.overallPercentage}` : 
+      'nostats';
+    const cacheKey = `premium_${userName || 'anonymous'}_${today}_${statsHash}`;
+    
+    // キャッシュチェック（プレミアムは5分キャッシュで頻度高め）
+    const cached = messageCache.get(cacheKey);
+    const premiumCacheDuration = 5 * 60 * 1000; // 5分
+    if (cached && Date.now() - cached.timestamp < premiumCacheDuration) {
+      console.log('Returning cached message for premium user');
+      return NextResponse.json({ message: cached.message });
+    }
+
     if (!process.env.GEMINI_API_KEY) {
       throw new Error('Gemini API key not configured');
     }
 
+    console.log('Generating new message for premium user:', userName || 'anonymous');
+    console.log('Statistics:', statistics);
+
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    const today = new Date().toLocaleDateString('ja-JP', {
+    const todayFormatted = new Date().toLocaleDateString('ja-JP', {
       weekday: 'long',
       month: 'long', 
       day: 'numeric'
@@ -259,7 +350,7 @@ async function generatePremiumMessage(userName?: string, tasks?: any[], statisti
     
     const prompt = `
 あなたは優しく寄り添うタスク管理アプリのキャラクターです。
-今日は${today}です。
+今日は${todayFormatted}です。
 ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
 
 ユーザーの状況：
@@ -296,7 +387,7 @@ ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
 - 高ストレス時: 「${userGreeting}期限切れタスクでプレッシャーを感じているかもしれませんね。まずは重要なタスクから取り組みましょう。」
 `;
 
-    // 新システム：リトライ付き生成
+    // レート制限対応リトライ付き生成
     const finalMessage = await generateWithRetry(
       model, 
       prompt, 
@@ -307,16 +398,32 @@ ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
     // 最終安全チェック
     const truncatedMessage = finalMessage || 'メッセージの生成に失敗しました。';
 
+    // キャッシュに保存
+    messageCache.set(cacheKey, {
+      message: truncatedMessage,
+      timestamp: Date.now()
+    });
+
+    console.log('Successfully generated and cached premium message');
     return NextResponse.json({ message: truncatedMessage });
   } catch (error) {
     console.error('Gemini API error (Premium):', error);
+    console.error('Error type:', error?.constructor?.name);
+    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
     console.error('Gemini API key configured:', !!process.env.GEMINI_API_KEY);
-    console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
     
-    // フォールバック
-    const fallbackMessage = userName 
-      ? `${userName}さん、あなたのペースで大丈夫です。プレミアムメンバーとして、きっと目標を達成できますよ！`
-      : 'あなたのペースで大丈夫です。プレミアムメンバーとして、きっと目標を達成できますよ！';
+    // エラータイプに応じたフォールバック
+    let fallbackMessage;
+    if (isRateLimitError(error)) {
+      fallbackMessage = userName 
+        ? `${userName}さん、現在メッセージ生成が混雑しています。プレミアムメンバーとして優先的に処理いたしますので、少しお待ちください。`
+        : '現在メッセージ生成が混雑しています。プレミアムメンバーとして優先的に処理いたしますので、少しお待ちください。';
+    } else {
+      fallbackMessage = userName 
+        ? `${userName}さん、あなたのペースで大丈夫です。プレミアムメンバーとして、きっと目標を達成できますよ！`
+        : 'あなたのペースで大丈夫です。プレミアムメンバーとして、きっと目標を達成できますよ！';
+    }
+    
     return NextResponse.json({ message: fallbackMessage });
   }
 } 

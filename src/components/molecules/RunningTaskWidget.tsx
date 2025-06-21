@@ -101,10 +101,10 @@ export const RunningTaskWidget: React.FC = () => {
           <button
             onClick={handlePause}
             className="flex items-center gap-2 px-3 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 font-medium text-sm transition-colors"
-            title="一時停止"
+            title="休憩"
           >
             {FaPause({ className: "w-3 h-3" })}
-            一時停止
+            休憩
           </button>
         ) : (
           <button
@@ -120,10 +120,10 @@ export const RunningTaskWidget: React.FC = () => {
         <button
           onClick={handleStop}
           className="flex items-center gap-2 px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 font-medium text-sm transition-colors"
-          title="停止・記録"
+          title={runningTask.is_habit ? "今日分完了" : "完了して記録"}
         >
           {FaStop({ className: "w-3 h-3" })}
-          停止
+          {runningTask.is_habit ? "今日分完了" : "完了して記録"}
         </button>
 
         <button
