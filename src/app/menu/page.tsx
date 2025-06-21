@@ -13,6 +13,10 @@ import { HeatmapChart } from '@/components/molecules/HeatmapChart';
 import { AlertBox } from '@/components/molecules/AlertBox';
 import { TaskListHome } from '@/components/molecules/TaskListHome';
 import { GuestMigrationModal } from '@/components/molecules/GuestMigrationModal';
+import { MobileHomeHeader } from '@/components/molecules/MobileHomeHeader';
+import { MobileHomeContent } from '@/components/molecules/MobileHomeContent';
+import { MobileCollapsibleFooter } from '@/components/molecules/MobileCollapsibleFooter';
+import { ModernMobileHome } from '@/components/molecules/ModernMobileHome';
 
 import { Button } from '@/components/atoms/Button';
 
@@ -29,6 +33,7 @@ export default function MenuPage() {
   const [migrationError, setMigrationError] = React.useState<string | null>(null);
   const [greeting, setGreeting] = useState('');
   const [contentHeight, setContentHeight] = useState(28); // rem単位
+  const [currentMobileTab, setCurrentMobileTab] = useState<'tasks' | 'habits'>('tasks');
 
   
   // 選択された日付を管理（初期値は今日）
@@ -346,9 +351,37 @@ export default function MenuPage() {
     }
   }, []);
 
+  // FABクリック時の処理（現在のタブに応じてタスク追加画面に遷移）
+  const handleFABClick = () => {
+    if (currentMobileTab === 'habits') {
+      // 習慣追加画面に遷移（習慣モードでタスクページを開く）
+      router.push('/tasks?type=habit');
+    } else {
+      // 通常のタスク追加画面に遷移
+      router.push('/tasks?type=task');
+    }
+  };
+
   return (
-    <AppLayout variant="home" tasks={tasks as any} showNotifications={true}>
-      <div className="px-4 sm:px-6 py-4 sm:py-6 max-w-7xl mx-auto w-full">
+    <AppLayout variant="home" tasks={tasks as any} showNotifications={true} onFABClick={handleFABClick}>
+      {/* モダンなモバイル専用レイアウト */}
+      <div className="md:hidden">
+        <ModernMobileHome
+          selectedDate={selectedDate}
+          selectedDateTasks={selectedDateTasks}
+          tasks={tasks}
+          statistics={statistics}
+          characterMood={characterMood}
+          characterMessage={characterMessage}
+          onCompleteTask={handleCompleteTask}
+          onDeleteTask={handleDeleteTask}
+          onDateSelect={setSelectedDate}
+          onTabChange={setCurrentMobileTab}
+        />
+      </div>
+
+      {/* デスクトップ版レイアウト（変更なし） */}
+      <div className="hidden md:block px-4 sm:px-6 py-4 sm:py-6 max-w-7xl mx-auto w-full">
         {/* メインコンテンツエリア（サイドバーは左固定で分離） */}
         <div>
           <div>
@@ -378,9 +411,6 @@ export default function MenuPage() {
 
             {/* 中段：キャラクター吹き出し */}
             <div className="mb-6">
-              <div className="block md:hidden">
-                <Character mood={characterMood} message={characterMessage} layout="vertical" />
-              </div>
               <div className="hidden md:block">
                 <Character mood={characterMood} message={characterMessage} layout="horizontal" />
               </div>
@@ -392,8 +422,6 @@ export default function MenuPage() {
               <CategoryStats tasks={tasks} />
               <HeatmapChart tasks={tasks} />
             </div>
-
-
           </div>
         </div>
       </div>

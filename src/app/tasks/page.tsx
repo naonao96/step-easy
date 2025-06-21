@@ -240,30 +240,6 @@ export default function TaskEditPage() {
 
   // プレビューモードの表示
   if (!isEditMode && isExistingTask && task) {
-    const previewContextActions = [
-      {
-        label: 'メニューに戻る',
-        action: () => router.push('/menu'),
-        icon: FaArrowLeft
-      },
-      {
-        label: '編集',
-        action: switchToEditMode,
-        icon: FaEdit,
-        variant: 'primary' as const
-      },
-      {
-        label: task.status === 'done' ? '未完了に戻す' : '完了',
-        action: handleComplete,
-        variant: task.status === 'done' ? 'default' as const : 'primary' as const
-      },
-      {
-        label: '削除',
-        action: handleDelete,
-        icon: FaTrash,
-        variant: 'danger' as const
-      }
-    ];
 
   return (
     <AppLayout
@@ -271,7 +247,6 @@ export default function TaskEditPage() {
       showBackButton={true}
       backUrl="/menu"
       backLabel="メニューに戻る"
-      contextActions={previewContextActions}
       tasks={tasks as any}
     >
         <div className="px-4 sm:px-6 py-4 sm:py-6">
@@ -388,31 +363,6 @@ export default function TaskEditPage() {
   }
 
   // 編集モードの表示
-  const editContextActions = [
-    {
-      label: 'メニューに戻る',
-      action: () => router.push('/menu'),
-      icon: FaArrowLeft
-    },
-    ...(isExistingTask ? [{
-      label: 'プレビュー',
-      action: switchToPreviewMode,
-      icon: FaEye,
-      variant: 'default' as const
-    }] : []),
-    {
-      label: '保存',
-      action: handleSave,
-      icon: FaSave,
-      variant: 'primary' as const
-    },
-    ...(isExistingTask && task ? [{
-      label: '削除',
-      action: handleDelete,
-      icon: FaTrash,
-      variant: 'danger' as const
-    }] : [])
-  ];
 
   return (
     <AppLayout
@@ -420,7 +370,6 @@ export default function TaskEditPage() {
       showBackButton={true}
       backUrl={isExistingTask ? `/tasks?id=${taskId}` : "/menu"}
       backLabel={isExistingTask ? "プレビューに戻る" : "メニューに戻る"}
-      contextActions={editContextActions}
       tasks={tasks as any}
     >
       <div className="px-4 sm:px-6 py-4 sm:py-6">

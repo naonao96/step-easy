@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { AppHeader } from '@/components/organisms/AppHeader';
-import { MobileNavigation } from '@/components/organisms/MobileNavigation';
 import { MobileBottomNavigation } from '@/components/organisms/MobileBottomNavigation';
 import { LeftSidebar } from '@/components/organisms/LeftSidebar';
 
@@ -28,15 +27,6 @@ interface AppLayoutProps {
   
   // レイアウト設定
   className?: string;
-  showMobileNav?: boolean;
-  
-  // コンテキスト依存のアクション（ハンバーガーメニュー用）
-  contextActions?: {
-    label: string;
-    action: () => void;
-    icon?: any;
-    variant?: 'default' | 'primary' | 'danger';
-  }[];
 
   // モバイル専用設定
   showBottomNav?: boolean;
@@ -56,13 +46,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   tasks = [],
   showNotifications = true,
   className = '',
-  showMobileNav = true,
-  contextActions = [],
   showBottomNav = true,
   showFAB = true,
   onFABClick
 }) => {
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  // モバイルメニュー関連のstateを削除（ボトムナビゲーションを使用）
 
   // ホームバリアント（メニュー画面用）
   if (variant === 'home') {
@@ -73,22 +61,15 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           variant="default"
           tasks={tasks}
           showNotifications={showNotifications}
-          showMobileMenu={showMobileMenu}
-          onMobileMenuToggle={showMobileNav ? () => setShowMobileMenu(!showMobileMenu) : undefined}
+          showMobileMenu={false}
+          onMobileMenuToggle={undefined}
           className="fixed top-0 left-0 right-0 z-50"
         />
         
         {/* 左サイドバー（デスクトップのみ） */}
         <LeftSidebar className="hidden lg:block" />
         
-        {/* モバイルナビゲーション */}
-        {showMobileNav && (
-          <MobileNavigation 
-            isOpen={showMobileMenu}
-            onClose={() => setShowMobileMenu(false)}
-            contextActions={contextActions}
-          />
-        )}
+        {/* モバイルナビゲーション（サイドドロワー）を無効化 - ボトムナビゲーションを使用 */}
         
         {/* メインコンテンツエリア */}
         <main className={`pt-20 lg:ml-16 overflow-y-auto min-h-screen ${
@@ -121,22 +102,15 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         variant={headerVariant}
         tasks={tasks}
         showNotifications={showNotifications}
-        showMobileMenu={showMobileMenu}
-        onMobileMenuToggle={showMobileNav ? () => setShowMobileMenu(!showMobileMenu) : undefined}
+        showMobileMenu={false}
+        onMobileMenuToggle={undefined}
         className="fixed top-0 left-0 right-0 z-50"
       />
       
       {/* 左サイドバー（デスクトップのみ） */}
       <LeftSidebar className="hidden lg:block" />
       
-      {/* モバイルナビゲーション */}
-      {showMobileNav && (
-        <MobileNavigation 
-          isOpen={showMobileMenu}
-          onClose={() => setShowMobileMenu(false)}
-          contextActions={contextActions}
-        />
-      )}
+      {/* モバイルナビゲーション（サイドドロワー）を無効化 - ボトムナビゲーションを使用 */}
       
       {/* メインコンテンツエリア */}
       <main className={`pt-20 lg:ml-16 overflow-y-auto min-h-screen ${

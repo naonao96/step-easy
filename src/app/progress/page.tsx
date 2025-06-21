@@ -6,8 +6,10 @@ import { AppLayout } from '@/components/templates/AppLayout';
 import { ProgressCard } from '@/components/molecules/ProgressCard';
 import { CategoryBadge } from '@/components/atoms/CategoryBadge';
 import { DetailedHeatmap } from '@/components/molecules/DetailedHeatmap';
+import { MobileProgressDashboard } from '@/components/molecules/MobileProgressDashboard';
 // Removed react-icons import due to type issues
-import { DEFAULT_CATEGORIES, Task } from '@/types/task';
+import { DEFAULT_CATEGORIES } from '@/types/task';
+import { Task } from '@/stores/taskStore';
 import { useSearchParams } from 'next/navigation';
 
 type TabType = 'today' | 'category' | 'heatmap' | 'overall';
@@ -17,6 +19,7 @@ export default function ProgressPage() {
   const tasks = storeTasks as Task[]; // Type cast to use the Task type with category
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>('overall');
+  const [showMobileDashboard, setShowMobileDashboard] = useState(true);
 
   useEffect(() => {
     fetchTasks();
@@ -211,6 +214,12 @@ export default function ProgressPage() {
     { id: 'overall', label: '全体統計', icon: <span className="text-blue-500">📈</span> }
   ];
 
+  // モバイルでタブを選択した時のハンドラー
+  const handleMobileTabSelect = (tab: TabType) => {
+    setActiveTab(tab);
+    setShowMobileDashboard(false);
+  };
+
   return (
     <AppLayout
       title="進捗管理"
@@ -219,7 +228,183 @@ export default function ProgressPage() {
       backLabel="メニューに戻る"
       tasks={tasks as any}
     >
-      <div className="px-4 sm:px-6 py-4 sm:py-6">
+      {/* モバイル専用ダッシュボード */}
+      {showMobileDashboard && (
+        <MobileProgressDashboard 
+          tasks={tasks as Task[]}
+          onNavigateToTab={handleMobileTabSelect}
+        />
+      )}
+
+      {/* モバイル詳細タブ表示 */}
+      {!showMobileDashboard && (
+        <div className="md:hidden px-4 py-4">
+          <div className="max-w-7xl mx-auto">
+            {/* モバイル用戻るボタン */}
+            <button
+              onClick={() => setShowMobileDashboard(true)}
+              className="flex items-center gap-2 mb-4 text-blue-600 hover:text-blue-700 transition-colors"
+            >
+              <span>←</span>
+              <span className="text-sm font-medium">ダッシュボードに戻る</span>
+            </button>
+
+            {/* タブコンテンツ（モバイル用） */}
+            <div className="space-y-6">
+              {activeTab === 'today' && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-semibold text-gray-900">今日の詳細分析</h2>
+                  
+                  {/* 今日の概要 */}
+                  <div className="grid grid-cols-1 gap-6 mb-8">
+                    <ProgressCard
+                      title="今日の達成率"
+                      value={todayStats.completedTasks}
+                      total={todayStats.totalTasks}
+                      icon={<span className="text-2xl">✅</span>}
+                      color="text-blue-500"
+                      description="今日予定されたタスクの完了状況"
+                    />
+                  </div>
+
+                  {/* カテゴリ別詳細 */}
+                  {todayStats.categoryStats.length > 0 && (
+                    <div className="bg-white rounded-lg shadow-md p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">カテゴリ別進捗</h3>
+                      <div className="grid grid-cols-1 gap-4">
+                        {todayStats.categoryStats.map(stat => (
+                          <div key={stat.id} className="p-4 border rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <CategoryBadge category={stat.id} size="sm" />
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600">
+                                {stat.completed}/{stat.total}
+                              </span>
+                              <span className={`font-medium text-sm ${
+                                stat.percentage === 100 ? 'text-green-600' :
+                                stat.percentage >= 70 ? 'text-blue-600' :
+                                stat.percentage >= 40 ? 'text-amber-600' : 'text-gray-500'
+                              }`}>
+                                {stat.percentage}%
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                              <div
+                                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${stat.percentage}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'category' && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-semibold text-gray-900">カテゴリ別詳細分析</h2>
+                  
+                  {/* カテゴリ別統計一覧 */}
+                  <div className="bg-white rounded-lg shadow-md p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">カテゴリ別完了率</h3>
+                    <div className="space-y-4">
+                      {categoryStats.map((category, index) => (
+                        <div key={category.id} className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              {index === 0 && <span className="text-lg">🏆</span>}
+                              {index === 1 && <span className="text-lg">🥈</span>}
+                              {index === 2 && <span className="text-lg">🥉</span>}
+                              <CategoryBadge category={category.id} size="md" />
+                              <div className="text-sm text-gray-600">
+                                {category.completedTasks}/{category.totalTasks} 完了
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              {category.avgCompletionTime > 0 && (
+                                <span className="text-xs text-gray-500">
+                                  平均 {category.avgCompletionTime}分
+                                </span>
+                              )}
+                              <span className={`font-bold text-lg ${
+                                category.percentage === 100 ? 'text-green-600' :
+                                category.percentage >= 75 ? 'text-blue-600' :
+                                category.percentage >= 50 ? 'text-amber-600' : 'text-gray-500'
+                              }`}>
+                                {category.percentage}%
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {/* プログレスバー */}
+                          <div className="w-full bg-gray-200 rounded-full h-3">
+                            <div
+                              className={`h-3 rounded-full transition-all duration-300 ${
+                                category.percentage === 100 ? 'bg-green-500' :
+                                category.percentage >= 75 ? 'bg-blue-500' :
+                                category.percentage >= 50 ? 'bg-amber-500' : 'bg-gray-400'
+                              }`}
+                              style={{ width: `${category.percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'heatmap' && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-semibold text-gray-900">完了時間ヒートマップ</h2>
+                  <DetailedHeatmap tasks={tasks as any} />
+                </div>
+              )}
+
+              {activeTab === 'overall' && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-semibold text-gray-900">全体統計</h2>
+                  
+                  <div className="grid grid-cols-1 gap-6 mb-8">
+                    <ProgressCard
+                      title="タスク完了率"
+                      value={overallStats.completedTasks}
+                      total={overallStats.totalTasks}
+                      icon={<span className="text-2xl">✅</span>}
+                      color="text-green-500"
+                      description="全タスクに対する完了タスクの割合"
+                    />
+
+                    <ProgressCard
+                      title="進行中のタスク"
+                      value={overallStats.inProgressTasks}
+                      total={overallStats.totalTasks}
+                      icon={<span className="text-2xl">🕐</span>}
+                      color="text-blue-500"
+                      description="現在進行中のタスク数"
+                    />
+
+                    <ProgressCard
+                      title="習慣達成率"
+                      value={overallStats.completedHabits}
+                      total={overallStats.habitTasks}
+                      icon={<span className="text-2xl">🔥</span>}
+                      color="text-orange-500"
+                      description="習慣タスクの達成率"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* デスクトップ版（従来の表示） */}
+      <div className="hidden md:block px-4 sm:px-6 py-4 sm:py-6">
         <div className="max-w-7xl mx-auto">
           {/* タブナビゲーション */}
           <div className="border-b border-gray-200 mb-6">

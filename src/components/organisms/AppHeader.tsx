@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/atoms/Button';
 import { NotificationDropdown } from '@/components/molecules/NotificationDropdown';
 import { HelpPanel } from '@/components/molecules/HelpPanel';
-import { FaArrowLeft, FaBars, FaTimes, FaSignOutAlt, FaUser, FaQuestionCircle } from 'react-icons/fa';
+import { FaArrowLeft, FaSignOutAlt, FaUser, FaQuestionCircle } from 'react-icons/fa';
 import { Task } from '@/types/task';
 
 interface AppHeaderProps {
@@ -110,15 +110,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
     <header className={`h-20 flex justify-between items-center px-4 sm:px-6 flex-shrink-0 shadow-sm ${getHeaderStyles()} ${className}`}>
       {/* 左側：モバイルハンバーガー + 戻るボタン + タイトル/ロゴ */}
       <div className="flex items-center gap-3">
-        {/* ハンバーガーボタン（モバイルのみ） */}
-        {onMobileMenuToggle && (
-          <button
-            onClick={onMobileMenuToggle}
-            className="md:hidden p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            {showMobileMenu ? FaTimes({ className: "w-5 h-5" }) : FaBars({ className: "w-5 h-5" })}
-          </button>
-        )}
+        {/* ハンバーガーボタンを削除 - ボトムナビゲーションを使用 */}
 
         {/* 戻るボタン（デスクトップのみ） */}
         {showBackButton && (
