@@ -13,6 +13,7 @@ interface CharacterMessageHookProps {
     todayPercentage: number;
     overallPercentage: number;
   };
+  selectedDate?: Date; // 選択された日付を追加
 }
 
 const GUEST_MESSAGES = [
@@ -44,7 +45,72 @@ const FALLBACK_MESSAGES = {
   ]
 };
 
-export const useCharacterMessage = ({ userType, userName, tasks, statistics }: CharacterMessageHookProps) => {
+// 統一されたフォールバックメッセージ生成関数
+const generateUnifiedFallbackMessage = (
+  userType: 'guest' | 'free' | 'premium',
+  userName?: string,
+  tasks?: Task[],
+  statistics?: any,
+  selectedDate?: Date
+): string => {
+  // ゲストユーザーの場合
+  if (userType === 'guest') {
+    const randomIndex = Math.floor(Math.random() * GUEST_MESSAGES.length);
+    return GUEST_MESSAGES[randomIndex];
+  }
+
+  // 選択された日付が今日かどうか
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const isToday = selectedDate ? 
+    selectedDate.getTime() === today.getTime() : true;
+
+  // タスク統計の計算
+  const regularTasks = tasks?.filter(t => !t.is_habit) || [];
+  const habitTasks = tasks?.filter(t => t.is_habit) || [];
+  const completedCount = regularTasks.filter(t => t.status === 'done').length + 
+                        habitTasks.filter(t => t.status === 'done').length;
+  const totalCount = regularTasks.length + habitTasks.length;
+  const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+  // ユーザー名の処理
+  const greeting = userName ? `${userName}さん、` : '';
+
+  // 統一されたメッセージ生成ロジック
+  if (totalCount === 0) {
+    return isToday ? 
+      `${greeting}新しい一日の始まりですね！今日はどんなことにチャレンジしますか？` : 
+      `${greeting}この日はお休みの日だったようですね。`;
+  }
+
+  if (completionRate >= 100) {
+    return isToday ? 
+      `${greeting}🎉 完璧です！全てのタスクを完了しました。今日は本当によく頑張りましたね！` : 
+      `${greeting}素晴らしい一日でした！全てのタスクを完了されていますね。`;
+  } else if (completionRate >= 80) {
+    return isToday ? 
+      `${greeting}💪 とても順調に進んでいます！あと少しで今日の目標達成ですね。` : 
+      `${greeting}とても良いペースで進められた一日でした。`;
+  } else if (completionRate >= 50) {
+    return isToday ? 
+      `${greeting}📈 半分以上完了していて素晴らしいです。この調子で最後まで頑張りましょう！` : 
+      `${greeting}まずまずの進捗でした。着実に進歩されています。`;
+  } else if (completionRate >= 20) {
+    return isToday ? 
+      `${greeting}🚀 良いスタートを切れていますね！一歩ずつ、着実に進んでいきましょう。` : 
+      `${greeting}少しずつでも前進されています。それが大切です。`;
+  } else if (completedCount > 0) {
+    return isToday ? 
+      `${greeting}✨ 第一歩を踏み出せました！小さな一歩も大きな成果につながります。` : 
+      `${greeting}何かを始めることができた日でした。`;
+  } else {
+    return isToday ? 
+      `${greeting}💡 今日はまだこれからです。最初の小さな一歩から始めてみませんか？` : 
+      `${greeting}時にはチャレンジが難しい日もありますね。それも大切な経験です。`;
+  }
+};
+
+export const useCharacterMessage = ({ userType, userName, tasks, statistics, selectedDate }: CharacterMessageHookProps) => {
   const [message, setMessage] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,9 +122,9 @@ export const useCharacterMessage = ({ userType, userName, tasks, statistics }: C
         setError(null);
 
         if (userType === 'guest') {
-          // ゲストユーザー: ランダムメッセージ（変更なし）
-          const randomIndex = Math.floor(Math.random() * GUEST_MESSAGES.length);
-          setMessage(GUEST_MESSAGES[randomIndex]);
+          // ゲストユーザー: 統一されたメッセージ生成
+          const guestMessage = generateUnifiedFallbackMessage(userType, userName, tasks, statistics, selectedDate);
+          setMessage(guestMessage);
           return;
         }
 
@@ -69,16 +135,9 @@ export const useCharacterMessage = ({ userType, userName, tasks, statistics }: C
         const { data: user, error: authError } = await supabase.auth.getUser();
         
         if (authError || !user.user) {
-          console.warn('User not authenticated, falling back to static messages:', authError?.message);
-          // 認証エラー時は静的メッセージにフォールバック
-          const fallbackMessages = FALLBACK_MESSAGES[userType as 'free' | 'premium'] || FALLBACK_MESSAGES.free;
-          const randomIndex = Math.floor(Math.random() * fallbackMessages.length);
-          let fallbackMessage = fallbackMessages[randomIndex];
-          
-          if (userName) {
-            fallbackMessage = `${userName}さん、${fallbackMessage}`;
-          }
-          
+          console.warn('User not authenticated, falling back to unified messages:', authError?.message);
+          // 認証エラー時は統一されたフォールバック処理
+          const fallbackMessage = generateUnifiedFallbackMessage(userType, userName, tasks, statistics, selectedDate);
           setMessage(fallbackMessage);
           return;
         }
@@ -99,10 +158,18 @@ export const useCharacterMessage = ({ userType, userName, tasks, statistics }: C
             console.log('No daily message found, falling back to API generation');
             return await fallbackToApiGeneration(userType, userName, tasks, statistics);
           }
-          throw dbError;
+          // その他のDBエラーも同様にフォールバックする
+          console.warn('Database error, falling back to API generation:', dbError.message);
+          return await fallbackToApiGeneration(userType, userName, tasks, statistics);
         }
 
         if (dailyMessage && dailyMessage.message) {
+          console.log('Daily message fetched from database:', {
+            message: dailyMessage.message,
+            messageLength: dailyMessage.message.length,
+            userType,
+            userName
+          });
           setMessage(dailyMessage.message);
           console.log('Successfully fetched daily message from database');
         } else {
@@ -113,14 +180,16 @@ export const useCharacterMessage = ({ userType, userName, tasks, statistics }: C
         console.error('Daily message fetch error:', err);
         setError(err instanceof Error ? err.message : 'Unknown error');
         
-        // エラー時のフォールバック
-        const fallbackMessages = FALLBACK_MESSAGES[userType as 'free' | 'premium'] || FALLBACK_MESSAGES.free;
-        const randomIndex = Math.floor(Math.random() * fallbackMessages.length);
-        let fallbackMessage = fallbackMessages[randomIndex];
+        // エラー時の統一フォールバック
+        const fallbackMessage = generateUnifiedFallbackMessage(userType, userName, tasks, statistics, selectedDate);
         
-        if (userName) {
-          fallbackMessage = `${userName}さん、${fallbackMessage}`;
-        }
+        console.log('Using unified fallback message:', {
+          message: fallbackMessage,
+          messageLength: fallbackMessage.length,
+          userType,
+          userName,
+          errorType: err instanceof Error ? err.constructor.name : 'Unknown'
+        });
         
         setMessage(fallbackMessage);
       } finally {
@@ -153,21 +222,20 @@ export const useCharacterMessage = ({ userType, userName, tasks, statistics }: C
         }
 
         const data = await response.json();
+        console.log('API fallback message generated:', {
+          message: data.message,
+          messageLength: data.message?.length || 0,
+          userType,
+          userName
+        });
         setMessage(data.message);
         console.log('Successfully generated message via API fallback');
 
       } catch (apiError) {
         console.error('API fallback also failed:', apiError);
         
-        // 最終フォールバック
-        const fallbackMessages = FALLBACK_MESSAGES[userType as 'free' | 'premium'] || FALLBACK_MESSAGES.free;
-        const randomIndex = Math.floor(Math.random() * fallbackMessages.length);
-        let fallbackMessage = fallbackMessages[randomIndex];
-        
-        if (userName) {
-          fallbackMessage = `${userName}さん、${fallbackMessage}`;
-        }
-        
+        // 最終フォールバック：統一処理
+        const fallbackMessage = generateUnifiedFallbackMessage(userType as 'guest' | 'free' | 'premium', userName, tasks, statistics, selectedDate);
         setMessage(fallbackMessage);
       }
     };

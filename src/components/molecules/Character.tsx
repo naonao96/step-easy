@@ -78,7 +78,7 @@ export const Character: React.FC<CharacterProps> = ({ mood, message, layout = 'v
     return 80; // ゲストユーザーは少し短め
   };
 
-  const processedMessage = message || 'こんにちは！今日も一緒に頑張りましょう！';
+  const processedMessage = message || 'メッセージを読み込み中...';
   // APIから来るメッセージは既に適切な長さに制限されているため、
   // ここでは表示の最適化に集中し、極端に長い場合のみ制限
   const maxLength = 250; // 安全な上限値

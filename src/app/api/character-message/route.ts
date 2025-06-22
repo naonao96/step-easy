@@ -17,11 +17,13 @@ interface RequestBody {
 const MESSAGE_LIMITS = {
   free: {
     target: 100,    // 目標文字数
-    max: 200        // 許容上限（バッファ含む）
+    max: 200,       // 許容上限（バッファ含む）
+    database: 350   // データベース制限（安全上限）
   },
   premium: {
     target: 200,    // 目標文字数
-    max: 300        // 許容上限（バッファ含む）
+    max: 300,       // 許容上限（バッファ含む）
+    database: 350   // データベース制限（安全上限）
   }
 };
 

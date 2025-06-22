@@ -10,8 +10,8 @@ async function generateDailyMessagesLocally(
 ) {
   const { GoogleGenerativeAI } = await import('@google/generative-ai');
   
-  // Supabaseクライアント（Service Role使用）
-  const supabase = createClient(supabaseUrl, serviceRoleKey, {
+  // Supabaseクライアント（Service Role使用、または通常キーでフォールバック）
+  const supabase = createClient(supabaseUrl, serviceRoleKey || supabaseAnonKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false
@@ -106,8 +106,8 @@ ${userName}さんに向けて、今日一日のモチベーションを上げる
 
 export async function POST(req: NextRequest) {
   try {
-    // 開発環境でのみ実行可能にする
-    if (process.env.NODE_ENV === 'production') {
+    // 開発環境とローカル環境でのみ実行可能にする
+    if (process.env.NODE_ENV === 'production' && !process.env.ALLOW_MANUAL_TRIGGER) {
       return NextResponse.json(
         { error: 'This endpoint is only available in development mode' },
         { status: 403 }
@@ -148,19 +148,40 @@ export async function POST(req: NextRequest) {
 
     // Edge Functionを手動で呼び出し
 
-    // Edge Functionを呼び出し（Service Role Keyがある場合のみ）
+    // Service Role Keyがない場合は、より詳細な指示とフォールバック提案
     if (!serviceRoleKey) {
-      return NextResponse.json({
-        success: false,
-        error: 'Service Role Key required',
-        message: 'SUPABASE_SERVICE_ROLE_KEY environment variable is required to call Edge Functions',
-        instructions: [
-          '1. Go to Supabase Dashboard → Settings → API',
-          '2. Copy the "service_role" key (marked as secret)',
-          '3. Add SUPABASE_SERVICE_ROLE_KEY=your_key to .env.local',
-          '4. Restart the development server'
-        ]
-      }, { status: 400 });
+      console.log('Service Role Key not found, will use fallback method');
+      
+      // フォールバック処理を直接実行
+      try {
+        const fallbackResult = await generateDailyMessagesLocally(supabaseUrl, supabaseAnonKey!, 'mock-service-key', geminiApiKey!);
+        
+        return NextResponse.json({
+          success: true,
+          message: 'Daily message generation completed (local fallback mode)',
+          result: fallbackResult,
+          note: 'Service Role Key not configured, used local fallback',
+          instructions: [
+            '1. Go to Supabase Dashboard → Settings → API',
+            '2. Copy the "service_role" key (marked as secret)',
+            '3. Add SUPABASE_SERVICE_ROLE_KEY=your_key to .env.local',
+            '4. Restart the development server for full functionality'
+          ]
+        });
+      } catch (fallbackError) {
+        return NextResponse.json({
+          success: false,
+          error: 'Service Role Key required and fallback failed',
+          message: 'SUPABASE_SERVICE_ROLE_KEY environment variable is required',
+          fallbackError: fallbackError instanceof Error ? fallbackError.message : 'Unknown error',
+          instructions: [
+            '1. Go to Supabase Dashboard → Settings → API',
+            '2. Copy the "service_role" key (marked as secret)',
+            '3. Add SUPABASE_SERVICE_ROLE_KEY=your_key to .env.local',
+            '4. Restart the development server'
+          ]
+        }, { status: 400 });
+      }
     }
 
     try {

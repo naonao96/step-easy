@@ -72,6 +72,10 @@ export default function TestDailyMessagesPage() {
   // 生成されたメッセージを確認する関数
   const [generatedMessages, setGeneratedMessages] = useState<any[]>([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  
+  // クイックメッセージ生成用の状態
+  const [quickMessage, setQuickMessage] = useState<any>(null);
+  const [loadingQuick, setLoadingQuick] = useState(false);
 
   const checkGeneratedMessages = async () => {
     setLoadingMessages(true);
@@ -91,6 +95,43 @@ export default function TestDailyMessagesPage() {
       setGeneratedMessages([]);
     } finally {
       setLoadingMessages(false);
+    }
+  };
+
+  // クイック生成機能
+  const generateQuickMessage = async (userType: 'free' | 'premium') => {
+    setLoadingQuick(true);
+    setQuickMessage(null);
+    
+    try {
+      const response = await fetch('/api/generate-single-message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userType,
+          userName: userType === 'premium' ? 'テストユーザー' : undefined
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setQuickMessage(data);
+      } else {
+        const errorData = await response.json();
+        setQuickMessage({ 
+          success: false, 
+          error: errorData.error || 'Failed to generate message' 
+        });
+      }
+    } catch (err) {
+      setQuickMessage({ 
+        success: false, 
+        error: err instanceof Error ? err.message : 'Unknown error' 
+      });
+    } finally {
+      setLoadingQuick(false);
     }
   };
 
@@ -122,6 +163,24 @@ export default function TestDailyMessagesPage() {
               >
                 {loadingMessages ? '読み込み中...' : '📋 生成されたメッセージ確認'}
               </button>
+              
+              {/* クイック生成ボタン */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => generateQuickMessage('free')}
+                  disabled={loadingQuick}
+                  className="py-2 px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+                >
+                  {loadingQuick ? '生成中...' : '⚡ フリー版テスト'}
+                </button>
+                <button
+                  onClick={() => generateQuickMessage('premium')}
+                  disabled={loadingQuick}
+                  className="py-2 px-4 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors disabled:opacity-50"
+                >
+                  {loadingQuick ? '生成中...' : '⚡ プレミアム版テスト'}
+                </button>
+              </div>
               
               {envCheck && (
                 <div className="mt-2 p-3 bg-gray-50 border rounded text-sm">
@@ -180,6 +239,30 @@ export default function TestDailyMessagesPage() {
                   <div key={index} className="font-mono">{msg}</div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* クイック生成結果表示 */}
+          {quickMessage && (
+            <div className={`mb-6 p-4 rounded-lg border ${quickMessage.success ? 'bg-blue-50 border-blue-200' : 'bg-red-50 border-red-200'}`}>
+              <h3 className={`text-lg font-semibold mb-2 ${quickMessage.success ? 'text-blue-800' : 'text-red-800'}`}>
+                {quickMessage.success ? '⚡ クイック生成結果' : '❌ 生成エラー'}
+              </h3>
+              {quickMessage.success ? (
+                <div>
+                  <p className="text-gray-800 mb-3 p-3 bg-white border rounded">
+                    "{quickMessage.message}"
+                  </p>
+                  <div className="text-xs text-gray-500 space-y-1">
+                    <div>ユーザータイプ: {quickMessage.userType}</div>
+                    <div>ユーザー名: {quickMessage.userName}</div>
+                    <div>生成時刻: {new Date(quickMessage.generated_at).toLocaleString('ja-JP')}</div>
+                    <div>DB保存: {quickMessage.savedToDb ? '✅ 成功' : '❌ 失敗（権限不足）'}</div>
+                  </div>
+                </div>
+              ) : (
+                <pre className="text-red-700 whitespace-pre-wrap text-sm">{quickMessage.error}</pre>
+              )}
             </div>
           )}
 

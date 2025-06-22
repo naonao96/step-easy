@@ -27,11 +27,13 @@ interface Task {
 const MESSAGE_LIMITS = {
   free: {
     target: 100,
-    max: 200
+    max: 200,
+    database: 350   // データベース制限（安全上限）
   },
   premium: {
     target: 200,
-    max: 300
+    max: 300,
+    database: 350   // データベース制限（安全上限）
   }
 };
 
@@ -286,7 +288,7 @@ serve(async (_req: any) => {
 
         // ユーザータイプ判定
         const userType = userSettings?.plan_type || 'free';
-        const userName = userSettings?.display_name || user.user_metadata?.name;
+        const userName = userSettings?.display_name || user.user_metadata?.display_name;
 
         let message = '';
         let statistics = null;
@@ -319,6 +321,14 @@ serve(async (_req: any) => {
           message = await generateFreeMessage(genAI, userName);
         }
 
+        // メッセージ文字数の最終チェック（データベース制約に合わせる）
+        const databaseLimit = MESSAGE_LIMITS[userType as 'free' | 'premium']?.database || 350;
+        const finalMessage = message.length > databaseLimit 
+          ? smartTrim(message, databaseLimit - 3) 
+          : message;
+
+        console.log(`Final message length for ${userType} user: ${finalMessage.length}/${databaseLimit}`);
+
         // DBに保存
         const { error: insertError } = await supabase
           .from('daily_messages')
@@ -328,7 +338,7 @@ serve(async (_req: any) => {
             scheduled_type: 'morning',
             user_type: userType,
             user_name: userName,
-            message,
+            message: finalMessage,
             stats_today_completed: statistics?.selectedDateCompletedTasks || 0,
             stats_today_total: statistics?.selectedDateTotalTasks || 0,
             stats_today_percentage: statistics?.selectedDatePercentage || 0,

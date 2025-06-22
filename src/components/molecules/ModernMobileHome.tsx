@@ -546,52 +546,39 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
               <div className="w-full">
                 <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
                   <p className="text-sm text-gray-700 leading-relaxed">
-                {(() => {
-                  const completedCount = regularTasks.filter(t => t.status === 'done').length + habitTasks.filter(t => t.status === 'done').length;
-                  const totalCount = regularTasks.length + habitTasks.length;
-                  const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+                    {/* デバッグ情報をコンソールに出力 */}
+                    {(() => {
+                      console.log('ModernMobileHome characterMessage debug:', {
+                        characterMessage,
+                        hasMessage: !!characterMessage,
+                        messageLength: characterMessage?.length || 0,
+                        messageType: typeof characterMessage
+                      });
 
-                              if (characterMessage) return characterMessage;
-                              
-                              if (totalCount === 0) {
-                                return isToday ? '新しい一日の始まりですね！今日はどんなことにチャレンジしますか？' : 'この日はお休みの日だったようですね。';
-                              }
-
-                              if (completionRate >= 100) {
-                                return isToday ? '🎉 完璧です！全てのタスクを完了しました。今日は本当によく頑張りましたね！' : '素晴らしい一日でした！全てのタスクを完了されていますね。';
-                              } else if (completionRate >= 80) {
-                                return isToday ? '💪 とても順調に進んでいます！あと少しで今日の目標達成ですね。' : 'とても良いペースで進められた一日でした。';
-                              } else if (completionRate >= 50) {
-                                return isToday ? '📈 半分以上完了していて素晴らしいです。この調子で最後まで頑張りましょう！' : 'まずまずの進捗でした。着実に進歩されています。';
-                              } else if (completionRate >= 20) {
-                                return isToday ? '🚀 良いスタートを切れていますね！一歩ずつ、着実に進んでいきましょう。' : '少しずつでも前進されています。それが大切です。';
-                              } else if (completedCount > 0) {
-                                return isToday ? '✨ 第一歩を踏み出せました！小さな一歩も大きな成果につながります。' : '何かを始めることができた日でした。';
-                              } else {
-                                return isToday ? '💡 今日はまだこれからです。最初の小さな一歩から始めてみませんか？' : '時にはチャレンジが難しい日もありますね。それも大切な経験です。';
-                              }
-                            })()}
-                          </p>
-                        </div>
-                        
-                        {/* 詳細分析ボタン */}
-                        <div className="mt-4 pt-4 border-t border-gray-200">
-                                                    <button
-                            onClick={() => handleNavigateToProgress()}
-                            className="w-full bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg p-3 transition-colors"
-                          >
-                            <div className="flex items-center justify-between">
-                               <div className="flex items-center gap-2">
-                                 {React.createElement(FaChartBar as React.ComponentType<any>, { className: "w-4 h-4 text-blue-600" })}
-                                 <span className="text-sm font-medium text-blue-900">詳細統計</span>
-                               </div>
-                               <div className="text-xs text-blue-600">
-                                 進捗ページで確認
-                               </div>
-                             </div>
-                          </button>
-                        </div>
-                      </div>
+                      // 統一されたHookから受け取ったメッセージをそのまま表示
+                      return characterMessage || '読み込み中...';
+                    })()}
+                  </p>
+                </div>
+                
+                {/* 詳細分析ボタン */}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => handleNavigateToProgress()}
+                    className="w-full bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg p-3 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-2">
+                         {React.createElement(FaChartBar as React.ComponentType<any>, { className: "w-4 h-4 text-blue-600" })}
+                         <span className="text-sm font-medium text-blue-900">詳細統計</span>
+                       </div>
+                       <div className="text-xs text-blue-600">
+                         進捗ページで確認
+                       </div>
+                     </div>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

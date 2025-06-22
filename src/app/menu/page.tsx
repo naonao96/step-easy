@@ -269,6 +269,7 @@ export default function MenuPage() {
     userName: user?.displayName,
     tasks,
     statistics,
+    selectedDate,
   });
 
   useEffect(() => {
