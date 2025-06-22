@@ -107,7 +107,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
           {/* ヘッダー */}
           <div className="p-6 border-b border-gray-200 bg-blue-50">
             <div className="flex items-center justify-between">
-              <img src="/logo.png" alt="StepEasy" className="h-8" />
+              <img src="/logo.png" alt="StepEasy" className="h-8" style={{ width: 'auto' }} />
               <button
                 onClick={onClose}
                 className="p-2 text-gray-600 hover:text-gray-800 hover:bg-blue-100 rounded-lg"

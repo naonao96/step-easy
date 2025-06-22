@@ -17,6 +17,9 @@ import { MobileHomeHeader } from '@/components/molecules/MobileHomeHeader';
 import { MobileHomeContent } from '@/components/molecules/MobileHomeContent';
 import { MobileCollapsibleFooter } from '@/components/molecules/MobileCollapsibleFooter';
 import { ModernMobileHome } from '@/components/molecules/ModernMobileHome';
+import { PremiumComingSoonBanner } from '@/components/molecules/PremiumComingSoonBanner';
+import { PremiumPreviewModal } from '@/components/molecules/PremiumPreviewModal';
+import { NotificationSignupForm } from '@/components/molecules/NotificationSignupForm';
 
 import { Button } from '@/components/atoms/Button';
 
@@ -34,8 +37,11 @@ export default function MenuPage() {
   const [greeting, setGreeting] = useState('');
   const [contentHeight, setContentHeight] = useState(28); // rem単位
   const [currentMobileTab, setCurrentMobileTab] = useState<'tasks' | 'habits'>('tasks');
-
   
+  // プレミアム関連のstate（デスクトップ版用）
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showNotificationForm, setShowNotificationForm] = useState(false);
+
   // 選択された日付を管理（初期値は今日）
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     const today = new Date();
@@ -418,6 +424,16 @@ export default function MenuPage() {
               </div>
             </div>
 
+            {/* プレミアム導線（デスクトップ版）- 既存デザインを壊さない安全な追加 */}
+            {!isGuest && planType === 'free' && (
+              <div className="mb-6">
+                <PremiumComingSoonBanner
+                  onPreviewClick={() => setShowPreviewModal(true)}
+                  onNotificationSignup={() => setShowNotificationForm(true)}
+                />
+              </div>
+            )}
+
             {/* 下段：統計・傾向（アラートはサイドバーに移動） */}
             <div className="grid grid-cols-1 lg:grid-cols-3 md:grid-cols-2 gap-4 mb-6">
               <ActivityStats tasks={tasks} selectedDateTasks={selectedDateTasks} selectedDate={selectedDate} />
@@ -436,6 +452,24 @@ export default function MenuPage() {
         onCancel={handleMigrationCancel}
         onComplete={handleMigrationComplete}
         error={migrationError}
+      />
+
+      {/* プレミアム関連モーダル（デスクトップ版） */}
+      <PremiumPreviewModal
+        isOpen={showPreviewModal}
+        onClose={() => setShowPreviewModal(false)}
+        onNotificationSignup={() => {
+          setShowPreviewModal(false);
+          setShowNotificationForm(true);
+        }}
+      />
+
+      <NotificationSignupForm
+        isOpen={showNotificationForm}
+        onClose={() => setShowNotificationForm(false)}
+        onSuccess={() => {
+          console.log('Premium notification signup successful (desktop)');
+        }}
       />
     </AppLayout>
   );

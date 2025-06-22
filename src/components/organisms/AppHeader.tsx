@@ -130,7 +130,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           className="cursor-pointer flex items-center gap-3"
           onClick={() => router.push('/menu')}
         >
-          <img src="/logo.png" alt="StepEasy" className="h-8 sm:h-10" />
+          <img src="/logo.png" alt="StepEasy" className="h-8 sm:h-10" style={{ width: 'auto' }} />
           {title && (
           <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
             {title}

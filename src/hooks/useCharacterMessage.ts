@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Task } from '@/stores/taskStore';
-import { createClient } from '@/lib/supabase';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 interface CharacterMessageHookProps {
   userType: 'guest' | 'free' | 'premium';
@@ -114,134 +114,205 @@ export const useCharacterMessage = ({ userType, userName, tasks, statistics, sel
   const [message, setMessage] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // AuthContextと同じSupabaseクライアントを使用
+  const supabase = createClientComponentClient();
+
+  // メッセージ取得関数
+  const fetchMessage = useCallback(async () => {
+    if (isLoading) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // ゲストユーザーの場合は統一されたフォールバックメッセージ
+      if (userType === 'guest') {
+        const fallbackMessage = generateUnifiedFallbackMessage(userType, userName, tasks, statistics, selectedDate);
+        setMessage(fallbackMessage);
+        return;
+      }
+
+      // 認証状態を確認
+      const { data: user, error: authError } = await supabase.auth.getUser();
+      
+      // 日付の準備（認証エラー処理の前に移動）
+      const today = new Date().toISOString().split('T')[0];
+      const selectedDateStr = selectedDate ? selectedDate.toISOString().split('T')[0] : today;
+      const queryDate = selectedDateStr === today ? today : today; // 常に今日の日付を使用
+      
+      if (authError || !user.user) {
+        // セッションリフレッシュを試行
+        try {
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          
+          if (refreshData.session && !refreshError) {
+            // セッションが復旧したら再試行
+            const { data: retryUser } = await supabase.auth.getUser();
+            if (retryUser.user) {
+              // ここでデータベースクエリを再実行
+              const { data: dailyMessage, error: dbError } = await supabase
+                .from('daily_messages')
+                .select('*')
+                .eq('user_id', retryUser.user.id)
+                .eq('message_date', queryDate)
+                .eq('scheduled_type', 'morning')
+                .single();
+              
+              if (dailyMessage && dailyMessage.message) {
+                setMessage(dailyMessage.message);
+                return;
+              }
+            }
+          }
+        } catch (refreshError) {
+          console.warn('Session refresh failed:', refreshError);
+        }
+        
+        // 認証エラー時は統一されたフォールバック処理
+        const fallbackMessage = generateUnifiedFallbackMessage(userType, userName, tasks, statistics, selectedDate);
+        setMessage(fallbackMessage);
+        return;
+      }
+
+      // キャッシュ制御を追加
+      const { data: dailyMessage, error: dbError } = await supabase
+        .from('daily_messages')
+        .select('*')
+        .eq('user_id', user.user.id)
+        .eq('message_date', queryDate) // 常に今日の日付で検索
+        .eq('scheduled_type', 'morning')
+        .single();
+
+      if (dbError) {
+        // メッセージが見つからない場合は既存のAPI呼び出しにフォールバック
+        if (dbError.code === 'PGRST116') { // No rows found
+          return await fallbackToApiGeneration(userType, userName, tasks, statistics);
+        }
+        // その他のDBエラーも同様にフォールバックする
+        console.warn('Database error, falling back to API generation:', dbError.message);
+        return await fallbackToApiGeneration(userType, userName, tasks, statistics);
+      }
+
+      if (dailyMessage && dailyMessage.message) {
+        setMessage(dailyMessage.message);
+      } else {
+        throw new Error('Empty message received from database');
+      }
+
+    } catch (err) {
+      console.error('Daily message fetch error:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      
+      // エラー時の統一フォールバック
+      const fallbackMessage = generateUnifiedFallbackMessage(userType, userName, tasks, statistics, selectedDate);
+      setMessage(fallbackMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userType, userName, tasks, statistics, selectedDate, isLoading, supabase]);
+
+  // 既存のAPI呼び出しにフォールバック（DB取得失敗時）
+  const fallbackToApiGeneration = async (userType: string, userName?: string, tasks?: Task[], statistics?: any) => {
+    try {
+      const response = await fetch('/api/character-message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userType,
+          userName: userName || null,
+          tasks: userType === 'premium' ? tasks : undefined,
+          statistics: userType === 'premium' ? statistics : undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      setMessage(data.message);
+
+    } catch (apiError) {
+      console.error('API fallback also failed:', apiError);
+      
+      // 最終フォールバック：統一処理
+      const fallbackMessage = generateUnifiedFallbackMessage(userType as 'guest' | 'free' | 'premium', userName, tasks, statistics, selectedDate);
+      setMessage(fallbackMessage);
+    }
+  };
 
   useEffect(() => {
-    const fetchMessage = async () => {
+    // 初回メッセージ取得
+    fetchMessage();
+
+    // ゲストユーザーまたは認証されていない場合は定期的な再取得は不要
+    if (userType === 'guest') {
+      return;
+    }
+
+    // 認証状態を確認してから設定
+    const checkAuthAndSetup = async () => {
       try {
-        setIsLoading(true);
-        setError(null);
-
-        if (userType === 'guest') {
-          // ゲストユーザー: 統一されたメッセージ生成
-          const guestMessage = generateUnifiedFallbackMessage(userType, userName, tasks, statistics, selectedDate);
-          setMessage(guestMessage);
-          return;
-        }
-
-        console.log('Fetching daily message from database for:', userType, userName);
-
-        // Supabaseから今日のメッセージを取得
-        const supabase = createClient();
         const { data: user, error: authError } = await supabase.auth.getUser();
         
         if (authError || !user.user) {
-          console.warn('User not authenticated, falling back to unified messages:', authError?.message);
-          // 認証エラー時は統一されたフォールバック処理
-          const fallbackMessage = generateUnifiedFallbackMessage(userType, userName, tasks, statistics, selectedDate);
-          setMessage(fallbackMessage);
           return;
         }
 
-        const today = new Date().toISOString().split('T')[0];
-        
-        const { data: dailyMessage, error: dbError } = await supabase
-          .from('daily_messages')
-          .select('*')
-          .eq('user_id', user.user.id)
-          .eq('message_date', today)
-          .eq('scheduled_type', 'morning')
-          .single();
+        // 定期的な再取得（5分ごと）
+        const interval = setInterval(() => {
+          fetchMessage();
+        }, 5 * 60 * 1000); // 5分
 
-        if (dbError) {
-          // メッセージが見つからない場合は既存のAPI呼び出しにフォールバック
-          if (dbError.code === 'PGRST116') { // No rows found
-            console.log('No daily message found, falling back to API generation');
-            return await fallbackToApiGeneration(userType, userName, tasks, statistics);
+        // リアルタイム監視の設定
+        let subscription: any = null;
+        
+        try {
+          const { data: user } = await supabase.auth.getUser();
+          
+          if (user.user) {
+            subscription = supabase
+              .channel('daily_messages_changes')
+              .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'daily_messages',
+                filter: `user_id=eq.${user.user.id}`
+              }, (payload) => {
+                fetchMessage(); // 新しいメッセージが追加されたら再取得
+              })
+              .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'daily_messages',
+                filter: `user_id=eq.${user.user.id}`
+              }, (payload) => {
+                fetchMessage(); // メッセージが更新されたら再取得
+              })
+              .subscribe();
           }
-          // その他のDBエラーも同様にフォールバックする
-          console.warn('Database error, falling back to API generation:', dbError.message);
-          return await fallbackToApiGeneration(userType, userName, tasks, statistics);
+        } catch (subscriptionError) {
+          console.warn('Failed to setup realtime subscription:', subscriptionError);
         }
 
-        if (dailyMessage && dailyMessage.message) {
-          console.log('Daily message fetched from database:', {
-            message: dailyMessage.message,
-            messageLength: dailyMessage.message.length,
-            userType,
-            userName
-          });
-          setMessage(dailyMessage.message);
-          console.log('Successfully fetched daily message from database');
-        } else {
-          throw new Error('Empty message received from database');
-        }
-
-      } catch (err) {
-        console.error('Daily message fetch error:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error');
-        
-        // エラー時の統一フォールバック
-        const fallbackMessage = generateUnifiedFallbackMessage(userType, userName, tasks, statistics, selectedDate);
-        
-        console.log('Using unified fallback message:', {
-          message: fallbackMessage,
-          messageLength: fallbackMessage.length,
-          userType,
-          userName,
-          errorType: err instanceof Error ? err.constructor.name : 'Unknown'
-        });
-        
-        setMessage(fallbackMessage);
-      } finally {
-        setIsLoading(false);
+        return () => {
+          clearInterval(interval);
+          if (subscription) {
+            subscription.unsubscribe();
+          }
+        };
+      } catch (error) {
+        console.error('Error in checkAuthAndSetup:', error);
       }
     };
 
-    // 既存のAPI呼び出しにフォールバック（DB取得失敗時）
-    const fallbackToApiGeneration = async (userType: string, userName?: string, tasks?: Task[], statistics?: any) => {
-      try {
-        console.log('Attempting API fallback generation');
-        
-        const response = await fetch('/api/character-message', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            userType,
-            userName: userName || null,
-            tasks: userType === 'premium' ? tasks : undefined,
-            statistics: userType === 'premium' ? statistics : undefined,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          const errorMessage = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
-          throw new Error(errorMessage);
-        }
-
-        const data = await response.json();
-        console.log('API fallback message generated:', {
-          message: data.message,
-          messageLength: data.message?.length || 0,
-          userType,
-          userName
-        });
-        setMessage(data.message);
-        console.log('Successfully generated message via API fallback');
-
-      } catch (apiError) {
-        console.error('API fallback also failed:', apiError);
-        
-        // 最終フォールバック：統一処理
-        const fallbackMessage = generateUnifiedFallbackMessage(userType as 'guest' | 'free' | 'premium', userName, tasks, statistics, selectedDate);
-        setMessage(fallbackMessage);
-      }
-    };
-
-    fetchMessage();
-  }, [userType, userName]); // 依存配列を簡素化（DBから取得するため）
+    checkAuthAndSetup();
+  }, [userType]); // 依存関係を最小限に
 
   return { message, isLoading, error };
 }; 

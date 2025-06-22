@@ -7,6 +7,9 @@ import { StreakBadge } from '@/components/atoms/StreakBadge';
 import { useAuth } from '@/contexts/AuthContext';
 import { MobileTaskTimer } from './MobileTaskTimer';
 import { MobileTaskHistory } from './MobileTaskHistory';
+import { PremiumComingSoonBanner } from './PremiumComingSoonBanner';
+import { PremiumPreviewModal } from './PremiumPreviewModal';
+import { NotificationSignupForm } from './NotificationSignupForm';
 import ReactMarkdown from 'react-markdown';
 import { 
   FaPlus, 
@@ -65,8 +68,10 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   const { isGuest, isPremium, planType, canAddTaskOnDate } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('tasks');
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
-
-
+  
+  // プレミアム機能モーダル関連の状態
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showNotificationForm, setShowNotificationForm] = useState(false);
 
   // 今日かどうかの判定
   const today = new Date();
@@ -166,8 +171,6 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   const toggleTaskExpansion = (taskId: string) => {
     setExpandedTaskId(expandedTaskId === taskId ? null : taskId);
   };
-
-
 
   // 進捗ページに移動
   const handleNavigateToProgress = () => {
@@ -488,7 +491,6 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
                       <MobileTaskHistory task={task as any} />
                     </div>
 
-
                   </div>
                 </div>
               )}
@@ -515,12 +517,10 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
              </div>
            )}
         </div>
-
-                 
       </div>
 
             {/* Enhanced Character Insights Card */}
-      <div className="px-4 pb-20">
+      <div className="px-4 pb-6">
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           {/* Main Content */}
           <div className="p-5">
@@ -546,18 +546,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
               <div className="w-full">
                 <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
                   <p className="text-sm text-gray-700 leading-relaxed">
-                    {/* デバッグ情報をコンソールに出力 */}
-                    {(() => {
-                      console.log('ModernMobileHome characterMessage debug:', {
-                        characterMessage,
-                        hasMessage: !!characterMessage,
-                        messageLength: characterMessage?.length || 0,
-                        messageType: typeof characterMessage
-                      });
-
-                      // 統一されたHookから受け取ったメッセージをそのまま表示
-                      return characterMessage || '読み込み中...';
-                    })()}
+                    {characterMessage || '読み込み中...'}
                   </p>
                 </div>
                 
@@ -584,9 +573,37 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
         </div>
       </div>
 
-      
+      {/* プレミアム Coming Soon バナー */}
+      {!isPremium && (
+        <div className="mb-6">
+          <PremiumComingSoonBanner
+            onPreviewClick={() => setShowPreviewModal(true)}
+            onNotificationSignup={() => setShowNotificationForm(true)}
+          />
+        </div>
+      )}
 
+      {/* プレミアムプレビューモーダル */}
+      <PremiumPreviewModal
+        isOpen={showPreviewModal}
+        onClose={() => setShowPreviewModal(false)}
+        onNotificationSignup={() => {
+          setShowPreviewModal(false);
+          setShowNotificationForm(true);
+        }}
+      />
 
+      {/* 通知登録フォーム */}
+      <NotificationSignupForm
+        isOpen={showNotificationForm}
+        onClose={() => setShowNotificationForm(false)}
+        onSuccess={() => {
+          // 成功時の処理（必要に応じて）
+          console.log('Premium notification signup successful');
+        }}
+      />
+
+      <div className="pb-20"></div>
     </div>
   );
 }; 

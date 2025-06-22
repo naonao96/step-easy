@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Image from 'next/image';
 
 interface CharacterProps {
@@ -8,6 +8,18 @@ interface CharacterProps {
 }
 
 export const Character: React.FC<CharacterProps> = ({ mood, message, layout = 'vertical' }) => {
+  // デバッグ用：メッセージの更新を監視
+  useEffect(() => {
+    if (message) {
+      console.log('Character component received new message:', {
+        message: message.substring(0, 50) + (message.length > 50 ? '...' : ''),
+        messageLength: message.length,
+        timestamp: new Date().toISOString(),
+        mood
+      });
+    }
+  }, [message, mood]);
+
   const getMoodImage = () => {
     switch (mood) {
       case 'happy':
@@ -106,7 +118,7 @@ export const Character: React.FC<CharacterProps> = ({ mood, message, layout = 'v
           </div>
           
           {/* 吹き出し（前面） */}
-          <div className="absolute left-4 sm:left-8 right-36 sm:right-48 top-1/2 transform -translate-y-1/2 z-[100]">
+          <div className="absolute left-4 sm:left-8 right-36 sm:right-48 top-1/2 transform -translate-y-1/2 z-30">
             <svg 
               className="w-full h-auto" 
               viewBox={`0 0 520 ${optimizedText.length > 100 ? 120 : 100}`}

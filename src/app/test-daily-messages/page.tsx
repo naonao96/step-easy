@@ -15,6 +15,7 @@ export default function TestDailyMessagesPage() {
 
   const checkEnvironment = async () => {
     try {
+      addDebug('環境変数チェックを開始...');
       const response = await fetch('/api/trigger-daily-messages/check-env', {
         method: 'GET',
       });
@@ -22,11 +23,17 @@ export default function TestDailyMessagesPage() {
       if (response.ok) {
         const data = await response.json();
         setEnvCheck(data);
+        addDebug('環境変数チェック完了');
+        addDebug(`Supabase URL: ${data.supabaseUrl}`);
+        addDebug(`Gemini API Key: ${data.hasGeminiApiKey ? '設定済み' : '未設定'}`);
+        addDebug(`Service Role Key: ${data.hasSupabaseServiceKey ? '設定済み' : '未設定'}`);
       } else {
         setEnvCheck({ error: 'Environment check endpoint not found' });
+        addDebug('環境変数チェックエンドポイントが見つかりません');
       }
     } catch (err) {
       setEnvCheck({ error: 'Failed to check environment' });
+      addDebug('環境変数チェックに失敗しました');
     }
   };
 
@@ -292,6 +299,63 @@ export default function TestDailyMessagesPage() {
                     )}
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* 環境変数チェック結果 */}
+          {envCheck && (
+            <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">🔧 環境変数チェック結果</h3>
+              <div className="text-sm text-gray-700 space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>Node Environment:</div>
+                  <div className={`font-mono ${envCheck.nodeEnv === 'development' ? 'text-green-600' : 'text-yellow-600'}`}>
+                    {envCheck.nodeEnv || 'Not set'}
+                  </div>
+                  
+                  <div>Supabase URL:</div>
+                  <div className={`font-mono ${envCheck.hasSupabaseUrl ? 'text-green-600' : 'text-red-600'}`}>
+                    {envCheck.hasSupabaseUrl ? envCheck.supabaseUrl : 'Not set'}
+                  </div>
+                  
+                  <div>Supabase Anon Key:</div>
+                  <div className={`font-mono ${envCheck.hasSupabaseAnonKey ? 'text-green-600' : 'text-red-600'}`}>
+                    {envCheck.hasSupabaseAnonKey ? 'Set' : 'Not set'}
+                  </div>
+                  
+                  <div>Service Role Key:</div>
+                  <div className={`font-mono ${envCheck.hasSupabaseServiceKey ? 'text-green-600' : 'text-yellow-600'}`}>
+                    {envCheck.hasSupabaseServiceKey ? 'Set' : 'Not set'}
+                  </div>
+                  
+                  <div>Gemini API Key:</div>
+                  <div className={`font-mono ${envCheck.hasGeminiApiKey ? 'text-green-600' : 'text-red-600'}`}>
+                    {envCheck.hasGeminiApiKey ? 'Set' : 'Not set'}
+                  </div>
+                </div>
+                
+                {!envCheck.hasGeminiApiKey && (
+                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-red-700">
+                    <strong>⚠️ 重要な設定が不足しています:</strong>
+                    <ul className="mt-2 list-disc list-inside space-y-1">
+                      <li>GEMINI_API_KEYが設定されていません</li>
+                      <li>Google AI StudioでAPIキーを取得してください</li>
+                      <li>.env.localファイルに設定を追加してください</li>
+                    </ul>
+                  </div>
+                )}
+                
+                {!envCheck.hasSupabaseServiceKey && (
+                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-yellow-700">
+                    <strong>⚠️ 推奨設定が不足しています:</strong>
+                    <ul className="mt-2 list-disc list-inside space-y-1">
+                      <li>SUPABASE_SERVICE_ROLE_KEYが設定されていません</li>
+                      <li>Supabaseダッシュボード → Settings → API で取得できます</li>
+                      <li>完全な機能のためには設定を推奨します</li>
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
           )}

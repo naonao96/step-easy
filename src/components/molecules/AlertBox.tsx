@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { Task } from '@/stores/taskStore';
-import { FaExclamationTriangle, FaClock, FaCheckCircle, FaFire } from 'react-icons/fa';
+import { FaExclamationTriangle, FaClock, FaCheckCircle, FaFire, FaGem } from 'react-icons/fa';
 import { getRiskyStreakTasks, getExpiredStreakTasks, getActiveStreakTasks } from '@/lib/streakUtils';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Alert {
   type: 'success' | 'warning' | 'info' | 'error';
@@ -15,6 +16,8 @@ interface AlertBoxProps {
 }
 
 export const AlertBox: React.FC<AlertBoxProps> = ({ tasks = [] }) => {
+  const { isGuest, planType } = useAuth();
+  
   const alerts = useMemo(() => {
     const alerts: Alert[] = [];
     const today = new Date();
@@ -105,8 +108,22 @@ export const AlertBox: React.FC<AlertBoxProps> = ({ tasks = [] }) => {
       });
     }
 
+    // プレミアム機能予告通知（週1回程度の頻度で表示）
+    if (!isGuest && planType === 'free') {
+      const weekOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
+      // 週番号が偶数の場合のみ表示（頻度調整）
+      if (weekOfYear % 2 === 0) {
+        alerts.push({
+          type: 'info',
+          title: '🚀 プレミアム機能開発中',
+          message: '詳細な分析レポートとAI専属コーチ機能を準備中です',
+          icon: FaGem({ className: "w-4 h-4" })
+        });
+      }
+    }
+
     return alerts;
-  }, [tasks]);
+  }, [tasks, isGuest, planType]);
 
   return (
     <div className="bg-white rounded-lg shadow-md p-4">

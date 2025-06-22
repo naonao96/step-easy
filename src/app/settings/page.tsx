@@ -3,7 +3,7 @@
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { Input } from '@/components/atoms/Input';
-import { FaUser, FaBell, FaLock, FaPalette, FaSignOutAlt, FaInfoCircle } from 'react-icons/fa';
+import { FaUser, FaBell, FaLock, FaPalette, FaSignOutAlt, FaInfoCircle, FaGem } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,7 +12,7 @@ import { useTaskStore } from '@/stores/taskStore';
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isPremium, isGuest } = useAuth();
   const { tasks, fetchTasks } = useTaskStore();
   const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'appearance' | 'security'>('profile');
   const [isLoading, setIsLoading] = useState(false);
@@ -29,6 +29,7 @@ export default function SettingsPage() {
     task_reminders: true,
     habit_reminders: true,
     ai_suggestions: true,
+    premium_updates: false,
   });
 
   const [appearanceSettings, setAppearanceSettings] = useState({
@@ -225,60 +226,96 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {/* サイドバー */}
             <div className="md:col-span-1">
-              <div className="bg-white rounded-lg shadow-md p-4">
-                <nav className="space-y-2">
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="space-y-4">
                   <button
                     onClick={() => setActiveTab('profile')}
-                    className={`w-full flex items-center space-x-3 px-4 py-2 rounded-lg ${
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                       activeTab === 'profile'
-                        ? 'bg-blue-50 text-blue-600'
-                        : 'text-gray-600 hover:bg-gray-50'
+                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        : 'text-gray-700 hover:bg-gray-50'
                     }`}
                   >
-                    <span className="w-5 h-5">{FaUser({})}</span>
+                    {FaUser({ className: "w-5 h-5" })}
                     <span>プロフィール</span>
                   </button>
                   <button
                     onClick={() => setActiveTab('notifications')}
-                    className={`w-full flex items-center space-x-3 px-4 py-2 rounded-lg ${
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                       activeTab === 'notifications'
-                        ? 'bg-blue-50 text-blue-600'
-                        : 'text-gray-600 hover:bg-gray-50'
+                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        : 'text-gray-700 hover:bg-gray-50'
                     }`}
                   >
-                    <span className="w-5 h-5">{FaBell({})}</span>
+                    {FaBell({ className: "w-5 h-5" })}
                     <span>通知</span>
                   </button>
                   <button
                     onClick={() => setActiveTab('appearance')}
-                    className={`w-full flex items-center space-x-3 px-4 py-2 rounded-lg ${
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                       activeTab === 'appearance'
-                        ? 'bg-blue-50 text-blue-600'
-                        : 'text-gray-600 hover:bg-gray-50'
+                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        : 'text-gray-700 hover:bg-gray-50'
                     }`}
                   >
-                    <span className="w-5 h-5">{FaPalette({})}</span>
+                    {FaPalette({ className: "w-5 h-5" })}
                     <span>外観</span>
                   </button>
                   <button
                     onClick={() => setActiveTab('security')}
-                    className={`w-full flex items-center space-x-3 px-4 py-2 rounded-lg ${
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                       activeTab === 'security'
-                        ? 'bg-blue-50 text-blue-600'
-                        : 'text-gray-600 hover:bg-gray-50'
+                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        : 'text-gray-700 hover:bg-gray-50'
                     }`}
                   >
-                    <span className="w-5 h-5">{FaLock({})}</span>
+                    {FaLock({ className: "w-5 h-5" })}
                     <span>セキュリティ</span>
                   </button>
+                </div>
+                
+                {/* プレミアム予告カード（安全に追加） */}
+                {!isPremium && !isGuest && (
+                  <div className="mt-6 p-4 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      {FaGem ({className:"w-4 h-4 text-amber-600"})}
+                      <span className="text-sm font-semibold text-amber-800">プレミアム機能</span>
+                      <span className="text-xs bg-amber-200 text-amber-800 px-2 py-0.5 rounded-full">
+                        準備中
+                      </span>
+                    </div>
+                    <p className="text-xs text-amber-700 mb-3">
+                      より詳細な分析とAI機能を準備中です
+                    </p>
+                    <div className="space-y-1 text-xs text-amber-600 mb-3">
+                      <div className="flex items-center gap-1">
+                        <div className="w-1 h-1 bg-amber-500 rounded-full"></div>
+                        <span>週次・月次レポート</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-1 h-1 bg-amber-500 rounded-full"></div>
+                        <span>行動パターン分析</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-1 h-1 bg-amber-500 rounded-full"></div>
+                        <span>AI専属コーチ</span>
+                      </div>
+                    </div>
+                    <button className="w-full text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-2 rounded-md transition-colors">
+                      詳細を見る
+                    </button>
+                  </div>
+                )}
+
+                <div className="mt-6 pt-6 border-t border-gray-200">
                   <button
                     onClick={handleSignOut}
-                    className="w-full flex items-center space-x-3 px-4 py-2 rounded-lg text-red-600 hover:bg-red-50"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-red-600 hover:bg-red-50 transition-colors"
                   >
-                    <span className="w-5 h-5">{FaSignOutAlt({})}</span>
+                    {FaSignOutAlt({ className: "w-5 h-5" })}
                     <span>ログアウト</span>
                   </button>
-                </nav>
+                </div>
               </div>
             </div>
 
@@ -401,6 +438,36 @@ export default function SettingsPage() {
                         />
                         <span>AI提案</span>
                       </label>
+                      
+                      {/* プレミアム機能通知設定（安全に追加） */}
+                      {!isPremium && (
+                        <div className="border-t border-gray-200 pt-4 mt-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            {FaGem ({className:"w-4 h-4 text-amber-500"})}
+                            <span className="text-sm font-medium text-gray-700">プレミアム機能通知</span>
+                            <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
+                              Coming Soon
+                            </span>
+                          </div>
+                          <label className="flex items-center space-x-3 opacity-75">
+                            <input
+                              type="checkbox"
+                              checked={notificationSettings.premium_updates || false}
+                              onChange={(e) =>
+                                setNotificationSettings({
+                                  ...notificationSettings,
+                                  premium_updates: e.target.checked,
+                                })
+                              }
+                              className="form-checkbox h-5 w-5 text-amber-600"
+                            />
+                            <span className="text-sm">プレミアム機能のアップデート通知</span>
+                          </label>
+                          <p className="text-xs text-gray-500 ml-8 mt-1">
+                            新機能のベータ版リリースやアップデート情報をお知らせします
+                          </p>
+                        </div>
+                      )}
                     </div>
                     <Button onClick={handleNotificationUpdate} isLoading={isLoading}>
                       保存
