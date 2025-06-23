@@ -50,6 +50,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [showHelpPanel, setShowHelpPanel] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
+  const mobileAccountMenuRef = useRef<HTMLDivElement>(null);
 
   const handleSignOut = async () => {
     try {
@@ -67,8 +68,14 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   // アカウントメニューを閉じる（外側クリック時）
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (accountMenuRef.current && !accountMenuRef.current.contains(event.target as Node)) {
-        setShowAccountMenu(false);
+      const target = event.target as Node;
+      
+      // デスクトップ用メニュー
+      if (accountMenuRef.current && !accountMenuRef.current.contains(target)) {
+        // モバイル用メニューも確認
+        if (mobileAccountMenuRef.current && !mobileAccountMenuRef.current.contains(target)) {
+          setShowAccountMenu(false);
+        }
       }
     };
 
@@ -211,7 +218,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         {/* ユーザーアバター（モバイル用） */}
         <button
           onClick={() => setShowAccountMenu(!showAccountMenu)}
-          className="lg:hidden w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center"
+          className="lg:hidden p-1 w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center hover:shadow-md transition-all"
+          title="アカウントメニュー"
         >
           <span className="text-white text-sm font-medium">
             {user?.isGuest ? 'G' : (user?.email?.[0]?.toUpperCase() || 'U')}
@@ -220,17 +228,17 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
         {/* モバイル用ドロップダウンメニュー */}
         {showAccountMenu && (
-          <div className="absolute lg:hidden right-4 top-16 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+          <div className="absolute lg:hidden right-2 top-16 w-44 sm:w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-[9999]" ref={mobileAccountMenuRef}>
             {user?.isGuest ? (
               <button
                 onClick={() => {
                   setShowAccountMenu(false);
                   router.push('/login');
                 }}
-                className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-3 w-full px-3 sm:px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
               >
-                {FaUser({ className: "w-4 h-4" })}
-                ログイン
+                {FaUser({ className: "w-4 h-4 flex-shrink-0" })}
+                <span>ログイン</span>
               </button>
             ) : (
               <button
@@ -238,10 +246,10 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                   setShowAccountMenu(false);
                   handleSignOut();
                 }}
-                className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-3 w-full px-3 sm:px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
               >
-                {FaSignOutAlt({ className: "w-4 h-4" })}
-                ログアウト
+                {FaSignOutAlt({ className: "w-4 h-4 flex-shrink-0" })}
+                <span>ログアウト</span>
               </button>
             )}
           </div>

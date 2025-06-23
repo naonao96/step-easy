@@ -99,6 +99,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
 
   createTask: async (task) => {
+    console.log('createTask開始:', task);
     set({ loading: true, error: null });
     try {
       const supabase = createClientComponentClient();
@@ -110,6 +111,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         console.log('ゲストユーザーとしてローカルストレージに保存');
         // ローカルストレージからゲストタスクを取得
         const guestTasks = JSON.parse(localStorage.getItem('guestTasks') || '[]');
+        console.log('既存ゲストタスク数:', guestTasks.length);
         
         if (guestTasks.length >= GUEST_TASK_LIMIT) {
           throw new Error('ゲストユーザーは3件までしかタスクを作成できません。アカウントを作成して続けるには、ログインしてください。');
@@ -131,16 +133,20 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
           streak_start_date: null
         };
         
+        console.log('保存するゲストタスク:', newTask);
         guestTasks.push(newTask);
         localStorage.setItem('guestTasks', JSON.stringify(guestTasks));
+        console.log('ローカルストレージ保存完了');
         
         // ローカルタスクを再読み込み
         await get().fetchTasks();
+        console.log('fetchTasks完了');
         return;
       }
       
       console.log('認証済みユーザーとしてSupabaseに保存');
       const isGuest = user?.user_metadata?.is_guest;
+      console.log('isGuest:', isGuest);
 
       if (isGuest && get().tasks.length >= GUEST_TASK_LIMIT) {
         throw new Error('ゲストユーザーは3件までしかタスクを作成できません。アカウントを作成して続けるには、ログインしてください。');
@@ -161,8 +167,12 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       console.log('Supabase insert結果:', { data, error });
 
       if (error) throw error;
+      
+      console.log('fetchTasks開始');
       await get().fetchTasks();
+      console.log('createTask完了');
     } catch (error) {
+      console.error('createTask エラー:', error);
       set({ error: (error as Error).message });
       console.error('タスク作成エラー:', error);
     } finally {

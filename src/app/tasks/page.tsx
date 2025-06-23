@@ -15,6 +15,7 @@ import { FaSave, FaEye, FaEdit, FaTrash, FaArrowLeft } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
 import { TaskTimer } from '@/components/molecules/TaskTimer';
 import { TaskExecutionHistory } from '@/components/molecules/TaskExecutionHistory';
+import { formatDateJP } from '@/lib/timeUtils';
 
 export default function TaskEditPage() {
   const router = useRouter();
@@ -115,7 +116,13 @@ export default function TaskEditPage() {
 
     // 期限日は開始日以降に設定
     if (dueDate && startDate) {
-      if (dueDate < startDate) {
+      // 時刻部分を除外して日付のみで比較（元のオブジェクトは変更しない）
+      const startDateOnly = new Date(startDate.getTime());
+      startDateOnly.setHours(0, 0, 0, 0);
+      const dueDateOnly = new Date(dueDate.getTime());
+      dueDateOnly.setHours(0, 0, 0, 0);
+      
+      if (dueDateOnly < startDateOnly) {
         return {
           isValid: false,
           message: '期限日は開始日以降に設定してください。'
@@ -169,19 +176,35 @@ export default function TaskEditPage() {
         category: category
       };
 
+      // デバッグ情報を出力
+      console.log('保存データ:', taskData);
+      console.log('開始日:', startDate);
+      console.log('期限日:', dueDate);
+
       if (isExistingTask && task) {
+        console.log('既存タスクを更新中...');
         await updateTask(task.id, taskData);
+        console.log('更新完了');
         // 保存後はプレビューモードに切り替え
         switchToPreviewMode();
       } else {
-        await createTask(taskData as any);
+        console.log('新規タスクを作成中...');
+        const result = await createTask(taskData as any);
+        console.log('作成結果:', result);
+        
         // エラーがある場合はストアのエラーを確認
         const error = useTaskStore.getState().error;
         if (error) {
+          console.error('ストアエラー:', error);
           alert(error);
           return;
         }
-        router.push('/menu');
+        console.log('メニューに遷移中...');
+        
+        // 短い遅延を入れてからリダイレクト（画面の更新を確実にする）
+        setTimeout(() => {
+          router.push('/menu');
+        }, 100);
       }
     } catch (error) {
       console.error('保存エラー:', error);
@@ -258,18 +281,12 @@ export default function TaskEditPage() {
                   <div className="flex items-center gap-4 text-xs text-gray-500 font-medium">
                     <div className="flex items-center gap-1.5">
                       <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>
-                      <span>{new Date(task.created_at).toLocaleDateString('ja-JP', { 
-                        month: 'short', 
-                        day: 'numeric'
-                      })}</span>
+                      <span>{formatDateJP(task.created_at)}</span>
                     </div>
                     {task.completed_at && (
                       <div className="flex items-center gap-1.5">
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                        <span>完了 {new Date(task.completed_at).toLocaleDateString('ja-JP', { 
-                          month: 'short', 
-                          day: 'numeric'
-                        })}</span>
+                        <span>完了 {formatDateJP(task.completed_at)}</span>
                       </div>
                     )}
                   </div>
@@ -382,12 +399,7 @@ export default function TaskEditPage() {
                   {isExistingTask && task && (
                     <div className="flex items-center gap-1.5">
                       <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                      <span>編集中 {new Date(task.updated_at).toLocaleDateString('ja-JP', { 
-                        month: 'short', 
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}</span>
+                      <span>編集中 {formatDateJP(task.updated_at)}</span>
                     </div>
                   )}
                   {!isExistingTask && (

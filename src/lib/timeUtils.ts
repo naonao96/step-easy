@@ -79,4 +79,113 @@ export const calculateTimeComparison = (estimatedMinutes: number, actualMinutes:
     isUnderEstimate,
     status: isUnderEstimate ? 'success' : 'warning'
   };
+};
+
+/**
+ * 安全な日本語日付フォーマット（ロケールエラー回避）
+ */
+export const formatDateJP = (date: Date | string, options?: Intl.DateTimeFormatOptions): string => {
+  try {
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) {
+      return '無効な日付';
+    }
+    
+    // デフォルトオプション
+    const defaultOptions: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      ...options
+    };
+    
+    // まず ja-JP を試す
+    try {
+      return dateObj.toLocaleDateString('ja-JP', defaultOptions);
+    } catch (localeError) {
+      // ja-JP が失敗した場合は ja を試す
+      try {
+        return dateObj.toLocaleDateString('ja', defaultOptions);
+      } catch (jaError) {
+        // それも失敗した場合はデフォルトロケールを使用
+        return dateObj.toLocaleDateString(undefined, defaultOptions);
+      }
+    }
+  } catch (error) {
+    console.warn('Date formatting error:', error);
+    return '日付エラー';
+  }
+};
+
+/**
+ * 安全な日本語時刻フォーマット（ロケールエラー回避）
+ */
+export const formatTimeJP = (date: Date | string, options?: Intl.DateTimeFormatOptions): string => {
+  try {
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) {
+      return '無効な時刻';
+    }
+    
+    // デフォルトオプション
+    const defaultOptions: Intl.DateTimeFormatOptions = {
+      hour: '2-digit',
+      minute: '2-digit',
+      ...options
+    };
+    
+    // まず ja-JP を試す
+    try {
+      return dateObj.toLocaleTimeString('ja-JP', defaultOptions);
+    } catch (localeError) {
+      // ja-JP が失敗した場合は ja を試す
+      try {
+        return dateObj.toLocaleTimeString('ja', defaultOptions);
+      } catch (jaError) {
+        // それも失敗した場合はデフォルトロケールを使用
+        return dateObj.toLocaleTimeString(undefined, defaultOptions);
+      }
+    }
+  } catch (error) {
+    console.warn('Time formatting error:', error);
+    return '時刻エラー';
+  }
+};
+
+/**
+ * 安全な日本語日時フォーマット（ロケールエラー回避）
+ */
+export const formatDateTimeJP = (date: Date | string, options?: Intl.DateTimeFormatOptions): string => {
+  try {
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) {
+      return '無効な日時';
+    }
+    
+    // デフォルトオプション
+    const defaultOptions: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      ...options
+    };
+    
+    // まず ja-JP を試す
+    try {
+      return dateObj.toLocaleString('ja-JP', defaultOptions);
+    } catch (localeError) {
+      // ja-JP が失敗した場合は ja を試す
+      try {
+        return dateObj.toLocaleString('ja', defaultOptions);
+      } catch (jaError) {
+        // それも失敗した場合はデフォルトロケールを使用
+        return dateObj.toLocaleString(undefined, defaultOptions);
+      }
+    }
+  } catch (error) {
+    console.warn('DateTime formatting error:', error);
+    return '日時エラー';
+  }
 }; 

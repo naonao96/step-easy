@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Task } from '@/stores/taskStore';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CharacterMessageHookProps {
   userType: 'guest' | 'free' | 'premium';
@@ -13,9 +13,10 @@ interface CharacterMessageHookProps {
     todayPercentage: number;
     overallPercentage: number;
   };
-  selectedDate?: Date; // 選択された日付を追加
+  selectedDate?: Date;
 }
 
+// ゲストユーザー用のシンプルなメッセージ
 const GUEST_MESSAGES = [
   '今日も頑張りましょう！',
   '新しいタスクを作成してみませんか？',
@@ -27,33 +28,17 @@ const GUEST_MESSAGES = [
   '目標に向かって頑張りましょう',
 ];
 
-// フォールバックメッセージ（DB取得失敗時）
-const FALLBACK_MESSAGES = {
-  free: [
-    '今日も一緒に頑張りましょう！',
-    '新しい一日の始まりです。小さな一歩から始めてみませんか？',
-    'あなたのペースで大丈夫です。一つずつ進んでいきましょう。',
-    '今日はどんなタスクに挑戦しますか？',
-    '一歩ずつ、着実に進んでいきましょう。',
-  ],
-  premium: [
-    'プレミアムメンバーとして、あなたの成功を全力でサポートします！',
-    'あなたの目標達成を心から応援しています。',
-    'プレミアム機能を活用して、効率的にタスクを進めましょう。',
-    '今日も素晴らしい一日になりそうですね。一緒に頑張りましょう！',
-    'あなたの継続的な努力が実を結んでいます。今日も前進しましょう。',
-  ]
-};
-
-// 統一されたフォールバックメッセージ生成関数
-const generateUnifiedFallbackMessage = (
+/**
+ * 統一されたメッセージ生成関数
+ * 認証状態に関係なく、現在のタスクデータから動的にメッセージを生成
+ */
+const generatePersonalizedMessage = (
   userType: 'guest' | 'free' | 'premium',
   userName?: string,
   tasks?: Task[],
-  statistics?: any,
   selectedDate?: Date
 ): string => {
-  // ゲストユーザーの場合
+  // ゲストユーザーの場合はランダムメッセージ
   if (userType === 'guest') {
     const randomIndex = Math.floor(Math.random() * GUEST_MESSAGES.length);
     return GUEST_MESSAGES[randomIndex];
@@ -62,27 +47,47 @@ const generateUnifiedFallbackMessage = (
   // 選択された日付が今日かどうか
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const isToday = selectedDate ? 
-    selectedDate.getTime() === today.getTime() : true;
+  const targetDate = selectedDate ? new Date(selectedDate) : today;
+  targetDate.setHours(0, 0, 0, 0);
+  const isToday = targetDate.getTime() === today.getTime();
 
-  // タスク統計の計算
-  const regularTasks = tasks?.filter(t => !t.is_habit) || [];
-  const habitTasks = tasks?.filter(t => t.is_habit) || [];
-  const completedCount = regularTasks.filter(t => t.status === 'done').length + 
-                        habitTasks.filter(t => t.status === 'done').length;
-  const totalCount = regularTasks.length + habitTasks.length;
-  const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-
+  // 時間帯の判定
+  const hour = new Date().getHours();
+  const timeOfDay = hour < 12 ? '朝' : hour < 18 ? '昼' : '夜';
+  
   // ユーザー名の処理
-  const greeting = userName ? `${userName}さん、` : '';
+  const displayName = userName || 'あなた';
+  const greeting = `${timeOfDay}の時間、${displayName}さん！`;
 
-  // 統一されたメッセージ生成ロジック
-  if (totalCount === 0) {
+  // タスクが存在しない場合
+  if (!tasks || tasks.length === 0) {
     return isToday ? 
-      `${greeting}新しい一日の始まりですね！今日はどんなことにチャレンジしますか？` : 
+      `${greeting}新しい一日の始まりですね！今日はどんなことにチャレンジしますか？✨` : 
       `${greeting}この日はお休みの日だったようですね。`;
   }
 
+  // 対象日のタスクをフィルタリング
+  const targetTasks = tasks.filter(task => {
+    if (!task.due_date) return isToday; // 期限なしは今日のタスクとして扱う
+    
+    const taskDate = new Date(task.due_date);
+    taskDate.setHours(0, 0, 0, 0);
+    return taskDate.getTime() === targetDate.getTime();
+  });
+
+  // 完了タスクの計算
+  const completedTasks = targetTasks.filter(task => task.status === 'done');
+  const totalTasks = targetTasks.length;
+  const completionRate = totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0;
+
+  // タスクがない日
+  if (totalTasks === 0) {
+    return isToday ? 
+      `${greeting}今日はゆっくり過ごす日ですね。新しいタスクを追加して、小さな一歩から始めてみませんか？` : 
+      `${greeting}この日はゆっくり過ごされた日でした。`;
+  }
+
+  // 完了率に基づいたメッセージ生成
   if (completionRate >= 100) {
     return isToday ? 
       `${greeting}🎉 完璧です！全てのタスクを完了しました。今日は本当によく頑張りましたね！` : 
@@ -99,7 +104,7 @@ const generateUnifiedFallbackMessage = (
     return isToday ? 
       `${greeting}🚀 良いスタートを切れていますね！一歩ずつ、着実に進んでいきましょう。` : 
       `${greeting}少しずつでも前進されています。それが大切です。`;
-  } else if (completedCount > 0) {
+  } else if (completedTasks.length > 0) {
     return isToday ? 
       `${greeting}✨ 第一歩を踏み出せました！小さな一歩も大きな成果につながります。` : 
       `${greeting}何かを始めることができた日でした。`;
@@ -115,204 +120,63 @@ export const useCharacterMessage = ({ userType, userName, tasks, statistics, sel
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
-  // AuthContextと同じSupabaseクライアントを使用
-  const supabase = createClientComponentClient();
+  // AuthContextから認証状態を取得
+  const { user, isLoading: authLoading } = useAuth();
 
-  // メッセージ取得関数
-  const fetchMessage = useCallback(async () => {
-    if (isLoading) return;
-    
-    setIsLoading(true);
-    setError(null);
-    
+  // メッセージ生成関数（認証不要のシンプルなアプローチ）
+  const generateMessage = useCallback(() => {
     try {
-      // ゲストユーザーの場合は統一されたフォールバックメッセージ
-      if (userType === 'guest') {
-        const fallbackMessage = generateUnifiedFallbackMessage(userType, userName, tasks, statistics, selectedDate);
-        setMessage(fallbackMessage);
-        return;
-      }
+      setIsLoading(true);
+      setError(null);
 
-      // 認証状態を確認
-      const { data: user, error: authError } = await supabase.auth.getUser();
+      // 認証状態に関係なく、現在のデータからメッセージを生成
+      const personalizedMessage = generatePersonalizedMessage(
+        userType,
+        userName,
+        tasks,
+        selectedDate
+      );
       
-      // 日付の準備（認証エラー処理の前に移動）
-      const today = new Date().toISOString().split('T')[0];
-      const selectedDateStr = selectedDate ? selectedDate.toISOString().split('T')[0] : today;
-      const queryDate = selectedDateStr === today ? today : today; // 常に今日の日付を使用
-      
-      if (authError || !user.user) {
-        // セッションリフレッシュを試行
-        try {
-          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-          
-          if (refreshData.session && !refreshError) {
-            // セッションが復旧したら再試行
-            const { data: retryUser } = await supabase.auth.getUser();
-            if (retryUser.user) {
-              // ここでデータベースクエリを再実行
-              const { data: dailyMessage, error: dbError } = await supabase
-                .from('daily_messages')
-                .select('*')
-                .eq('user_id', retryUser.user.id)
-                .eq('message_date', queryDate)
-                .eq('scheduled_type', 'morning')
-                .single();
-              
-              if (dailyMessage && dailyMessage.message) {
-                setMessage(dailyMessage.message);
-                return;
-              }
-            }
-          }
-        } catch (refreshError) {
-          console.warn('Session refresh failed:', refreshError);
-        }
-        
-        // 認証エラー時は統一されたフォールバック処理
-        const fallbackMessage = generateUnifiedFallbackMessage(userType, userName, tasks, statistics, selectedDate);
-        setMessage(fallbackMessage);
-        return;
-      }
-
-      // キャッシュ制御を追加
-      const { data: dailyMessage, error: dbError } = await supabase
-        .from('daily_messages')
-        .select('*')
-        .eq('user_id', user.user.id)
-        .eq('message_date', queryDate) // 常に今日の日付で検索
-        .eq('scheduled_type', 'morning')
-        .single();
-
-      if (dbError) {
-        // メッセージが見つからない場合は既存のAPI呼び出しにフォールバック
-        if (dbError.code === 'PGRST116') { // No rows found
-          return await fallbackToApiGeneration(userType, userName, tasks, statistics);
-        }
-        // その他のDBエラーも同様にフォールバックする
-        console.warn('Database error, falling back to API generation:', dbError.message);
-        return await fallbackToApiGeneration(userType, userName, tasks, statistics);
-      }
-
-      if (dailyMessage && dailyMessage.message) {
-        setMessage(dailyMessage.message);
-      } else {
-        throw new Error('Empty message received from database');
-      }
-
+      setMessage(personalizedMessage);
+      console.log('✅ Character message generated successfully');
     } catch (err) {
-      console.error('Daily message fetch error:', err);
+      console.error('Error generating character message:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
       
-      // エラー時の統一フォールバック
-      const fallbackMessage = generateUnifiedFallbackMessage(userType, userName, tasks, statistics, selectedDate);
+      // エラー時のフォールバック
+      const fallbackMessage = userType === 'guest' ? 
+        '今日も頑張りましょう！' : 
+        '今日も一緒に頑張りましょう！';
       setMessage(fallbackMessage);
     } finally {
       setIsLoading(false);
     }
-  }, [userType, userName, tasks, statistics, selectedDate, isLoading, supabase]);
+  }, [userType, userName, tasks, selectedDate]);
 
-  // 既存のAPI呼び出しにフォールバック（DB取得失敗時）
-  const fallbackToApiGeneration = async (userType: string, userName?: string, tasks?: Task[], statistics?: any) => {
-    try {
-      const response = await fetch('/api/character-message', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userType,
-          userName: userName || null,
-          tasks: userType === 'premium' ? tasks : undefined,
-          statistics: userType === 'premium' ? statistics : undefined,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
-      setMessage(data.message);
-
-    } catch (apiError) {
-      console.error('API fallback also failed:', apiError);
-      
-      // 最終フォールバック：統一処理
-      const fallbackMessage = generateUnifiedFallbackMessage(userType as 'guest' | 'free' | 'premium', userName, tasks, statistics, selectedDate);
-      setMessage(fallbackMessage);
-    }
-  };
-
+  // 初期化とメッセージ生成
   useEffect(() => {
-    // 初回メッセージ取得
-    fetchMessage();
-
-    // ゲストユーザーまたは認証されていない場合は定期的な再取得は不要
-    if (userType === 'guest') {
+    // AuthContextが初期化中の場合は待機
+    if (authLoading) {
       return;
     }
 
-    // 認証状態を確認してから設定
-    const checkAuthAndSetup = async () => {
-      try {
-        const { data: user, error: authError } = await supabase.auth.getUser();
-        
-        if (authError || !user.user) {
-          return;
-        }
+    // ゲストユーザーまたは認証完了後にメッセージ生成
+    if (userType === 'guest' || user) {
+      generateMessage();
+    }
+  }, [authLoading, user, generateMessage, userType]);
 
-        // 定期的な再取得（5分ごと）
-        const interval = setInterval(() => {
-          fetchMessage();
-        }, 5 * 60 * 1000); // 5分
+  // タスクや日付が変更された際の再生成
+  useEffect(() => {
+    // 認証初期化が完了していて、かつ適切な条件が揃った場合のみ再生成
+    if (!authLoading && (userType === 'guest' || user)) {
+      generateMessage();
+    }
+  }, [tasks, selectedDate, generateMessage, authLoading, user, userType]);
 
-        // リアルタイム監視の設定
-        let subscription: any = null;
-        
-        try {
-          const { data: user } = await supabase.auth.getUser();
-          
-          if (user.user) {
-            subscription = supabase
-              .channel('daily_messages_changes')
-              .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'daily_messages',
-                filter: `user_id=eq.${user.user.id}`
-              }, (payload) => {
-                fetchMessage(); // 新しいメッセージが追加されたら再取得
-              })
-              .on('postgres_changes', {
-                event: 'UPDATE',
-                schema: 'public',
-                table: 'daily_messages',
-                filter: `user_id=eq.${user.user.id}`
-              }, (payload) => {
-                fetchMessage(); // メッセージが更新されたら再取得
-              })
-              .subscribe();
-          }
-        } catch (subscriptionError) {
-          console.warn('Failed to setup realtime subscription:', subscriptionError);
-        }
-
-        return () => {
-          clearInterval(interval);
-          if (subscription) {
-            subscription.unsubscribe();
-          }
-        };
-      } catch (error) {
-        console.error('Error in checkAuthAndSetup:', error);
-      }
-    };
-
-    checkAuthAndSetup();
-  }, [userType]); // 依存関係を最小限に
-
-  return { message, isLoading, error };
+  return { 
+    message, 
+    isLoading: isLoading || authLoading, // 認証ローディング状態も含める
+    error 
+  };
 }; 

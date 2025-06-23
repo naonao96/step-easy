@@ -61,7 +61,7 @@ export const PremiumComingSoonBanner: React.FC<PremiumComingSoonBannerProps> = (
           </span>
         </div>
         <span className="text-xs text-amber-600 font-medium">
-          2024年春リリース予定
+          2025年7月リリース予定
         </span>
       </div>
 

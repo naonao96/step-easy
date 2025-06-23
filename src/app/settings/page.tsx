@@ -3,7 +3,7 @@
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { Input } from '@/components/atoms/Input';
-import { FaUser, FaBell, FaLock, FaPalette, FaSignOutAlt, FaInfoCircle, FaGem } from 'react-icons/fa';
+import { FaUser, FaBell, FaLock, FaSignOutAlt, FaInfoCircle, FaGem, FaFileContract, FaShieldAlt } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,7 +14,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const { user, signOut, isPremium, isGuest } = useAuth();
   const { tasks, fetchTasks } = useTaskStore();
-  const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'appearance' | 'security'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'security'>('profile');
   const [isLoading, setIsLoading] = useState(false);
 
   const [profileData, setProfileData] = useState({
@@ -32,17 +32,16 @@ export default function SettingsPage() {
     premium_updates: false,
   });
 
-  const [appearanceSettings, setAppearanceSettings] = useState({
-    theme: 'light' as 'light' | 'dark' | 'system',
-    font_size: 'medium' as 'small' | 'medium' | 'large',
-    compact_mode: false,
-  });
-
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
+
+  // 個別のパスワード変更用state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   // ヘルプリンク用の関数
   const openHelp = (section: string) => {
@@ -101,21 +100,9 @@ export default function SettingsPage() {
     }
   };
 
-  const handleAppearanceUpdate = async () => {
-    setIsLoading(true);
-    try {
-      // TODO: 外観設定更新機能の実装
-      toast.success('外観設定を更新しました');
-    } catch (error) {
-      toast.error('外観設定の更新に失敗しました');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
+    if (newPassword !== confirmPassword) {
       toast.error('新しいパスワードが一致しません');
       return;
     }
@@ -123,11 +110,9 @@ export default function SettingsPage() {
     try {
       // TODO: パスワード変更機能の実装
       toast.success('パスワードを変更しました');
-      setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
     } catch (error) {
       toast.error('パスワードの変更に失敗しました');
     } finally {
@@ -136,16 +121,129 @@ export default function SettingsPage() {
   };
 
   const handleDeleteAccount = async () => {
-    if (!window.confirm('アカウントを削除してもよろしいですか？この操作は取り消せません。')) {
-      return;
-    }
+    // 段階的確認プロセス
+    const firstConfirm = window.confirm(
+      'アカウントを削除すると、すべてのタスクデータ、実行履歴、設定が永久に失われます。\n\n本当に削除してもよろしいですか？'
+    );
+    
+    if (!firstConfirm) return;
+
+    const finalConfirm = window.confirm(
+      '最終確認です。\n\nこの操作は取り消すことができません。アカウントとすべてのデータが完全に削除されます。\n\n続行しますか？'
+    );
+    
+    if (!finalConfirm) return;
+
     setIsLoading(true);
     try {
-      // TODO: アカウント削除機能の実装
-      toast.success('アカウントを削除しました');
-      router.push('/');
-    } catch (error) {
-      toast.error('アカウントの削除に失敗しました');
+      const { createClientComponentClient } = await import('@supabase/auth-helpers-nextjs');
+      const supabase = createClientComponentClient();
+      
+      console.log('🗑️ アカウント削除開始...');
+      
+      // 1. 関連データの順次削除（CASCADE設定があるが明示的に削除）
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
+      if (!currentUser) {
+        throw new Error('ユーザーが見つかりません');
+      }
+
+      console.log('📊 関連データ削除開始...');
+      
+      // execution_logs削除
+      const { error: logsError } = await supabase
+        .from('execution_logs')
+        .delete()
+        .eq('user_id', currentUser.id);
+      
+      if (logsError) {
+        console.error('execution_logs削除エラー:', logsError);
+      }
+
+      // active_executions削除
+      const { error: activeError } = await supabase
+        .from('active_executions')
+        .delete()
+        .eq('user_id', currentUser.id);
+      
+      if (activeError) {
+        console.error('active_executions削除エラー:', activeError);
+      }
+
+      // daily_messages削除
+      const { error: messagesError } = await supabase
+        .from('daily_messages')
+        .delete()
+        .eq('user_id', currentUser.id);
+      
+      if (messagesError) {
+        console.error('daily_messages削除エラー:', messagesError);
+      }
+
+      // premium_waitlist削除
+      const { error: waitlistError } = await supabase
+        .from('premium_waitlist')
+        .delete()
+        .eq('user_id', currentUser.id);
+      
+      if (waitlistError) {
+        console.error('premium_waitlist削除エラー:', waitlistError);
+      }
+
+      // tasks削除
+      const { error: tasksError } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('user_id', currentUser.id);
+      
+      if (tasksError) {
+        console.error('tasks削除エラー:', tasksError);
+        throw tasksError;
+      }
+
+      // user_settings削除
+      const { error: settingsError } = await supabase
+        .from('user_settings')
+        .delete()
+        .eq('user_id', currentUser.id);
+      
+      if (settingsError) {
+        console.error('user_settings削除エラー:', settingsError);
+        throw settingsError;
+      }
+
+      // users削除
+      const { error: userError } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', currentUser.id);
+      
+      if (userError) {
+        console.error('users削除エラー:', userError);
+        throw userError;
+      }
+
+      console.log('✅ 関連データ削除完了');
+      
+      // 2. Supabase Authからユーザー削除（注意：これは現在のセッションでは使用できない可能性がある）
+      // Supabase Authの削除は管理者権限が必要なため、サインアウトで代替
+      console.log('🔐 認証セッション終了...');
+      const { error: signOutError } = await supabase.auth.signOut();
+      
+      if (signOutError) {
+        console.error('サインアウトエラー:', signOutError);
+        // サインアウトエラーは致命的でないため続行
+      }
+
+      console.log('🎉 アカウント削除完了');
+      toast.success('アカウントを削除しました。ご利用ありがとうございました。');
+      
+      // トップページにリダイレクト
+      router.push('/lp');
+      
+    } catch (error: any) {
+      console.error('❌ アカウント削除エラー:', error);
+      toast.error(`アカウントの削除に失敗しました: ${error.message || '不明なエラー'}`);
     } finally {
       setIsLoading(false);
     }
@@ -223,9 +321,51 @@ export default function SettingsPage() {
     >
       <div className="px-4 sm:px-6 py-4 sm:py-6">
         <div className="max-w-7xl mx-auto">
+          {/* モバイル用タブナビゲーション（上部固定） */}
+          <div className="md:hidden mb-6">
+            <div className="bg-white rounded-lg shadow-md p-2 sticky top-0 z-10">
+              <div className="flex overflow-x-auto gap-1">
+                <button
+                  onClick={() => setActiveTab('profile')}
+                  className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[70px] ${
+                    activeTab === 'profile'
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {FaUser({ className: "w-4 h-4" })}
+                  <span className="text-xs font-medium">プロフィール</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('notifications')}
+                  className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[70px] ${
+                    activeTab === 'notifications'
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {FaBell({ className: "w-4 h-4" })}
+                  <span className="text-xs font-medium">通知</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('security')}
+                  className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[70px] ${
+                    activeTab === 'security'
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {FaLock({ className: "w-4 h-4" })}
+                  <span className="text-xs font-medium">セキュリティ</span>
+                </button>
+
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {/* サイドバー */}
-            <div className="md:col-span-1">
+            {/* デスクトップ用サイドバー */}
+            <div className="md:col-span-1 hidden md:block">
               <div className="bg-white rounded-lg shadow-md p-6">
                 <div className="space-y-4">
                   <button
@@ -251,17 +391,6 @@ export default function SettingsPage() {
                     <span>通知</span>
                   </button>
                   <button
-                    onClick={() => setActiveTab('appearance')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                      activeTab === 'appearance'
-                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                        : 'text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    {FaPalette({ className: "w-5 h-5" })}
-                    <span>外観</span>
-                  </button>
-                  <button
                     onClick={() => setActiveTab('security')}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                       activeTab === 'security'
@@ -272,6 +401,7 @@ export default function SettingsPage() {
                     {FaLock({ className: "w-5 h-5" })}
                     <span>セキュリティ</span>
                   </button>
+
                 </div>
                 
                 {/* プレミアム予告カード（安全に追加） */}
@@ -320,8 +450,8 @@ export default function SettingsPage() {
             </div>
 
             {/* メインコンテンツ */}
-            <div className="md:col-span-3">
-              <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="md:col-span-3 col-span-1">
+              <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
                 {activeTab === 'profile' && (
                   <form onSubmit={handleProfileUpdate} className="space-y-6">
                     <div className="flex items-center gap-2 mb-4">
@@ -475,124 +605,108 @@ export default function SettingsPage() {
                   </div>
                 )}
 
-                {activeTab === 'appearance' && (
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <h2 className="text-xl font-semibold text-gray-900">外観設定</h2>
-                      <button
-                        type="button"
-                        onClick={() => openHelp('faq')}
-                        className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
-                        title="外観設定のヘルプ"
-                      >
-                        {FaInfoCircle({ className: "w-4 h-4" })}
-                      </button>
-                    </div>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          テーマ
-                        </label>
-                        <select
-                          value={appearanceSettings.theme}
-                          onChange={(e) =>
-                            setAppearanceSettings({
-                              ...appearanceSettings,
-                              theme: e.target.value as 'light' | 'dark' | 'system',
-                            })
-                          }
-                          className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="light">ライト</option>
-                          <option value="dark">ダーク</option>
-                          <option value="system">システム設定に従う</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          フォントサイズ
-                        </label>
-                        <select
-                          value={appearanceSettings.font_size}
-                          onChange={(e) =>
-                            setAppearanceSettings({
-                              ...appearanceSettings,
-                              font_size: e.target.value as 'small' | 'medium' | 'large',
-                            })
-                          }
-                          className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="small">小</option>
-                          <option value="medium">中</option>
-                          <option value="large">大</option>
-                        </select>
-                      </div>
-                      <label className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          checked={appearanceSettings.compact_mode}
-                          onChange={(e) =>
-                            setAppearanceSettings({
-                              ...appearanceSettings,
-                              compact_mode: e.target.checked,
-                            })
-                          }
-                          className="form-checkbox h-5 w-5 text-blue-600"
-                        />
-                        <span>コンパクトモード</span>
-                      </label>
-                    </div>
-                    <Button onClick={handleAppearanceUpdate} isLoading={isLoading}>
-                      保存
-                    </Button>
-                  </div>
-                )}
-
                 {activeTab === 'security' && (
                   <div className="space-y-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <h2 className="text-xl font-semibold text-gray-900">セキュリティ設定</h2>
-                      <button
-                        type="button"
-                        onClick={() => openHelp('faq')}
-                        className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
-                        title="セキュリティ設定のヘルプ"
-                      >
-                        {FaInfoCircle({ className: "w-4 h-4" })}
-                      </button>
-                    </div>
+                    <h2 className="text-xl font-semibold text-slate-900">セキュリティ</h2>
+                    
                     <form onSubmit={handlePasswordChange} className="space-y-4">
-                      <Input
-                        label="現在のパスワード"
-                        type="password"
-                        value={passwordData.currentPassword}
-                        onChange={(e) =>
-                          setPasswordData({ ...passwordData, currentPassword: e.target.value })
-                        }
-                        required
-                      />
-                      <Input
-                        label="新しいパスワード"
-                        type="password"
-                        value={passwordData.newPassword}
-                        onChange={(e) =>
-                          setPasswordData({ ...passwordData, newPassword: e.target.value })
-                        }
-                        required
-                      />
-                      <Input
-                        label="新しいパスワード（確認）"
-                        type="password"
-                        value={passwordData.confirmPassword}
-                        onChange={(e) =>
-                          setPasswordData({ ...passwordData, confirmPassword: e.target.value })
-                        }
-                        required
-                      />
-                      <Button type="submit" isLoading={isLoading}>
+                      <div>
+                        <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                          現在のパスワード
+                        </label>
+                                                  <Input
+                            id="currentPassword"
+                            type="password"
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
+                            placeholder="現在のパスワードを入力"
+                            required
+                          />
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                          新しいパスワード
+                        </label>
+                                                  <Input
+                            id="newPassword"
+                            type="password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="新しいパスワードを入力"
+                            required
+                          />
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                          新しいパスワード（確認）
+                        </label>
+                                                  <Input
+                            id="confirmPassword"
+                            type="password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="新しいパスワードを再入力"
+                            required
+                          />
+                      </div>
+                      
+                      <Button
+                        type="submit"
+                        isLoading={isLoading}
+                        className="w-full sm:w-auto"
+                      >
                         パスワードを変更
                       </Button>
                     </form>
+
+                    <hr className="my-8" />
+
+                    {/* 法的情報セクション */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                      <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                        法的情報
+                      </h3>
+                      <p className="text-slate-700 mb-4 text-sm">
+                        プライバシーポリシーと利用規約をご確認いただけます。
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button
+                          onClick={() => window.open('/privacy', '_blank')}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                        >
+                          {FaShieldAlt({ className: "w-4 h-4" })}
+                          プライバシーポリシー
+                        </button>
+                        <button
+                          onClick={() => window.open('/terms', '_blank')}
+                          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                        >
+                          {FaFileContract({ className: "w-4 h-4" })}
+                          利用規約
+                        </button>
+                      </div>
+                    </div>
+
+                    <hr className="my-8" />
+
+                    {/* ログアウトセクション */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                        アカウント管理
+                      </h3>
+                      <p className="text-blue-700 mb-4 text-sm">
+                        アカウントからログアウトします。
+                      </p>
+                      <button
+                        onClick={handleSignOut}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                      >
+                        {FaSignOutAlt({ className: "w-4 h-4" })}
+                        ログアウト
+                      </button>
+                    </div>
 
                     <hr className="my-8" />
 

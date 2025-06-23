@@ -1,9 +1,13 @@
 'use client';
 
 import React, { forwardRef } from 'react';
-import ReactDatePicker from 'react-datepicker';
+import ReactDatePicker, { registerLocale } from 'react-datepicker';
 import { FaCalendarAlt, FaTimes } from 'react-icons/fa';
+import { ja } from 'date-fns/locale';
 import 'react-datepicker/dist/react-datepicker.css';
+
+// 日本語ロケールを登録
+registerLocale('ja', ja);
 
 interface DatePickerProps {
   selected?: Date | null;
