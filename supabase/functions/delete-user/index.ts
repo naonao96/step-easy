@@ -63,10 +63,66 @@ serve(async (req: Request) => {
 
   try {
     console.log('🔐 Attempting to delete user:', userId);
+    
+    // 1. ユーザー存在確認
+    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
+    if (userError) {
+      console.log('❌ User not found:', userError);
+      return new Response(JSON.stringify({ 
+        error: 'User not found',
+        details: userError,
+        userId: userId 
+      }), {
+        status: 404,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    }
+    console.log('✅ User found:', userData.user?.email);
+
+    // 2. 関連データを明示的に削除（念のため）
+    const tables = ['execution_logs', 'active_executions', 'daily_messages', 'premium_waitlist', 'tasks', 'user_settings'];
+    
+    for (const table of tables) {
+      try {
+        const { error } = await supabaseAdmin
+          .from(table)
+          .delete()
+          .eq('user_id', userId);
+        
+        if (error) {
+          console.log(`⚠️ ${table}削除エラー:`, error);
+        } else {
+          console.log(`✅ ${table}削除完了`);
+        }
+      } catch (e) {
+        console.log(`❌ ${table}削除例外:`, e);
+      }
+    }
+
+    // 3. usersテーブルから削除
+    const { error: userTableError } = await supabaseAdmin
+      .from('users')
+      .delete()
+      .eq('id', userId);
+    
+    if (userTableError) {
+      console.log('❌ Users table deletion error:', userTableError);
+    } else {
+      console.log('✅ Users table deletion completed');
+    }
+
+    // 4. Authユーザー削除
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
     if (error) {
       console.log('❌ Delete user error:', error);
-      return new Response(JSON.stringify({ error: error.message }), {
+      return new Response(JSON.stringify({ 
+        error: error.message,
+        details: error,
+        userId: userId 
+      }), {
         status: 500,
         headers: { 
           'Content-Type': 'application/json',
@@ -74,6 +130,7 @@ serve(async (req: Request) => {
         },
       });
     }
+    
     console.log('✅ User deleted successfully');
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
@@ -84,7 +141,11 @@ serve(async (req: Request) => {
     });
   } catch (e: any) {
     console.log('❌ Unexpected error:', e);
-    return new Response(JSON.stringify({ error: e.message }), {
+    return new Response(JSON.stringify({ 
+      error: e.message,
+      details: e,
+      userId: userId 
+    }), {
       status: 500,
       headers: { 
         'Content-Type': 'application/json',
