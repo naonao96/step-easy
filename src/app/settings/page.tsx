@@ -223,22 +223,39 @@ export default function SettingsPage() {
         throw userError;
       }
 
-      console.log('✅ 関連データ削除完了');
-      
-      // 2. Supabase Authからユーザー削除（注意：これは現在のセッションでは使用できない可能性がある）
-      // Supabase Authの削除は管理者権限が必要なため、サインアウトで代替
-      console.log('🔐 認証セッション終了...');
-      const { error: signOutError } = await supabase.auth.signOut();
-      
-      if (signOutError) {
-        console.error('サインアウトエラー:', signOutError);
-        // サインアウトエラーは致命的でないため続行
+      // 2. Supabase Authユーザー本体をEdge Function経由で削除
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      const edgeFunctionUrl = isDevelopment
+        ? 'https://vcqumdrbalivowxggvmv.supabase.co/functions/v1/delete-user'
+        : '/functions/v1/delete-user';
+      console.log('🔐 Supabase Authユーザー本体削除リクエスト...');
+      console.log('🌐 Edge Function URL:', edgeFunctionUrl);
+      console.log('🆔 User ID:', currentUser.id);
+      const res = await fetch(edgeFunctionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(isDevelopment && { 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}` })
+        },
+        body: JSON.stringify({ userId: currentUser.id }),
+      });
+      console.log('📡 Response status:', res.status);
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('❌ Edge Function エラー:', errorText);
+        throw new Error(`Edge Function エラー (${res.status}): ${errorText}`);
+      }
+      const result = await res.json();
+      console.log('📋 Edge Function 結果:', result);
+      if (!result.success) {
+        throw new Error(result.error || 'Supabase Authユーザー削除に失敗しました');
       }
 
       console.log('🎉 アカウント削除完了');
       toast.success('アカウントを削除しました。ご利用ありがとうございました。');
       
-      // トップページにリダイレクト
+      // サインアウトとリダイレクト
+      await supabase.auth.signOut();
       router.push('/lp');
       
     } catch (error: any) {
