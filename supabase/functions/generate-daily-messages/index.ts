@@ -117,7 +117,7 @@ async function generateWithRetry(model: any, prompt: string, targetLength: numbe
 }
 
 // 既存のフリーユーザー向けメッセージ生成（プロンプト活用）
-async function generateFreeMessage(genAI: GoogleGenerativeAI, userName?: string): Promise<string> {
+async function generateFreeMessage(genAI: GoogleGenerativeAI, userName?: string, tasks?: Task[]): Promise<string> {
   const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
   
   const today = new Date().toLocaleDateString('ja-JP', {
@@ -128,20 +128,48 @@ async function generateFreeMessage(genAI: GoogleGenerativeAI, userName?: string)
 
   const userGreeting = userName ? `${userName}さん、` : '';
   
+  // 基本的なタスク分析（無料版向け）
+  const recentTasks = tasks?.slice(-5) || []; // 最新5件
+  const completedCount = recentTasks.filter(t => t.status === 'done').length;
+  const totalCount = recentTasks.length;
+  const recentCompletionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  
+  // 今日のタスク状況
+  const todayTasks = tasks?.filter(t => {
+    if (!t.due_date) return false;
+    const taskDate = new Date(t.due_date).toISOString().split('T')[0];
+    const todayDate = new Date().toISOString().split('T')[0];
+    return taskDate === todayDate;
+  }) || [];
+  
+  const todayCompleted = todayTasks.filter(t => t.status === 'done').length;
+  const todayTotal = todayTasks.length;
+
+  // パーソナライズされたプロンプト（無料版）
   const prompt = `
 あなたは優しいタスク管理アプリのキャラクターです。
 今日は${today}です。
 ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
 
-【重要】以下の条件でメッセージを生成してください：
+ユーザーの基本情報：
+- 最近のタスク完了率: ${recentCompletionRate}%（最新${totalCount}個中${completedCount}個完了）
+- 今日のタスク状況: ${todayTotal}個中${todayCompleted}個完了
+- タスク管理の傾向: ${totalCount > 0 ? '継続的に取り組んでいる' : '新しくタスク管理を始めた'}
+
+【重要】無料版ユーザー向けの親しみやすいメッセージを以下の条件で生成してください：
 - 必ず100文字以内（絶対条件）
 - 親しみやすく優しい口調
 - ${userName ? `「${userName}さん」という呼びかけを自然に含める` : ''}
+- 基本的な進捗状況を反映した励まし
 - 今日の天気や季節感を含める
 - タスク管理へのモチベーションを上げる内容
 - 絵文字は使わない
+- プレッシャーを与えず、優しく寄り添う内容
 
-例：「${userGreeting}今日は晴れて気持ちの良い一日ですね！新しいタスクにチャレンジするのにぴったりです。一歩ずつゆっくりと進んでいきましょう。」
+例（進捗に応じて）：
+- 順調な場合: 「${userGreeting}今日は爽やかな朝ですね！最近とても頑張っていらっしゃいますね。この調子で今日も一歩ずつ進んでいきましょう。」
+- 始めたばかりの場合: 「${userGreeting}新しい一週間の始まりですね！タスク管理を始められて素晴らしいです。小さな一歩から始めていきましょう。」
+- 今日タスクがある場合: 「${userGreeting}今日は${todayTotal}個のタスクがありますね。焦らずに一つずつ取り組んでいけば大丈夫です。」
 `;
 
   return await generateWithRetry(model, prompt, MESSAGE_LIMITS.free.target, MESSAGE_LIMITS.free.max);
@@ -243,8 +271,16 @@ serve(async (_req: any) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const genAI = new GoogleGenerativeAI(geminiApiKey);
 
-    const today = new Date().toISOString().split('T')[0];
-    console.log(`Starting daily message generation for ${today}`);
+    // 日本時間での日付取得（統一処理）
+    const getJSTDateString = (): string => {
+      const now = new Date();
+      const jstOffset = 9 * 60; // 日本時間は UTC+9
+      const jstTime = new Date(now.getTime() + (jstOffset * 60 * 1000));
+      return jstTime.toISOString().split('T')[0];
+    };
+
+    const today = getJSTDateString();
+    console.log(`Starting daily message generation for ${today} (JST)`);
 
     // 全ユーザーの取得（認証済みユーザーのみ）
     const { data: users, error: usersError } = await supabase.auth.admin.listUsers();
@@ -294,7 +330,7 @@ serve(async (_req: any) => {
         let statistics = null;
 
         if (userType === 'premium') {
-          // プレミアムユーザー：詳細統計付きメッセージ
+          // プレミアムユーザー：詳細統計付きメッセージ（日本時間で比較）
           const todayTasks = tasks?.filter((t: Task) => 
             t.start_date === today || (t.created_at && t.created_at.startsWith(today))
           ) || [];
@@ -318,7 +354,7 @@ serve(async (_req: any) => {
           message = await generatePremiumMessage(genAI, userName, tasks, statistics);
         } else {
           // フリーユーザー：シンプルメッセージ
-          message = await generateFreeMessage(genAI, userName);
+          message = await generateFreeMessage(genAI, userName, tasks);
         }
 
         // メッセージ文字数の最終チェック（データベース制約に合わせる）

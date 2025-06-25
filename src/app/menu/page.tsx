@@ -424,7 +424,14 @@ export default function MenuPage() {
               </div>
             </div>
 
-            {/* プレミアム導線（デスクトップ版）- 既存デザインを壊さない安全な追加 */}
+            {/* 中段：統計・傾向（アラートはサイドバーに移動） */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 md:grid-cols-2 gap-4 mb-6">
+              <ActivityStats tasks={tasks} selectedDateTasks={selectedDateTasks} selectedDate={selectedDate} />
+              <CategoryStats tasks={tasks} />
+              <HeatmapChart tasks={tasks} />
+            </div>
+
+            {/* プレミアム導線（デスクトップ版）- 一番下に移動 */}
             {!isGuest && planType === 'free' && (
               <div className="mb-6">
                 <PremiumComingSoonBanner
@@ -433,13 +440,6 @@ export default function MenuPage() {
                 />
               </div>
             )}
-
-            {/* 下段：統計・傾向（アラートはサイドバーに移動） */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 md:grid-cols-2 gap-4 mb-6">
-              <ActivityStats tasks={tasks} selectedDateTasks={selectedDateTasks} selectedDate={selectedDate} />
-              <CategoryStats tasks={tasks} />
-              <HeatmapChart tasks={tasks} />
-            </div>
           </div>
         </div>
       </div>

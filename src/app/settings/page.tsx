@@ -3,7 +3,7 @@
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { Input } from '@/components/atoms/Input';
-import { FaUser, FaBell, FaLock, FaSignOutAlt, FaInfoCircle, FaGem, FaFileContract, FaShieldAlt } from 'react-icons/fa';
+import { FaUser, FaBell, FaLock, FaSignOutAlt, FaInfoCircle, FaGem, FaFileContract, FaShieldAlt, FaPalette } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,7 +14,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const { user, signOut, isPremium, isGuest } = useAuth();
   const { tasks, fetchTasks } = useTaskStore();
-  const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'security'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'appearance' | 'security'>('profile');
   const [isLoading, setIsLoading] = useState(false);
 
   const [profileData, setProfileData] = useState({
@@ -348,6 +348,17 @@ export default function SettingsPage() {
                   <span className="text-xs font-medium">通知</span>
                 </button>
                 <button
+                  onClick={() => setActiveTab('appearance')}
+                  className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[70px] ${
+                    activeTab === 'appearance'
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {FaPalette({ className: "w-4 h-4" })}
+                  <span className="text-xs font-medium">外観</span>
+                </button>
+                <button
                   onClick={() => setActiveTab('security')}
                   className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[70px] ${
                     activeTab === 'security'
@@ -389,6 +400,17 @@ export default function SettingsPage() {
                   >
                     {FaBell({ className: "w-5 h-5" })}
                     <span>通知</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('appearance')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                      activeTab === 'appearance'
+                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    {FaPalette({ className: "w-5 h-5" })}
+                    <span>外観</span>
                   </button>
                   <button
                     onClick={() => setActiveTab('security')}
@@ -600,6 +622,113 @@ export default function SettingsPage() {
                       )}
                     </div>
                     <Button onClick={handleNotificationUpdate} isLoading={isLoading}>
+                      保存
+                    </Button>
+                  </div>
+                )}
+
+                {activeTab === 'appearance' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <h2 className="text-xl font-semibold text-gray-900">外観設定</h2>
+                      <button
+                        type="button"
+                        onClick={() => openHelp('tasks')}
+                        className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
+                        title="外観設定のヘルプ"
+                      >
+                        {FaInfoCircle({ className: "w-4 h-4" })}
+                      </button>
+                    </div>
+                    
+                    {/* テーマ設定 */}
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900 mb-3">テーマ</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:border-blue-300 bg-blue-50 border-blue-300">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-medium text-gray-900">ライト</span>
+                              <div className="w-4 h-4 rounded-full bg-blue-600"></div>
+                            </div>
+                            <div className="text-sm text-gray-600">明るいテーマ（現在選択中）</div>
+                          </div>
+                          <div className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:border-blue-300 opacity-50">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-medium text-gray-900">ダーク</span>
+                              <div className="w-4 h-4 rounded-full border border-gray-300"></div>
+                            </div>
+                            <div className="text-sm text-gray-600">暗いテーマ（準備中）</div>
+                          </div>
+                          <div className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:border-blue-300 opacity-50">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-medium text-gray-900">オート</span>
+                              <div className="w-4 h-4 rounded-full border border-gray-300"></div>
+                            </div>
+                            <div className="text-sm text-gray-600">システム連動（準備中）</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* フォントサイズ設定 */}
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900 mb-3">フォントサイズ</h3>
+                        <div className="space-y-2">
+                          <label className="flex items-center space-x-3">
+                            <input type="radio" name="fontSize" value="small" className="form-radio h-4 w-4 text-blue-600" />
+                            <span className="text-sm">小</span>
+                          </label>
+                          <label className="flex items-center space-x-3">
+                            <input type="radio" name="fontSize" value="medium" defaultChecked className="form-radio h-4 w-4 text-blue-600" />
+                            <span>標準</span>
+                          </label>
+                          <label className="flex items-center space-x-3">
+                            <input type="radio" name="fontSize" value="large" className="form-radio h-4 w-4 text-blue-600" />
+                            <span className="text-lg">大</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* カラーアクセント設定 */}
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900 mb-3">アクセントカラー</h3>
+                        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                          <div className="w-8 h-8 rounded-full bg-blue-600 border-2 border-gray-300 cursor-pointer"></div>
+                          <div className="w-8 h-8 rounded-full bg-green-600 border-2 border-transparent cursor-pointer opacity-50"></div>
+                          <div className="w-8 h-8 rounded-full bg-purple-600 border-2 border-transparent cursor-pointer opacity-50"></div>
+                          <div className="w-8 h-8 rounded-full bg-red-600 border-2 border-transparent cursor-pointer opacity-50"></div>
+                          <div className="w-8 h-8 rounded-full bg-yellow-600 border-2 border-transparent cursor-pointer opacity-50"></div>
+                          <div className="w-8 h-8 rounded-full bg-pink-600 border-2 border-transparent cursor-pointer opacity-50"></div>
+                          <div className="w-8 h-8 rounded-full bg-indigo-600 border-2 border-transparent cursor-pointer opacity-50"></div>
+                          <div className="w-8 h-8 rounded-full bg-gray-600 border-2 border-transparent cursor-pointer opacity-50"></div>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-2">※ カスタムカラーは今後実装予定</p>
+                      </div>
+
+                      {/* 今後の機能 */}
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          {FaGem({ className: "w-4 h-4 text-amber-600" })}
+                          <span className="text-sm font-semibold text-amber-800">今後追加予定の機能</span>
+                        </div>
+                        <div className="space-y-1 text-xs text-amber-700">
+                          <div className="flex items-center gap-1">
+                            <div className="w-1 h-1 bg-amber-500 rounded-full"></div>
+                            <span>ダークモード対応</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-1 h-1 bg-amber-500 rounded-full"></div>
+                            <span>カスタムテーマ作成</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-1 h-1 bg-amber-500 rounded-full"></div>
+                            <span>レイアウト調整機能</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Button onClick={() => toast.success('設定を保存しました')} isLoading={isLoading}>
                       保存
                     </Button>
                   </div>

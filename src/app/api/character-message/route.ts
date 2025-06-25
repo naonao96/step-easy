@@ -221,7 +221,14 @@ async function generateFreeMessage(userName?: string) {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    const todayFormatted = new Date().toLocaleDateString('ja-JP', {
+    // 日本時間での日付取得（統一処理）
+    const getJSTDate = (): Date => {
+      const now = new Date();
+      const jstOffset = 9 * 60;
+      return new Date(now.getTime() + (jstOffset * 60 * 1000));
+    };
+
+    const todayFormatted = getJSTDate().toLocaleDateString('ja-JP', {
       weekday: 'long',
       month: 'long', 
       day: 'numeric'
@@ -229,20 +236,29 @@ async function generateFreeMessage(userName?: string) {
 
     const userGreeting = userName ? `${userName}さん、` : '';
     
+    // 無料版向けのシンプルで親しみやすいプロンプト
     const prompt = `
 あなたは優しいタスク管理アプリのキャラクターです。
 今日は${todayFormatted}です。
 ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
 
-【重要】以下の条件でメッセージを生成してください：
+【重要】無料版ユーザー向けの親しみやすいメッセージを以下の条件で生成してください：
 - 必ず100文字以内（絶対条件）
 - 親しみやすく優しい口調
 - ${userName ? `「${userName}さん」という呼びかけを自然に含める` : ''}
 - 今日の天気や季節感を含める
 - タスク管理へのモチベーションを上げる内容
 - 絵文字は使わない
+- プレッシャーを与えず、優しく寄り添う内容
+- 新しい一日への希望と励ましを込める
 
 例：「${userGreeting}今日は晴れて気持ちの良い一日ですね！新しいタスクにチャレンジするのにぴったりです。一歩ずつゆっくりと進んでいきましょう。」
+
+基本的な励ましの要素：
+- 今日という新しい一日への期待
+- ユーザーの取り組みへの肯定的な評価
+- 無理のないペースでの進歩を推奨
+- 寄り添うようなサポートの姿勢
 `;
 
     // レート制限対応リトライ付き生成
@@ -255,41 +271,44 @@ ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
     
     // 最終安全チェック
     const truncatedMessage = finalMessage || 'メッセージの生成に失敗しました。';
-
+    
     // キャッシュに保存
     messageCache.set(cacheKey, {
       message: truncatedMessage,
       timestamp: Date.now()
     });
 
-    console.log('Successfully generated and cached free message');
+    console.log('Free message generated successfully');
     return NextResponse.json({ message: truncatedMessage });
+
   } catch (error) {
-    console.error('Gemini API error (Free):', error);
-    console.error('Error type:', error?.constructor?.name);
-    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Free message generation failed:', error);
     console.error('Gemini API key configured:', !!process.env.GEMINI_API_KEY);
     
-    // エラータイプに応じたフォールバック
-    let fallbackMessage;
-    if (isRateLimitError(error)) {
-      fallbackMessage = userName 
-        ? `${userName}さん、現在メッセージ生成が混雑しています。少し時間をおいてから再度お試しください。`
-        : '現在メッセージ生成が混雑しています。少し時間をおいてから再度お試しください。';
-    } else {
-      fallbackMessage = userName 
-        ? `${userName}さん、今日も一緒に頑張りましょう！新しいタスクを作成してみませんか？`
-        : '今日も一緒に頑張りましょう！新しいタスクを作成してみませんか？';
-    }
+    // エラー時のフォールバック
+    const fallbackMessage = userName ? 
+      `${userName}さん、今日も一緒に頑張りましょう！` : 
+      '今日も頑張りましょう！';
     
-    return NextResponse.json({ message: fallbackMessage });
+    return NextResponse.json(
+      { message: fallbackMessage },
+      { status: 200 } // エラーでもメッセージは返す
+    );
   }
 }
 
 async function generatePremiumMessage(userName?: string, tasks?: any[], statistics?: any) {
   try {
+    // 日本時間での日付取得（統一処理）
+    const getJSTDateString = (): string => {
+      const now = new Date();
+      const jstOffset = 9 * 60;
+      const jstTime = new Date(now.getTime() + (jstOffset * 60 * 1000));
+      return jstTime.toISOString().split('T')[0];
+    };
+
     // キャッシュキーの生成（統計情報も含める）
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const today = getJSTDateString(); // YYYY-MM-DD (JST)
     const statsHash = statistics ? 
       `${statistics.selectedDatePercentage}_${statistics.todayPercentage}_${statistics.overallPercentage}` : 
       'nostats';
@@ -313,7 +332,14 @@ async function generatePremiumMessage(userName?: string, tasks?: any[], statisti
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    const todayFormatted = new Date().toLocaleDateString('ja-JP', {
+    // 日本時間での日付取得（統一処理）
+    const getJSTDate = (): Date => {
+      const now = new Date();
+      const jstOffset = 9 * 60; // 日本時間は UTC+9
+      return new Date(now.getTime() + (jstOffset * 60 * 1000));
+    };
+
+    const todayFormatted = getJSTDate().toLocaleDateString('ja-JP', {
       weekday: 'long',
       month: 'long', 
       day: 'numeric'

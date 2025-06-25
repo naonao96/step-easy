@@ -26,8 +26,16 @@ async function generateDailyMessagesLocally(
   const genAI = new GoogleGenerativeAI(geminiApiKey);
   const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-  const today = new Date().toISOString().split('T')[0];
-  console.log(`Starting local daily message generation for ${today}`);
+  // 日本時間での日付取得（統一処理）
+  const getJSTDateString = (): string => {
+    const now = new Date();
+    const jstOffset = 9 * 60; // 日本時間は UTC+9
+    const jstTime = new Date(now.getTime() + (jstOffset * 60 * 1000));
+    return jstTime.toISOString().split('T')[0];
+  };
+
+  const today = getJSTDateString();
+  console.log(`Starting local daily message generation for ${today} (JST)`);
 
   // 全ユーザーの取得（簡易版）
   const { data: users, error: usersError } = await supabase.auth.admin.listUsers();
@@ -61,15 +69,62 @@ async function generateDailyMessagesLocally(
         continue;
       }
 
-      // シンプルなメッセージ生成
-      const userName = user.user_metadata?.name || 'ユーザー';
+      // ユーザーのタスクデータを取得
+      const { data: userTasks } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10); // 最新10件
+
+      // ユーザー設定を取得
+      const { data: userSettings } = await supabase
+        .from('user_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      // ユーザー名の取得（複数ソースから）
+      const userName = userSettings?.display_name || 
+                     user.user_metadata?.display_name || 
+                     user.user_metadata?.name || 
+                     'ユーザー';
+
+      // 基本的なタスク分析
+      const recentTasks = userTasks?.slice(-5) || [];
+      const completedCount = recentTasks.filter(t => t.status === 'done').length;
+      const totalCount = recentTasks.length;
+      const recentCompletionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+      
+      // 今日のタスク状況（日本時間で比較）
+      const todayTasks = userTasks?.filter(t => {
+        if (!t.due_date) return false;
+        const taskDate = new Date(t.due_date).toISOString().split('T')[0];
+        return taskDate === today; // 既に日本時間のtodayと比較
+      }) || [];
+      
+      const todayCompleted = todayTasks.filter(t => t.status === 'done').length;
+      const todayTotal = todayTasks.length;
+
+      // パーソナライズされたプロンプト（テスト版）
       const prompt = `
 あなたは優しいタスク管理アプリのキャラクターです。
-${userName}さんに向けて、今日一日のモチベーションを上げる短いメッセージを100文字以内で生成してください。
+${userName}さんに向けて、今日一日のモチベーションを上げるメッセージを100文字以内で生成してください。
+
+ユーザーの状況：
+- お名前: ${userName}さん
+- 最近のタスク完了率: ${recentCompletionRate}%（${totalCount}個中${completedCount}個完了）
+- 今日のタスク: ${todayTotal}個中${todayCompleted}個完了
+- タスク管理状況: ${totalCount > 0 ? '積極的に取り組んでいる' : '新しく始めた'}
+
 親しみやすく、優しい口調で、絵文字は使わずに書いてください。
+${userName}さんの頑張りを認めて、今日への励ましを込めてください。
+プレッシャーを与えず、寄り添うような内容でお願いします。
 `;
 
-      console.log(`Generating message for user: ${userName}`);
+      console.log(`Generating personalized message for user: ${userName}`);
+      console.log(`User stats: ${recentCompletionRate}% completion rate, ${todayTotal} tasks today`);
+      
       const result = await model.generateContent(prompt);
       const message = result.response.text().trim().substring(0, 100);
       console.log(`Generated message: ${message}`);
@@ -145,10 +200,18 @@ export async function POST(req: NextRequest) {
       geminiApiKey
     );
 
+    // 日本時間での日付取得（統一処理）
+    const getJSTDateString = (): string => {
+      const now = new Date();
+      const jstOffset = 9 * 60;
+      const jstTime = new Date(now.getTime() + (jstOffset * 60 * 1000));
+      return jstTime.toISOString().split('T')[0];
+    };
+
     return NextResponse.json({
       success: true,
       ...result,
-      date: new Date().toISOString().split('T')[0]
+      date: getJSTDateString() // 日本時間での日付
     });
 
   } catch (error) {

@@ -73,11 +73,10 @@ export const MobileOthersContent: React.FC = () => {
               className="w-full p-4 text-left bg-white hover:bg-slate-50 transition-colors flex justify-between items-center"
             >
               <span className="font-medium text-slate-900 text-sm pr-2">{faq.question}</span>
-              {expandedFaq === index ? (
-                FaChevronUp ({className:"w-4 h-4 text-slate-500 flex-shrink-0"})
-              ) : (
-                FaChevronDown ({className:"w-4 h-4 text-slate-500 flex-shrink-0"})
-              )}
+              {expandedFaq === index ? 
+                FaChevronUp({ className: "w-4 h-4 text-slate-500 flex-shrink-0" }) :
+                FaChevronDown({ className: "w-4 h-4 text-slate-500 flex-shrink-0" })
+              }
             </button>
             {expandedFaq === index && (
               <div className="p-4 pt-0 bg-slate-50 border-t border-slate-200">
@@ -265,7 +264,7 @@ export const MobileOthersContent: React.FC = () => {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              {IconComponent ({className:"w-3 h-3"})}
+              {IconComponent({ className: "w-3 h-3" })}
               <span className="hidden sm:inline">{tab.label}</span>
               <span className="sm:hidden">{tab.id === 'faq' ? 'FAQ' : tab.id === 'privacy' ? 'プライバシー' : '利用規約'}</span>
             </button>

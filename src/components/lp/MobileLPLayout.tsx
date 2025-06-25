@@ -139,7 +139,7 @@ export const MobileLPLayout: React.FC<MobileLPLayoutProps> = ({
       )}
 
       {/* メインコンテンツ */}
-      <main className="flex-1 overflow-y-auto pb-20">
+      <main className="flex-1 overflow-y-auto pb-32">
         {children}
       </main>
 

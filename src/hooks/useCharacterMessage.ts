@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Task } from '@/stores/taskStore';
 import { useAuth } from '@/contexts/AuthContext';
+import { createClient } from '@/lib/supabase';
 
 interface CharacterMessageHookProps {
   userType: 'guest' | 'free' | 'premium';
@@ -29,7 +30,58 @@ const GUEST_MESSAGES = [
 ];
 
 /**
- * 統一されたメッセージ生成関数
+ * 日本時間での日付文字列を取得する関数
+ */
+const getJSTDateString = (date?: Date): string => {
+  const targetDate = date ? new Date(date) : new Date();
+  
+  // 日本時間のオフセット（+9時間）を適用
+  const jstOffset = 9 * 60; // 分単位
+  const jstTime = new Date(targetDate.getTime() + (jstOffset * 60 * 1000));
+  
+  return jstTime.toISOString().split('T')[0];
+};
+
+/**
+ * daily_messagesテーブルから今日のメッセージを取得
+ */
+const fetchDailyMessage = async (userId: string, selectedDate?: Date): Promise<string | null> => {
+  try {
+    const supabase = createClient();
+    const targetDate = getJSTDateString(selectedDate); // 修正: 日本時間での日付取得
+
+    console.log(`🔍 Fetching daily message for user: ${userId}, date: ${targetDate}`);
+
+    const { data: dailyMessage, error } = await supabase
+      .from('daily_messages')
+      .select('message')
+      .eq('user_id', userId)
+      .eq('message_date', targetDate)
+      .eq('scheduled_type', 'morning')
+      .single();
+
+    if (error) {
+      console.log(`❌ No daily message found: ${error.message}`);
+      console.log(`   User ID: ${userId}`);
+      console.log(`   Target Date: ${targetDate}`);
+      console.log(`   Error Code: ${error.code}`);
+      return null;
+    }
+
+    if (dailyMessage?.message) {
+      console.log('✅ Daily message fetched from database');
+      return dailyMessage.message;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('❌ Error fetching daily message:', error);
+    return null;
+  }
+};
+
+/**
+ * 統一されたメッセージ生成関数（フォールバック用）
  * 認証状態に関係なく、現在のタスクデータから動的にメッセージを生成
  */
 const generatePersonalizedMessage = (
@@ -123,13 +175,35 @@ export const useCharacterMessage = ({ userType, userName, tasks, statistics, sel
   // AuthContextから認証状態を取得
   const { user, isLoading: authLoading } = useAuth();
 
-  // メッセージ生成関数（認証不要のシンプルなアプローチ）
-  const generateMessage = useCallback(() => {
+  // メッセージ生成関数（DBを優先、フォールバック付き）
+  const generateMessage = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      // 認証状態に関係なく、現在のデータからメッセージを生成
+      // ゲストユーザーの場合は即座にフォールバック
+      if (userType === 'guest' || !user) {
+        const personalizedMessage = generatePersonalizedMessage(
+          userType,
+          userName,
+          tasks,
+          selectedDate
+        );
+        setMessage(personalizedMessage);
+        console.log('✅ Guest/unauthenticated message generated');
+        return;
+      }
+
+      // 認証ユーザーの場合：まずDBから取得を試行
+      const dailyMessage = await fetchDailyMessage(user.id, selectedDate);
+      
+      if (dailyMessage) {
+        setMessage(dailyMessage);
+        console.log('✅ Daily message loaded from database');
+        return;
+      }
+
+      // DBにメッセージがない場合はフォールバック
       const personalizedMessage = generatePersonalizedMessage(
         userType,
         userName,
@@ -138,7 +212,8 @@ export const useCharacterMessage = ({ userType, userName, tasks, statistics, sel
       );
       
       setMessage(personalizedMessage);
-      console.log('✅ Character message generated successfully');
+      console.log('✅ Fallback message generated (no DB message found)');
+      
     } catch (err) {
       console.error('Error generating character message:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
@@ -148,10 +223,11 @@ export const useCharacterMessage = ({ userType, userName, tasks, statistics, sel
         '今日も頑張りましょう！' : 
         '今日も一緒に頑張りましょう！';
       setMessage(fallbackMessage);
+      console.log('⚠️ Error fallback message used');
     } finally {
       setIsLoading(false);
     }
-  }, [userType, userName, tasks, selectedDate]);
+  }, [userType, userName, tasks, selectedDate, user]);
 
   // 初期化とメッセージ生成
   useEffect(() => {
@@ -160,19 +236,17 @@ export const useCharacterMessage = ({ userType, userName, tasks, statistics, sel
       return;
     }
 
-    // ゲストユーザーまたは認証完了後にメッセージ生成
-    if (userType === 'guest' || user) {
-      generateMessage();
-    }
-  }, [authLoading, user, generateMessage, userType]);
+    // メッセージ生成実行
+    generateMessage();
+  }, [authLoading, generateMessage]);
 
   // タスクや日付が変更された際の再生成
   useEffect(() => {
     // 認証初期化が完了していて、かつ適切な条件が揃った場合のみ再生成
-    if (!authLoading && (userType === 'guest' || user)) {
+    if (!authLoading) {
       generateMessage();
     }
-  }, [tasks, selectedDate, generateMessage, authLoading, user, userType]);
+  }, [tasks, selectedDate, generateMessage, authLoading]);
 
   return { 
     message, 
