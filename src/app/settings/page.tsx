@@ -224,10 +224,7 @@ export default function SettingsPage() {
       }
 
       // 2. Supabase Authユーザー本体をEdge Function経由で削除
-      const isDevelopment = process.env.NODE_ENV === 'development';
-      const edgeFunctionUrl = isDevelopment
-        ? 'https://vcqumdrbalivowxggvmv.supabase.co/functions/v1/delete-user'
-        : '/functions/v1/delete-user';
+      const edgeFunctionUrl = 'https://vcqumdrbalivowxggvmv.supabase.co/functions/v1/delete-user';
       console.log('🔐 Supabase Authユーザー本体削除リクエスト...');
       console.log('🌐 Edge Function URL:', edgeFunctionUrl);
       console.log('🆔 User ID:', currentUser.id);
@@ -235,7 +232,7 @@ export default function SettingsPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(isDevelopment && { 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}` })
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`
         },
         body: JSON.stringify({ userId: currentUser.id }),
       });
