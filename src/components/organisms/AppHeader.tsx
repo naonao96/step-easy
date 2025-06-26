@@ -15,6 +15,7 @@ interface AppHeaderProps {
   showBackButton?: boolean;
   backUrl?: string;
   backLabel?: string;
+  onBackClick?: () => void;
   
   // 右側のアクション
   rightActions?: React.ReactNode;
@@ -37,6 +38,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   showBackButton = false,
   backUrl = '/menu',
   backLabel = '戻る',
+  onBackClick,
   rightActions,
   tasks = [],
   showNotifications = true,
@@ -124,7 +126,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleBack}
+            onClick={onBackClick || handleBack}
             leftIcon={FaArrowLeft}
             className="hidden md:flex text-gray-600 hover:text-gray-800"
           >

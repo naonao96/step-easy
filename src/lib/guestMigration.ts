@@ -1,6 +1,9 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Task } from '@/stores/taskStore';
 
+// モジュールレベルでSupabaseクライアントを一度だけ作成
+const supabase = createClientComponentClient();
+
 export interface GuestMigrationResult {
   success: boolean;
   migratedCount: number;
@@ -20,7 +23,6 @@ export const getGuestTasks = (): Task[] => {
 };
 
 export const migrateGuestTasks = async (userId: string): Promise<GuestMigrationResult> => {
-  const supabase = createClientComponentClient();
   const guestTasks = getGuestTasks();
   
   if (guestTasks.length === 0) {

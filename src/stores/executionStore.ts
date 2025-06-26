@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { ActiveTaskExecution, Task } from '@/types/task';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
+// Supabaseクライアントはシングルトンとしてモジュールレベルで一度だけ生成
+const supabase = createClientComponentClient();
+
 interface ExecutionStore {
   activeExecution: ActiveTaskExecution | null;
   elapsedTime: number; // 現在の経過時間（秒）
@@ -85,7 +88,6 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
   // 今日の累積時間を計算
   const calculateTodayTotal = async (taskId: string, newDuration: number): Promise<number> => {
     try {
-      const supabase = createClientComponentClient();
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) return newDuration;
@@ -102,7 +104,7 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
         .lt('start_time', `${today}T23:59:59.999Z`)
         .eq('is_completed', true);
 
-      const todayTotal = (todayLogs || []).reduce((sum, log) => sum + log.duration, 0);
+      const todayTotal = (todayLogs || []).reduce((sum, log) => sum + (log.duration as number), 0);
       return todayTotal + newDuration;
     } catch (error) {
       console.error('今日の累積時間計算エラー:', error);
@@ -120,7 +122,6 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
     // 他のデバイスでの実行状態をチェック
     checkActiveExecution: async () => {
       try {
-        const supabase = createClientComponentClient();
         const { data: { user } } = await supabase.auth.getUser();
         
         if (!user) return;
@@ -135,11 +136,11 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
           // 他のデバイスで実行中の場合、ローカル状態を同期
           set({
             activeExecution: {
-              task_id: activeExec.task_id,
-              start_time: new Date(activeExec.start_time),
+              task_id: activeExec.task_id as string,
+              start_time: new Date(activeExec.start_time as string),
               elapsed_seconds: 0
             },
-            accumulatedTime: activeExec.accumulated_time,
+            accumulatedTime: activeExec.accumulated_time as number,
             isRunning: !activeExec.is_paused,
             deviceType: activeExec.device_type as 'mobile' | 'desktop'
           });
@@ -155,7 +156,6 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
 
     startExecution: async (taskId: string) => {
       try {
-        const supabase = createClientComponentClient();
         const { data: { user } } = await supabase.auth.getUser();
         
         if (!user) {
@@ -256,7 +256,6 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
       stopTimer();
       
       try {
-        const supabase = createClientComponentClient();
         const { data: { user } } = await supabase.auth.getUser();
         
         // データベース状態確認：他デバイスで強制クリーンアップされていないかチェック
@@ -312,8 +311,8 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
             .eq('user_id', user.id)
             .single();
 
-          const newAllTimeTotal = (currentTask?.all_time_total || 0) + sessionDuration;
-          const newExecutionCount = (currentTask?.execution_count || 0) + 1;
+          const newAllTimeTotal = ((currentTask?.all_time_total as number) || 0) + sessionDuration;
+          const newExecutionCount = ((currentTask?.execution_count as number) || 0) + 1;
 
           const { error: updateError } = await supabase
             .from('tasks')
@@ -377,7 +376,6 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
         
         stopTimer();
 
-        const supabase = createClientComponentClient();
         const { data: { user } } = await supabase.auth.getUser();
 
         if (user) {
@@ -407,7 +405,6 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
       if (!state.activeExecution || state.isRunning) return;
 
       try {
-        const supabase = createClientComponentClient();
         const { data: { user } } = await supabase.auth.getUser();
         
         if (user) {
@@ -484,7 +481,6 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
       stopTimer();
       
       try {
-        const supabase = createClientComponentClient();
         const { data: { user } } = await supabase.auth.getUser();
         
         if (user && activeExecution) {
@@ -507,7 +503,7 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
               const currentTodayTotal = currentTask?.today_total || 0;
               
               // 今日累計リセット: 総累計から今日分を引く
-              updates.all_time_total = Math.max(0, currentAllTimeTotal - currentTodayTotal);
+              updates.all_time_total = Math.max(0, (currentAllTimeTotal as number) - (currentTodayTotal as number));
               updates.today_total = 0;
               updates.actual_duration = updates.all_time_total > 0 ? Math.floor(updates.all_time_total / 60) : null;
               
@@ -530,7 +526,7 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
                   .eq('user_id', user.id)
                   .single();
                   
-                const currentExecutionCount = currentTaskCount?.execution_count || 0;
+                const currentExecutionCount = (currentTaskCount?.execution_count as number) || 0;
                 updates.execution_count = Math.max(0, currentExecutionCount - todayLogsCount);
               }
               
@@ -630,7 +626,6 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
 
     syncWithDatabase: async () => {
       try {
-        const supabase = createClientComponentClient();
         const { data: { user } } = await supabase.auth.getUser();
         
         if (!user) return;
@@ -649,11 +644,11 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
           console.log('データベースから実行状態を復元します');
           set({
             activeExecution: {
-              task_id: activeExec.task_id,
-              start_time: new Date(activeExec.start_time),
+              task_id: activeExec.task_id as string,
+              start_time: new Date(activeExec.start_time as string),
               elapsed_seconds: 0
             },
-            accumulatedTime: activeExec.accumulated_time,
+            accumulatedTime: activeExec.accumulated_time as number,
             isRunning: !activeExec.is_paused,
             deviceType: activeExec.device_type as 'mobile' | 'desktop'
           });
@@ -677,11 +672,11 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
           console.warn('他デバイスで別のタスクが開始されました。ローカル状態を同期します。');
           set({
             activeExecution: {
-              task_id: activeExec.task_id,
-              start_time: new Date(activeExec.start_time),
+              task_id: activeExec.task_id as string,
+              start_time: new Date(activeExec.start_time as string),
               elapsed_seconds: 0
             },
-            accumulatedTime: activeExec.accumulated_time,
+            accumulatedTime: activeExec.accumulated_time as number,
             isRunning: !activeExec.is_paused,
             deviceType: activeExec.device_type as 'mobile' | 'desktop'
           });
@@ -699,7 +694,6 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
 
     forceCleanupActiveExecutions: async () => {
       try {
-        const supabase = createClientComponentClient();
         const { data: { user } } = await supabase.auth.getUser();
         
         if (!user) return;

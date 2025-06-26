@@ -9,6 +9,10 @@ import { toast } from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/templates/AppLayout';
 import { useTaskStore } from '@/stores/taskStore';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+
+// Supabaseクライアントはシングルトンとしてモジュールレベルで一度だけ生成
+const supabase = createClientComponentClient();
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -68,9 +72,6 @@ export default function SettingsPage() {
     setIsLoading(true);
     
     try {
-      const { createClientComponentClient } = await import('@supabase/auth-helpers-nextjs');
-      const supabase = createClientComponentClient();
-      
       const displayName = profileData.displayName.trim();
       
       // 入力値の検証
@@ -170,9 +171,6 @@ export default function SettingsPage() {
 
     setIsLoading(true);
     try {
-      const { createClientComponentClient } = await import('@supabase/auth-helpers-nextjs');
-      const supabase = createClientComponentClient();
-      
       console.log('🗑️ アカウント削除開始...');
       
       // 1. 関連データの順次削除（CASCADE設定があるが明示的に削除）

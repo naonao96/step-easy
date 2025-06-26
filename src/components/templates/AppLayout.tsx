@@ -18,6 +18,7 @@ interface AppLayoutProps {
   showBackButton?: boolean;
   backUrl?: string;
   backLabel?: string;
+  onBackClick?: () => void;
   rightActions?: React.ReactNode;
   headerVariant?: 'default' | 'minimal' | 'transparent';
   
@@ -41,6 +42,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   showBackButton = false,
   backUrl = '/menu',
   backLabel = '戻る',
+  onBackClick,
   rightActions,
   headerVariant = 'default',
   tasks = [],
@@ -98,6 +100,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         showBackButton={showBackButton}
         backUrl={backUrl}
         backLabel={backLabel}
+        onBackClick={onBackClick}
         rightActions={rightActions}
         variant={headerVariant}
         tasks={tasks}

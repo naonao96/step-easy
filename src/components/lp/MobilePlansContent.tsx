@@ -169,6 +169,67 @@ export const MobilePlansContent: React.FC<MobilePlansContentProps> = ({
             無料で始める
           </button>
         </div>
+
+        {/* 機能比較表アコーディオンの追加 */}
+        <div className="mt-8">
+          <details className="bg-white rounded-xl shadow-lg">
+            <summary className="px-6 py-4 text-lg font-semibold text-slate-900 cursor-pointer">
+              機能詳細比較を見る
+            </summary>
+            <div className="px-6 pb-4">
+              <div className="space-y-4 text-sm">
+                <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                  <span className="text-slate-700">タスク作成数</span>
+                  <div className="flex gap-4 text-xs">
+                    <span className="text-slate-600">ゲスト: 3個</span>
+                    <span className="text-slate-600">無料: 無制限</span>
+                    <span className="text-amber-700">プレミアム: 無制限</span>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                  <span className="text-slate-700">新規作成可能日</span>
+                  <div className="flex gap-4 text-xs">
+                    <span className="text-slate-600">ゲスト: 今日のみ</span>
+                    <span className="text-slate-600">無料: 今日〜14日先</span>
+                    <span className="text-amber-700">プレミアム: 無制限</span>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                  <span className="text-slate-700">既存タスク編集</span>
+                  <div className="flex gap-4 text-xs">
+                    <span className="text-slate-600">ゲスト: 今日のみ</span>
+                    <span className="text-slate-600">無料: 過去〜14日先</span>
+                    <span className="text-amber-700">プレミアム: 無制限</span>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                  <span className="text-slate-700">期限日設定</span>
+                  <div className="flex gap-4 text-xs">
+                    <span className="text-slate-600">ゲスト: 不可</span>
+                    <span className="text-slate-600">無料: 可能</span>
+                    <span className="text-amber-700">プレミアム: 可能</span>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                  <span className="text-slate-700">データ保存期間</span>
+                  <div className="flex gap-4 text-xs">
+                    <span className="text-slate-600">ゲスト: セッション中</span>
+                    <span className="text-slate-600">無料: 30日間</span>
+                    <span className="text-amber-700">プレミアム: 無制限</span>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                  <span className="text-slate-700">習慣機能</span>
+                  <div className="flex gap-4 text-xs">
+                    <span className="text-slate-600">ゲスト: 不可</span>
+                    <span className="text-slate-600">無料: 3個まで</span>
+                    <span className="text-amber-700">プレミアム: 無制限</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </details>
+        </div>
       </div>
     </div>
   );

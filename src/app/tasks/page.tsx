@@ -17,11 +17,36 @@ import { TaskTimer } from '@/components/molecules/TaskTimer';
 import { TaskExecutionHistory } from '@/components/molecules/TaskExecutionHistory';
 import { formatDateJP } from '@/lib/timeUtils';
 
+// 定数
+const DEFAULT_PRIORITY: 'low' | 'medium' | 'high' = 'medium';
+const DEFAULT_CATEGORY = 'other';
+const DEFAULT_HABIT_FREQUENCY: 'daily' | 'weekly' | 'monthly' = 'daily';
+const SAVE_DELAY_MS = 100;
+
+// 型定義
+interface TaskFormData {
+  title: string;
+  description: string;
+  priority: 'low' | 'medium' | 'high';
+  is_habit: boolean;
+  habit_frequency?: 'daily' | 'weekly' | 'monthly';
+  status: 'todo';
+  start_date: string | null;
+  due_date: string | null;
+  estimated_duration: number | undefined;
+  category: string;
+}
+
+interface ValidationResult {
+  isValid: boolean;
+  message: string;
+}
+
 export default function TaskEditPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { tasks, loading, error, fetchTasks, createTask, updateTask, deleteTask } = useTaskStore();
-  const { planType, canAddTaskOnDate } = useAuth();
+  const { planType, canAddTaskOnDate, canEditTaskOnDate, getStartDateLimits, getDueDateLimits } = useAuth();
   
   // URLパラメータから編集モードを判定
   const taskId = searchParams.get('id');
@@ -40,27 +65,48 @@ export default function TaskEditPage() {
   const [task, setTask] = useState<Task | null>(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>(DEFAULT_PRIORITY);
   const [isHabit, setIsHabit] = useState(false);
-  const [habitFrequency, setHabitFrequency] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const [habitFrequency, setHabitFrequency] = useState<'daily' | 'weekly' | 'monthly'>(DEFAULT_HABIT_FREQUENCY);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [estimatedDuration, setEstimatedDuration] = useState<number | undefined>(undefined);
-  const [category, setCategory] = useState<string>('other');
+  const [category, setCategory] = useState<string>(DEFAULT_CATEGORY);
   const [isSaving, setIsSaving] = useState(false);
 
   // 今日の日付（各種制限チェック用）
   const today = new Date().toISOString().split('T')[0];
   
-  // プラン別の最大設定可能日付を計算
-  const getMaxAllowedDate = () => {
-    if (planType === 'guest') return new Date();
-    if (planType === 'free') {
-      const maxDate = new Date();
-      maxDate.setDate(maxDate.getDate() + 14);
-      return maxDate;
+  // プラン別の制限を取得
+  const startDateLimits = getStartDateLimits(isExistingTask);
+  const dueDateLimits = getDueDateLimits(startDate || undefined);
+
+  // 初期データの設定
+  const initializeFormData = (foundTask?: Task) => {
+    if (foundTask) {
+      setTask(foundTask);
+      setTitle(foundTask.title);
+      setContent(foundTask.description || '');
+      setPriority(foundTask.priority || DEFAULT_PRIORITY);
+      setIsHabit(foundTask.is_habit || false);
+      setHabitFrequency(foundTask.habit_frequency || DEFAULT_HABIT_FREQUENCY);
+      setStartDate(foundTask.start_date ? new Date(foundTask.start_date) : new Date());
+      setDueDate(foundTask.due_date ? new Date(foundTask.due_date) : null);
+      setEstimatedDuration(foundTask.estimated_duration);
+      setCategory(foundTask.category || DEFAULT_CATEGORY);
+    } else {
+      // 新規作成モード
+      setTask(null);
+      setTitle('');
+      setContent('');
+      setPriority(DEFAULT_PRIORITY);
+      setIsHabit(isHabitDefault);
+      setHabitFrequency(DEFAULT_HABIT_FREQUENCY);
+      setStartDate(initialStartDate ? new Date(initialStartDate) : new Date());
+      setDueDate(null);
+      setEstimatedDuration(undefined);
+      setCategory(DEFAULT_CATEGORY);
     }
-    return undefined; // プレミアムは無制限
   };
 
   useEffect(() => {
@@ -70,38 +116,18 @@ export default function TaskEditPage() {
   useEffect(() => {
     if (isExistingTask && tasks.length > 0) {
       const foundTask = tasks.find(t => t.id === taskId);
-      if (foundTask) {
-        setTask(foundTask as Task);
-        setTitle(foundTask.title);
-        setContent(foundTask.description || '');
-        setPriority(foundTask.priority);
-        setIsHabit(foundTask.is_habit || false);
-        setHabitFrequency(foundTask.habit_frequency || 'daily');
-        setStartDate(foundTask.start_date ? new Date(foundTask.start_date) : new Date());
-        setDueDate(foundTask.due_date ? new Date(foundTask.due_date) : null);
-        setEstimatedDuration(foundTask.estimated_duration);
-        setCategory(foundTask.category || 'other');
-      }
+      initializeFormData(foundTask as Task);
     } else {
-      // 新規作成モード
-      setTitle('');
-      setContent('');
-      setPriority('medium');
-      setIsHabit(isHabitDefault);
-      setHabitFrequency('daily');
-              setStartDate(initialStartDate ? new Date(initialStartDate) : new Date());
-        setDueDate(null);
-        setEstimatedDuration(undefined);
-        setCategory('other');
+      initializeFormData();
     }
-  }, [isExistingTask, taskId, tasks, initialStartDate, isHabitDefault, today]);
+  }, [isExistingTask, taskId, tasks, initialStartDate, isHabitDefault]);
 
   // 日付バリデーション関数
-  const validateDates = (): { isValid: boolean; message: string } => {
+  const validateDates = (): ValidationResult => {
     // 開始日のプラン別制限チェック
     if (startDate) {
-      const checkResult = canAddTaskOnDate(startDate);
-      if (!checkResult.canAdd) {
+      const checkResult = canEditTaskOnDate(startDate, isExistingTask);
+      if (!checkResult.canEdit) {
         return { isValid: false, message: checkResult.message };
       }
     }
@@ -116,7 +142,6 @@ export default function TaskEditPage() {
 
     // 期限日は開始日以降に設定
     if (dueDate && startDate) {
-      // 時刻部分を除外して日付のみで比較（元のオブジェクトは変更しない）
       const startDateOnly = new Date(startDate.getTime());
       startDateOnly.setHours(0, 0, 0, 0);
       const dueDateOnly = new Date(dueDate.getTime());
@@ -148,6 +173,32 @@ export default function TaskEditPage() {
     setIsEditMode(false);
   };
 
+  // カスタム戻る処理（編集モードからプレビューに戻る場合）
+  const handleBackFromEdit = () => {
+    if (isExistingTask && isEditMode) {
+      // 編集モードから戻る場合はプレビューモードに切り替え
+      switchToPreviewMode();
+    } else {
+      // その他の場合は通常の戻る処理
+      router.push('/menu');
+    }
+  };
+
+  // フォームデータの作成
+  const createTaskFormData = (): TaskFormData => ({
+    title: title.trim(),
+    description: content,
+    priority,
+    is_habit: isHabit,
+    habit_frequency: isHabit ? habitFrequency : undefined,
+    status: 'todo',
+    start_date: startDate ? startDate.toISOString().split('T')[0] : null,
+    due_date: dueDate ? dueDate.toISOString().split('T')[0] : null,
+    estimated_duration: estimatedDuration,
+    category
+  });
+
+  // 保存処理
   const handleSave = async () => {
     if (!title.trim()) {
       alert('タイトルを入力してください');
@@ -163,18 +214,7 @@ export default function TaskEditPage() {
 
     setIsSaving(true);
     try {
-      const taskData = {
-        title: title.trim(),
-        description: content,
-        priority,
-        is_habit: isHabit,
-        habit_frequency: isHabit ? habitFrequency : undefined,
-        status: 'todo' as const,
-        start_date: startDate ? startDate.toISOString().split('T')[0] : null,
-        due_date: dueDate ? dueDate.toISOString().split('T')[0] : null,
-        estimated_duration: estimatedDuration,
-        category: category
-      };
+      const taskData = createTaskFormData();
 
       // デバッグ情報を出力
       console.log('保存データ:', taskData);
@@ -204,7 +244,7 @@ export default function TaskEditPage() {
         // 短い遅延を入れてからリダイレクト（画面の更新を確実にする）
         setTimeout(() => {
           router.push('/menu');
-        }, 100);
+        }, SAVE_DELAY_MS);
       }
     } catch (error) {
       console.error('保存エラー:', error);
@@ -214,6 +254,7 @@ export default function TaskEditPage() {
     }
   };
 
+  // 削除処理
   const handleDelete = async () => {
     if (!isExistingTask || !task) return;
     
@@ -228,6 +269,7 @@ export default function TaskEditPage() {
     }
   };
 
+  // 完了状態切り替え処理
   const handleComplete = async () => {
     if (!isExistingTask || !task) return;
     
@@ -244,15 +286,39 @@ export default function TaskEditPage() {
     }
   };
 
+  // ローディング状態の表示
   if (loading) {
     return (
       <AppLayout tasks={tasks as any}>
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
           <div className="max-w-7xl mx-auto">
             <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">読み込み中...</p>
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-4 text-gray-600">読み込み中...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // エラー状態の表示
+  if (error) {
+    return (
+      <AppLayout tasks={tasks as any}>
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="text-center">
+                <p className="text-red-600">エラーが発生しました: {error}</p>
+                <button 
+                  onClick={() => router.push('/menu')}
+                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  メニューに戻る
+                </button>
               </div>
             </div>
           </div>
@@ -263,15 +329,14 @@ export default function TaskEditPage() {
 
   // プレビューモードの表示
   if (!isEditMode && isExistingTask && task) {
-
-  return (
-    <AppLayout
-      title="タスク詳細"
-      showBackButton={true}
-      backUrl="/menu"
-      backLabel="メニューに戻る"
-      tasks={tasks as any}
-    >
+    return (
+      <AppLayout
+        title="タスク詳細"
+        showBackButton={true}
+        backUrl="/menu"
+        backLabel="メニューに戻る"
+        tasks={tasks as any}
+      >
         <div className="px-4 sm:px-6 py-4 sm:py-6">
           <div className="max-w-7xl mx-auto">
             <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -320,57 +385,55 @@ export default function TaskEditPage() {
               
               {/* メインコンテンツ */}
               <div className="p-6">
-
-              {/* タスクタイトル */}
-              <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{task.title}</h1>
-                <div className="flex items-center gap-4">
-                  <span className={`px-3 py-1 text-sm rounded-full ${
-                    task.priority === 'high' ? 'bg-red-100 text-red-700' :
-                    task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-green-100 text-green-700'
-                  }`}>
-                    優先度: {task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}
-                  </span>
-                  {task.is_habit && (
-                    <span className="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-700">
-                      習慣タスク
+                {/* タスクタイトル */}
+                <div className="mb-6">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{task.title}</h1>
+                  <div className="flex items-center gap-4">
+                    <span className={`px-3 py-1 text-sm rounded-full ${
+                      task.priority === 'high' ? 'bg-red-100 text-red-700' :
+                      task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-green-100 text-green-700'
+                    }`}>
+                      優先度: {task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}
                     </span>
-                  )}
-                  <span className={`px-3 py-1 text-sm rounded-full ${
-                    task.status === 'done' ? 'bg-green-100 text-green-700' :
-                    task.status === 'doing' ? 'bg-blue-100 text-blue-700' :
-                    'bg-gray-100 text-gray-700'
-                  }`}>
-                    {task.status === 'done' ? '完了' : task.status === 'doing' ? '進行中' : '未着手'}
-                  </span>
+                    {task.is_habit && (
+                      <span className="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-700">
+                        習慣タスク
+                      </span>
+                    )}
+                    <span className={`px-3 py-1 text-sm rounded-full ${
+                      task.status === 'done' ? 'bg-green-100 text-green-700' :
+                      task.status === 'doing' ? 'bg-blue-100 text-blue-700' :
+                      'bg-gray-100 text-gray-700'
+                    }`}>
+                      {task.status === 'done' ? '完了' : task.status === 'doing' ? '進行中' : '未着手'}
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              {/* タスク内容 */}
-              <div className="bg-gray-50 rounded-lg p-6 mb-6">
-                <div className="prose prose-sm max-w-none">
-                  <ReactMarkdown>
-                    {task.description || '*メモが入力されていません*'}
-                  </ReactMarkdown>
+                {/* タスク内容 */}
+                <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                  <div className="prose prose-sm max-w-none">
+                    <ReactMarkdown>
+                      {task.description || '*メモが入力されていません*'}
+                    </ReactMarkdown>
+                  </div>
                 </div>
-              </div>
 
-              {/* 実行タイマー */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">実行ログ</h3>
-                <div className="space-y-4">
-                  <TaskTimer 
-                    task={task} 
-                    onExecutionComplete={() => {
-                      // 実行完了後にタスクデータを再読み込み
-                      fetchTasks();
-                    }}
-                  />
-                  <TaskExecutionHistory task={task} />
+                {/* 実行タイマー */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">実行ログ</h3>
+                  <div className="space-y-4">
+                    <TaskTimer 
+                      task={task} 
+                      onExecutionComplete={() => {
+                        // 実行完了後にタスクデータを再読み込み
+                        fetchTasks();
+                      }}
+                    />
+                    <TaskExecutionHistory task={task} />
+                  </div>
                 </div>
-              </div>
-
               </div>
             </div>
           </div>
@@ -380,7 +443,6 @@ export default function TaskEditPage() {
   }
 
   // 編集モードの表示
-
   return (
     <AppLayout
       title={isExistingTask ? "タスクを編集" : "新しいタスク"}
@@ -388,6 +450,7 @@ export default function TaskEditPage() {
       backUrl={isExistingTask ? `/tasks?id=${taskId}` : "/menu"}
       backLabel={isExistingTask ? "プレビューに戻る" : "メニューに戻る"}
       tasks={tasks as any}
+      onBackClick={isExistingTask ? handleBackFromEdit : undefined}
     >
       <div className="px-4 sm:px-6 py-4 sm:py-6">
         <div className="max-w-7xl mx-auto">
@@ -396,271 +459,197 @@ export default function TaskEditPage() {
             <div className="bg-white/60 backdrop-blur-sm border-b border-gray-100/60 px-6 py-3">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                 <div className="flex items-center gap-4 text-xs text-gray-500 font-medium">
-                  {isExistingTask && task && (
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                      <span>編集中 {formatDateJP(task.updated_at)}</span>
-                    </div>
-                  )}
-                  {!isExistingTask && (
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                      <span>新規作成</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
+                    <span>{isExistingTask ? '編集モード' : '新規作成'}</span>
+                  </div>
                 </div>
                 <div className="flex items-center gap-1">
+                  {/* プレビューボタン（モバイルのみ表示） */}
                   {isExistingTask && (
                     <button
                       onClick={switchToPreviewMode}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100/60 rounded-lg transition-all duration-200"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100/60 rounded-lg transition-all duration-200 md:hidden"
                     >
                       プレビュー
                     </button>
                   )}
                   <button
-              onClick={handleSave}
-              disabled={isSaving}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50/80 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSaving ? '保存中...' : '保存'}
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 rounded-lg transition-all duration-200"
+                  >
+                    {FaSave({ className: "w-3 h-3" })}
+                    <span>{isSaving ? '保存中...' : '保存'}</span>
                   </button>
-                  {isExistingTask && task && (
-                    <>
-                      <div className="w-px h-3 bg-gray-200 mx-1"></div>
-                      <button
-                        onClick={handleDelete}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-red-500 hover:text-red-600 hover:bg-red-50/80 rounded-lg transition-all duration-200"
-                      >
-                        削除
-                      </button>
-                    </>
-                  )}
                 </div>
               </div>
-          </div>
+            </div>
             
             {/* メインコンテンツ */}
             <div className="p-6">
+              {/* タイトル入力 */}
+              <div className="mb-6">
+                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+                  タイトル *
+                </label>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="タスクのタイトルを入力してください"
+                  className="w-full"
+                  required
+                />
+              </div>
 
-          {/* タイトル入力 */}
-          <div className="mb-6">
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="タスクのタイトルを入力..."
-              className="text-2xl font-bold border-0 shadow-none px-0 focus:ring-0"
-            />
-          </div>
+              {/* 内容入力 */}
+              <div className="mb-6">
+                <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
+                  メモ
+                </label>
+                <textarea
+                  id="content"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="タスクの詳細やメモを入力してください（Markdown対応）"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  rows={6}
+                />
+              </div>
 
-          {/* メタデータ */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
-            {/* 開始日 */}
-            <DatePicker
-              label={`開始日 ${
-                planType === 'guest' ? '（今日のみ）' :
-                planType === 'free' ? '（14日先まで）' :
-                '（制限なし）'
-              }`}
-              selected={startDate}
-              onChange={setStartDate}
-              minDate={planType === 'premium' ? undefined : new Date()}
-              maxDate={getMaxAllowedDate()}
-              disabled={planType === 'guest'}
-              placeholderText="開始日を選択..."
-              helpText={
-                planType === 'guest' ? 'ゲストは今日のタスクのみ作成可能' :
-                planType === 'free' ? '14日先まで設定可能' :
-                '制限なし（過去日・未来日両方OK）'
-              }
-              required
-            />
+              {/* 優先度選択 */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  優先度
+                </label>
+                <div className="flex gap-2">
+                  {(['low', 'medium', 'high'] as const).map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setPriority(p)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        priority === p
+                          ? p === 'high' ? 'bg-red-100 text-red-700 border-2 border-red-300' :
+                            p === 'medium' ? 'bg-yellow-100 text-yellow-700 border-2 border-yellow-300' :
+                            'bg-green-100 text-green-700 border-2 border-green-300'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {p === 'high' ? '高' : p === 'medium' ? '中' : '低'}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-            {/* 期限日（ゲスト以外） */}
-            {planType !== 'guest' && (
-              <DatePicker
-                label="期限日（オプション）"
-                selected={dueDate}
-                onChange={setDueDate}
-                minDate={startDate || new Date()}
-                placeholderText="期限日を選択..."
-                helpText="期限日は開始日以降に設定してください"
-              />
-            )}
-
-            {/* 優先度 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                優先度
-              </label>
-              <select
-                value={priority}
-                onChange={(e) => setPriority(e.target.value as 'low' | 'medium' | 'high')}
-                className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              >
-                <option value="low">低</option>
-                <option value="medium">中</option>
-                <option value="high">高</option>
-              </select>
-            </div>
-
-            {/* カテゴリ選択 */}
-            <div className="md:col-span-2">
-              <CategorySelector
-                value={category}
-                onChange={setCategory}
-                label="カテゴリ"
-              />
-            </div>
-
-            {/* 予想所要時間 */}
-            <div className="md:col-span-2">
-              <DurationInput
-                value={estimatedDuration}
-                onChange={setEstimatedDuration}
-                label="予想所要時間"
-              />
-            </div>
-            
-            {/* 習慣タスク設定 */}
-            <div className="md:col-span-2">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-start gap-3">
+              {/* 習慣タスク設定 */}
+              <div className="mb-6">
+                <div className="flex items-center gap-3">
                   <input
                     type="checkbox"
+                    id="isHabit"
                     checked={isHabit}
                     onChange={(e) => setIsHabit(e.target.checked)}
-                    className="form-checkbox h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0"
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    disabled={planType === 'guest'}
                   />
-                  <div className="flex-1">
-                    <label className="text-sm font-medium text-blue-900 mb-2 block">
-                      🔥 習慣タスクとして設定する
-                    </label>
-                    <div className="text-xs text-blue-700 space-y-1">
-                      <p className="font-medium">継続的に繰り返したいタスクの場合にチェック:</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 ml-2">
-                        <div>✅ 毎日の運動・読書</div>
-                        <div>✅ 週次レビュー・掃除</div>
-                        <div>✅ 月次目標確認</div>
-                        <div>✅ 日記・瞑想</div>
-                      </div>
-                      <p className="mt-2 pt-2 border-t border-blue-300">
-                        <strong>💡 効果:</strong> ストリーク（継続日数）がカウントされ、継続をサポートします
-                      </p>
-                    </div>
-                    <div className="text-xs text-blue-600 mt-2 pt-2 border-t border-blue-300">
-                      <strong>⚠️ 通常タスクの場合:</strong> プレゼン資料作成、メール返信など一回で完了するもの
-                    </div>
-                  </div>
+                  <label htmlFor="isHabit" className="text-sm font-medium text-gray-700">
+                    習慣タスクにする {planType === 'guest' && '(ログインで利用可能)'}
+                  </label>
                 </div>
-                
-                {/* 習慣頻度設定（習慣タスクの場合のみ表示） */}
-                {isHabit && (
-                  <div className="mt-3 p-3 bg-white rounded-lg border border-blue-200">
-                    <label className="block text-sm font-medium text-blue-900 mb-2">
-                      📅 実行頻度を選択してください
+                {planType === 'guest' && (
+                  <p className="text-xs text-gray-500 mt-1 ml-7">
+                    ゲストユーザーは習慣機能を利用できません。ログインして習慣管理を始めましょう。
+                  </p>
+                )}
+                {isHabit && planType !== 'guest' && (
+                  <div className="mt-3 ml-7">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      頻度
                     </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                             <label className="flex items-center p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                         <input
-                           type="radio"
-                           name="habitFrequency"
-                           value="daily"
-                           checked={habitFrequency === 'daily'}
-                           onChange={(e) => setHabitFrequency(e.target.value as 'daily' | 'weekly' | 'monthly')}
-                           className="form-radio h-4 w-4 text-blue-600 mr-2"
-                         />
-                         <div>
-                           <div className="text-sm font-medium text-gray-900">毎日</div>
-                           <div className="text-xs text-gray-500">24時間ごと</div>
-                         </div>
-                       </label>
-                       <label className="flex items-center p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                         <input
-                           type="radio"
-                           name="habitFrequency"
-                           value="weekly"
-                           checked={habitFrequency === 'weekly'}
-                           onChange={(e) => setHabitFrequency(e.target.value as 'daily' | 'weekly' | 'monthly')}
-                           className="form-radio h-4 w-4 text-blue-600 mr-2"
-                         />
-                         <div>
-                           <div className="text-sm font-medium text-gray-900">週1回</div>
-                           <div className="text-xs text-gray-500">7日ごと</div>
-                         </div>
-                       </label>
-                       <label className="flex items-center p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                         <input
-                           type="radio"
-                           name="habitFrequency"
-                           value="monthly"
-                           checked={habitFrequency === 'monthly'}
-                           onChange={(e) => setHabitFrequency(e.target.value as 'daily' | 'weekly' | 'monthly')}
-                           className="form-radio h-4 w-4 text-blue-600 mr-2"
-                         />
-                         <div>
-                           <div className="text-sm font-medium text-gray-900">月1回</div>
-                           <div className="text-xs text-gray-500">30日ごと</div>
-                         </div>
-                       </label>
+                    <div className="flex gap-2">
+                      {(['daily', 'weekly', 'monthly'] as const).map((f) => (
+                        <button
+                          key={f}
+                          type="button"
+                          onClick={() => setHabitFrequency(f)}
+                          className={`px-3 py-1 rounded text-sm font-medium transition-all duration-200 ${
+                            habitFrequency === f
+                              ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          {f === 'daily' ? '毎日' : f === 'weekly' ? '毎週' : '毎月'}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 )}
               </div>
-            </div>
 
-            {/* 完了切り替えボタン（既存タスクのみ） */}
-            {isExistingTask && task && (
-              <div className="flex items-center gap-2">
-                <Button
-                  variant={task.status === 'done' ? 'secondary' : 'primary'}
-                  onClick={handleComplete}
-                  size="sm"
-                >
-                  {task.status === 'done' ? '未完了に戻す' : '完了にする'}
-                </Button>
+              {/* 日付設定 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    開始日 * {planType === 'guest' && '(今日のみ)'}
+                  </label>
+                  <DatePicker
+                    selected={startDate}
+                    onChange={(date) => setStartDate(date)}
+                    maxDate={startDateLimits.max ? new Date(startDateLimits.max) : undefined}
+                    minDate={startDateLimits.min ? new Date(startDateLimits.min) : undefined}
+                    placeholderText="開始日を選択"
+                    className="w-full"
+                    disabled={startDateLimits.disabled}
+                  />
+                  {startDateLimits.message && (
+                    <p className="text-xs text-gray-500 mt-1">{startDateLimits.message}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    期限日 {planType === 'guest' && '(プレミアム機能)'}
+                  </label>
+                  <DatePicker
+                    selected={dueDate}
+                    onChange={(date) => setDueDate(date)}
+                    maxDate={dueDateLimits.max ? new Date(dueDateLimits.max) : undefined}
+                    minDate={dueDateLimits.min ? new Date(dueDateLimits.min) : undefined}
+                    placeholderText="期限日を選択"
+                    className="w-full"
+                    disabled={dueDateLimits.disabled}
+                  />
+                  {dueDateLimits.message && (
+                    <p className="text-xs text-gray-500 mt-1">{dueDateLimits.message}</p>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
 
-            {/* エディターエリア */}
-            <div className="bg-gray-50 rounded-lg border mb-6">
-              <div className="p-6">
-                <textarea
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder={`# メモ
-
-## 今日やること
-- [ ] タスク1
-- [ ] タスク2
-
-## メモ
-**重要**: 
-*参考*: 
-
----
-
-Markdownで自由に書けます！`}
-                  className="w-full h-96 resize-none border-0 focus:ring-0 focus:outline-none text-gray-900 placeholder-gray-400 bg-transparent"
-                  style={{ fontFamily: 'Monaco, Menlo, monospace' }}
+              {/* 予想時間 */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  予想時間（分）
+                </label>
+                <DurationInput
+                  value={estimatedDuration}
+                  onChange={setEstimatedDuration}
+                  placeholder="予想時間を入力"
+                  className="w-full"
                 />
               </div>
-          </div>
 
-          {/* ヘルプテキスト */}
-          <div className="text-sm text-gray-500">
-            <p><strong>使える記法:</strong></p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
-              <div># 見出し → <strong>見出し</strong></div>
-              <div>**太字** → <strong>太字</strong></div>
-              <div>*斜体* → <em>斜体</em></div>
-              <div>- [ ] チェックボックス</div>
-              <div>- リスト項目</div>
-              <div>--- → 区切り線</div>
-            </div>
-          </div>
-
+              {/* カテゴリ選択 */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  カテゴリ
+                </label>
+                <CategorySelector
+                  value={category}
+                  onChange={setCategory}
+                  className="w-full"
+                />
+              </div>
             </div>
           </div>
         </div>

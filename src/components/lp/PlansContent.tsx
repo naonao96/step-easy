@@ -145,6 +145,70 @@ export const PlansContent: React.FC<PlansContentProps> = ({ onLogin, onRegister,
             </div>
           </div>
         </div>
+
+        {/* 機能比較表の追加 */}
+        <div className="mt-16">
+          <div className="text-center mb-8">
+            <h3 className="text-2xl font-bold text-slate-900 mb-4">
+              機能詳細比較
+            </h3>
+            <p className="text-slate-600">
+              各プランの機能を詳しく比較できます
+            </p>
+          </div>
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">機能</th>
+                    <th className="px-6 py-4 text-center text-sm font-semibold text-slate-900">ゲスト</th>
+                    <th className="px-6 py-4 text-center text-sm font-semibold text-slate-900">無料</th>
+                    <th className="px-6 py-4 text-center text-sm font-semibold text-amber-900">プレミアム</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  <tr>
+                    <td className="px-6 py-4 text-sm text-slate-700">タスク作成数</td>
+                    <td className="px-6 py-4 text-center text-sm text-slate-600">3個まで</td>
+                    <td className="px-6 py-4 text-center text-sm text-slate-600">無制限</td>
+                    <td className="px-6 py-4 text-center text-sm text-slate-600">無制限</td>
+                  </tr>
+                  <tr>
+                    <td className="px-6 py-4 text-sm text-slate-700">新規作成可能日</td>
+                    <td className="px-6 py-4 text-center text-sm text-slate-600">今日のみ</td>
+                    <td className="px-6 py-4 text-center text-sm text-slate-600">今日〜14日先</td>
+                    <td className="px-6 py-4 text-center text-sm text-slate-600">無制限</td>
+                  </tr>
+                  <tr>
+                    <td className="px-6 py-4 text-sm text-slate-700">既存タスク編集</td>
+                    <td className="px-6 py-4 text-center text-sm text-slate-600">今日のみ</td>
+                    <td className="px-6 py-4 text-center text-sm text-slate-600">過去〜14日先</td>
+                    <td className="px-6 py-4 text-center text-sm text-slate-600">無制限</td>
+                  </tr>
+                  <tr>
+                    <td className="px-6 py-4 text-sm text-slate-700">期限日設定</td>
+                    <td className="px-6 py-4 text-center text-sm text-slate-600">不可</td>
+                    <td className="px-6 py-4 text-center text-sm text-slate-600">可能</td>
+                    <td className="px-6 py-4 text-center text-sm text-slate-600">可能</td>
+                  </tr>
+                  <tr>
+                    <td className="px-6 py-4 text-sm text-slate-700">データ保存期間</td>
+                    <td className="px-6 py-4 text-center text-sm text-slate-600">セッション中</td>
+                    <td className="px-6 py-4 text-center text-sm text-slate-600">30日間</td>
+                    <td className="px-6 py-4 text-center text-sm text-slate-600">無制限</td>
+                  </tr>
+                  <tr>
+                    <td className="px-6 py-4 text-sm text-slate-700">習慣機能</td>
+                    <td className="px-6 py-4 text-center text-sm text-slate-600">不可</td>
+                    <td className="px-6 py-4 text-center text-sm text-slate-600">3個まで</td>
+                    <td className="px-6 py-4 text-center text-sm text-slate-600">無制限</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

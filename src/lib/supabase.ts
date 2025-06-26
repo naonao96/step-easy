@@ -1,4 +1,5 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 // サーバーサイド用のクライアント
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -9,6 +10,15 @@ export const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey);
 // クライアント作成関数をエクスポート
 export function createClient() {
   return createSupabaseClient(supabaseUrl, supabaseAnonKey);
+}
+
+// クライアントサイド用シングルトン
+let supabaseClientComponent: ReturnType<typeof createClientComponentClient> | null = null;
+export function getSupabaseClient() {
+  if (!supabaseClientComponent) {
+    supabaseClientComponent = createClientComponentClient();
+  }
+  return supabaseClientComponent;
 }
 
 export type User = {

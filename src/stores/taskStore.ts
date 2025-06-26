@@ -3,6 +3,9 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useAuth } from '@/contexts/AuthContext';
 import { getExpiredStreakTasks } from '@/lib/streakUtils';
 
+// モジュールレベルでSupabaseクライアントを一度だけ作成
+const supabase = createClientComponentClient();
+
 export interface Task {
   id: string;
   title: string;
@@ -61,7 +64,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     fetchTasks: async () => {
     set({ loading: true, error: null });
     try {
-      const supabase = createClientComponentClient();
       const { data: { user } } = await supabase.auth.getUser();
       console.log('fetchTasks - 認証ユーザー情報:', user);
       
@@ -89,7 +91,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       // ゲストユーザーの場合は3件までに制限
       const limitedTasks = isGuest ? data.slice(0, GUEST_TASK_LIMIT) : data;
       console.log('設定するタスク:', limitedTasks);
-      set({ tasks: limitedTasks });
+      set({ tasks: limitedTasks as unknown as Task[] });
     } catch (error) {
       console.error('fetchTasks エラー:', error);
       set({ error: (error as Error).message });
@@ -102,7 +104,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     console.log('createTask開始:', task);
     set({ loading: true, error: null });
     try {
-      const supabase = createClientComponentClient();
       const { data: { user } } = await supabase.auth.getUser();
       console.log('認証ユーザー情報:', user);
       
@@ -124,8 +125,9 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
           user_id: 'guest',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          // 開始日のデフォルト値（今日）
-          start_date: task.start_date || new Date().toISOString().split('T')[0],
+          // ゲストタスクは日付なしタスクとして扱う（今日のみ表示）
+          start_date: null,
+          due_date: null,
           // 継続日数関連のデフォルト値
           current_streak: 0,
           longest_streak: 0,
@@ -183,7 +185,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   updateTask: async (id, task) => {
     set({ loading: true, error: null });
     try {
-      const supabase = createClientComponentClient();
       const { data: { user } } = await supabase.auth.getUser();
       
       // ゲストユーザーの場合はローカルストレージを更新
@@ -256,7 +257,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   deleteTask: async (id) => {
     set({ loading: true, error: null });
     try {
-      const supabase = createClientComponentClient();
       const { data: { user } } = await supabase.auth.getUser();
       
       // ゲストユーザーの場合はローカルストレージから削除
@@ -376,7 +376,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   // 無料ユーザーの30日経過データクリーンアップ
   cleanupExpiredData: async () => {
     try {
-      const supabase = createClientComponentClient();
       const { data: { user } } = await supabase.auth.getUser();
       
       // ゲストユーザーは処理不要（ローカルストレージ管理）
