@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaTasks, FaFire, FaChartLine, FaRobot, FaClock, FaGem, FaSearch, FaBars, FaTimes } from 'react-icons/fa';
+import { FaTasks, FaFire, FaChartLine, FaRobot, FaClock, FaGem, FaSearch, FaBars, FaTimes, FaCog } from 'react-icons/fa';
 
 interface FeatureGuideProps {
   className?: string;
@@ -78,6 +78,30 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
           name: 'ソート機能',
           description: '優先度、期限、作成日、継続日数など複数条件で並び替え',
           howToUse: 'タスク一覧画面のソートドロップダウンから選択',
+          status: 'implemented'
+        },
+        {
+          name: 'キーワード検索',
+          description: 'タスクのタイトル・説明文からキーワード検索が可能',
+          howToUse: 'タスク一覧画面の検索バーにキーワードを入力',
+          status: 'implemented'
+        },
+        {
+          name: 'ステータス別フィルター',
+          description: '未着手・進行中・完了の3段階でタスクを絞り込み',
+          howToUse: 'タスク一覧画面のフィルターボタンから選択',
+          status: 'implemented'
+        },
+        {
+          name: 'カテゴリ別フィルター',
+          description: '仕事・健康・学習・プライベート・趣味・その他の6カテゴリで分類',
+          howToUse: 'タスク一覧画面のカテゴリフィルターから選択',
+          status: 'implemented'
+        },
+        {
+          name: '優先度別フィルター',
+          description: '高・中・低の優先度でタスクを絞り込み',
+          howToUse: 'タスク一覧画面の優先度フィルターから選択',
           status: 'implemented'
         }
       ]
@@ -193,6 +217,30 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
           description: '時間内完了率、平均精度、最適な時間帯の分析',
           howToUse: 'モバイル版の詳細分析機能で確認',
           status: 'implemented'
+        },
+        {
+          name: '実行時間分析',
+          description: 'タスクごとの予想時間vs実績時間の比較分析',
+          howToUse: 'タスク詳細画面で実行時間の詳細を確認',
+          status: 'implemented'
+        },
+        {
+          name: 'カテゴリ別パフォーマンス',
+          description: 'カテゴリごとの完了率・実行時間・効率性を分析',
+          howToUse: 'プログレス画面 → カテゴリ別分析タブで確認',
+          status: 'implemented'
+        },
+        {
+          name: '習慣継続率分析',
+          description: '習慣タスクの継続率・中断パターン・最適化提案',
+          howToUse: '習慣タスクの統計画面で詳細分析を確認',
+          status: 'implemented'
+        },
+        {
+          name: '時間帯別生産性分析',
+          description: '24時間×7曜日のマトリックスで最適な時間帯を分析',
+          howToUse: 'プログレス画面 → ヒートマップタブで確認',
+          status: 'implemented'
         }
       ]
     },
@@ -231,6 +279,83 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
           description: '毎朝のモチベーション向上メッセージを自動生成・配信',
           howToUse: 'Edge Function による自動配信（開発中）',
           status: 'implemented'
+        },
+        {
+          name: '毎朝9時自動配信',
+          description: 'CronJobによる毎朝9時の自動メッセージ配信',
+          howToUse: '自動実行、ユーザーの状況に応じてメッセージが生成',
+          status: 'implemented'
+        },
+        {
+          name: 'プラン別メッセージ制限',
+          description: '無料プラン：100文字まで、プレミアム：200文字まで',
+          howToUse: 'プラン設定に応じて自動調整',
+          status: 'implemented'
+        },
+        {
+          name: '感情分析機能',
+          description: 'ストレス・モチベーション・継続性の3要素を分析',
+          howToUse: 'AIが自動判定、適切なメッセージを生成',
+          status: 'implemented'
+        },
+        {
+          name: 'データ保存期間制限',
+          description: '無料プラン：30日間、プレミアム：無制限',
+          howToUse: 'プラン設定に応じて自動制限',
+          status: 'implemented'
+        },
+        {
+          name: 'レート制限対応',
+          description: 'API制限に応じたリトライ機能とエラーハンドリング',
+          howToUse: '自動実行、エラー時は適切なフォールバック',
+          status: 'implemented'
+        }
+      ]
+    },
+    {
+      id: 'settings-account',
+      title: '設定・アカウント',
+      icon: FaCog,
+      description: 'アカウント設定とカスタマイズ機能',
+      features: [
+        {
+          name: 'プロフィール設定',
+          description: 'ユーザー名の変更とプロフィール管理',
+          howToUse: '設定画面 → プロフィールタブから編集',
+          status: 'implemented'
+        },
+        {
+          name: 'Googleログイン',
+          description: 'Googleアカウントでの簡単ログイン',
+          howToUse: 'ログイン画面でGoogleボタンをクリック',
+          status: 'implemented'
+        },
+        {
+          name: 'ゲスト→正式アカウント移行',
+          description: 'ゲストデータを正式アカウントに引き継ぎ',
+          howToUse: 'ゲスト利用中に登録ボタンで移行',
+          status: 'implemented'
+        },
+        {
+          name: 'アカウント削除',
+          description: 'アカウントとデータの完全削除',
+          howToUse: '設定画面 → セキュリティタブから削除',
+          status: 'implemented'
+        },
+        {
+          name: '通知設定',
+          description: 'カスタマイズ可能な通知設定',
+          status: 'coming-soon'
+        },
+        {
+          name: '外観設定',
+          description: 'カスタマイズ可能な外観設定',
+          status: 'coming-soon'
+        },
+        {
+          name: 'パスワードリセット',
+          description: 'パスワードリセット機能',
+          status: 'coming-soon'
         }
       ]
     },
@@ -238,7 +363,7 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
       id: 'premium-features',
       title: 'プレミアム機能',
       icon: FaGem,
-      description: '月額400円で利用できる高度な分析・サポート機能（開発中）',
+      description: '月額400円で利用できる高度な分析・サポート機能',
       features: [
         {
           name: '週次・月次詳細レポート',
@@ -286,11 +411,11 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
   const getStatusBadge = (status: Feature['status']) => {
     switch (status) {
       case 'implemented':
-        return <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">実装済み</span>;
+        return null; // バッジを表示しない
       case 'premium':
         return <span className="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full">プレミアム</span>;
       case 'coming-soon':
-        return <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">開発中</span>;
+        return <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Coming Soon</span>;
     }
   };
 

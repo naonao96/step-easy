@@ -423,8 +423,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // プレミアムは無制限（maxDateはundefined）
     
     return {
-      min: minDate.toISOString().split('T')[0],
-      max: planType === 'premium' ? undefined : maxDate.toISOString().split('T')[0],
+      min: minDate.toLocaleDateString('sv-SE'),
+      max: planType === 'premium' ? undefined : maxDate.toLocaleDateString('sv-SE'),
       disabled: false,
       message: planType === 'premium' ? '制限なし' : '開始日から14日先まで設定可能'
     };

@@ -85,7 +85,7 @@ export default function LoginPage() {
 
   return (
     <Layout>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
           {/* ロゴ・ブランディングセクション */}
           <div className="text-center">
@@ -173,13 +173,18 @@ export default function LoginPage() {
 
             <div className="flex items-center justify-between">
               <div className="text-sm">
-                <button
+                <div className="flex items-center gap-2">
+                  <button
                     type="button"
-                  onClick={() => router.push('/reset-password')}
-                    className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
-                >
-                  パスワードをお忘れですか？
-                </button>
+                    disabled={true}
+                    className="font-medium text-gray-400 cursor-not-allowed line-through"
+                  >
+                    パスワードをお忘れですか？
+                  </button>
+                  <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">
+                    ベータ版では利用不可
+                  </span>
+                </div>
               </div>
             </div>
 

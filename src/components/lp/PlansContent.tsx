@@ -1,5 +1,5 @@
-import React from 'react';
-import { FaCheck, FaStar, FaGem } from 'react-icons/fa';
+import React, { useState } from 'react';
+import { FaCheck, FaStar, FaGem, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 
 interface PlansContentProps {
   onLogin: () => void;
@@ -9,6 +9,10 @@ interface PlansContentProps {
 }
 
 export const PlansContent: React.FC<PlansContentProps> = ({ onLogin, onRegister, onGuest, isLoading }) => {
+  const [showGuestDetails, setShowGuestDetails] = useState(false);
+  const [showFreeDetails, setShowFreeDetails] = useState(false);
+  const [showPremiumDetails, setShowPremiumDetails] = useState(false);
+
   return (
     <div className="p-8">
       <div className="max-w-6xl mx-auto">
@@ -42,6 +46,25 @@ export const PlansContent: React.FC<PlansContentProps> = ({ onLogin, onRegister,
                   <span className="w-4 h-4 text-amber-500">⚠️</span>
                   <span className="text-slate-500">機能制限あり</span>
                 </div>
+                
+                {/* 詳細プレビューボタン */}
+                <button 
+                  onClick={() => setShowGuestDetails(!showGuestDetails)}
+                  className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-700 mt-2 transition-colors"
+                >
+                  {showGuestDetails ? '詳細を隠す' : '詳細を見る'}
+                  {showGuestDetails ? 
+                    (FaChevronUp as any)({ className: "w-3 h-3" }) : 
+                    (FaChevronDown as any)({ className: "w-3 h-3" })
+                  }
+                </button>
+                
+                {/* 詳細制限（条件付き表示） */}
+                {showGuestDetails && (
+                  <div className="text-xs text-slate-500 mt-2 border-t pt-2">
+                    タスク作成数：3個まで｜新規作成可能日：今日のみ｜既存タスク編集：今日のみ｜期限日設定：不可｜データ保存期間：セッション中｜習慣機能：不可
+                  </div>
+                )}
               </div>
               
               <button
@@ -81,6 +104,25 @@ export const PlansContent: React.FC<PlansContentProps> = ({ onLogin, onRegister,
                   {(FaCheck as any)({ className: "w-4 h-4 text-emerald-500" })}
                   <span className="text-slate-800">習慣ストリーク記録</span>
                 </div>
+                
+                {/* 詳細プレビューボタン */}
+                <button 
+                  onClick={() => setShowFreeDetails(!showFreeDetails)}
+                  className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 mt-2 transition-colors"
+                >
+                  {showFreeDetails ? '詳細を隠す' : '詳細を見る'}
+                  {showFreeDetails ? 
+                    (FaChevronUp as any)({ className: "w-3 h-3" }) : 
+                    (FaChevronDown as any)({ className: "w-3 h-3" })
+                  }
+                </button>
+                
+                {/* 詳細制限（条件付き表示） */}
+                {showFreeDetails && (
+                  <div className="text-xs text-slate-500 mt-2 border-t pt-2">
+                    タスク作成数：無制限｜新規作成可能日：今日〜14日先｜既存タスク編集：過去〜14日先｜期限日設定：可能｜データ保存期間：30日間｜習慣機能：3個まで
+                  </div>
+                )}
               </div>
               
               <button
@@ -134,6 +176,26 @@ export const PlansContent: React.FC<PlansContentProps> = ({ onLogin, onRegister,
                   {(FaStar as any)({ className: "w-4 h-4 text-amber-600" })}
                   <span className="text-amber-800">感情パターン解析</span>
                 </div>
+                
+                {/* 詳細プレビューボタン */}
+                <button 
+                  onClick={() => setShowPremiumDetails(!showPremiumDetails)}
+                  className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 mt-2 transition-colors"
+                >
+                  {showPremiumDetails ? '詳細を隠す' : '詳細を見る'}
+                  {showPremiumDetails ? 
+                    (FaChevronUp as any)({ className: "w-3 h-3" }) : 
+                    (FaChevronDown as any)({ className: "w-3 h-3" })
+                  }
+                </button>
+                
+                {/* 詳細制限（条件付き表示） */}
+                {showPremiumDetails && (
+                  <div className="text-xs text-slate-500 mt-2 border-t pt-2">
+                    タスク作成数：無制限｜新規作成可能日：無制限｜既存タスク編集：無制限｜期限日設定：可能｜データ保存期間：無制限｜習慣機能：無制限
+                    <span className="text-amber-500 ml-2">※ベータ版では利用できません</span>
+                  </div>
+                )}
               </div>
               
               <button
@@ -142,70 +204,6 @@ export const PlansContent: React.FC<PlansContentProps> = ({ onLogin, onRegister,
               >
                 Coming Soon
               </button>
-            </div>
-          </div>
-        </div>
-
-        {/* 機能比較表の追加 */}
-        <div className="mt-16">
-          <div className="text-center mb-8">
-            <h3 className="text-2xl font-bold text-slate-900 mb-4">
-              機能詳細比較
-            </h3>
-            <p className="text-slate-600">
-              各プランの機能を詳しく比較できます
-            </p>
-          </div>
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">機能</th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold text-slate-900">ゲスト</th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold text-slate-900">無料</th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold text-amber-900">プレミアム</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  <tr>
-                    <td className="px-6 py-4 text-sm text-slate-700">タスク作成数</td>
-                    <td className="px-6 py-4 text-center text-sm text-slate-600">3個まで</td>
-                    <td className="px-6 py-4 text-center text-sm text-slate-600">無制限</td>
-                    <td className="px-6 py-4 text-center text-sm text-slate-600">無制限</td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 text-sm text-slate-700">新規作成可能日</td>
-                    <td className="px-6 py-4 text-center text-sm text-slate-600">今日のみ</td>
-                    <td className="px-6 py-4 text-center text-sm text-slate-600">今日〜14日先</td>
-                    <td className="px-6 py-4 text-center text-sm text-slate-600">無制限</td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 text-sm text-slate-700">既存タスク編集</td>
-                    <td className="px-6 py-4 text-center text-sm text-slate-600">今日のみ</td>
-                    <td className="px-6 py-4 text-center text-sm text-slate-600">過去〜14日先</td>
-                    <td className="px-6 py-4 text-center text-sm text-slate-600">無制限</td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 text-sm text-slate-700">期限日設定</td>
-                    <td className="px-6 py-4 text-center text-sm text-slate-600">不可</td>
-                    <td className="px-6 py-4 text-center text-sm text-slate-600">可能</td>
-                    <td className="px-6 py-4 text-center text-sm text-slate-600">可能</td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 text-sm text-slate-700">データ保存期間</td>
-                    <td className="px-6 py-4 text-center text-sm text-slate-600">セッション中</td>
-                    <td className="px-6 py-4 text-center text-sm text-slate-600">30日間</td>
-                    <td className="px-6 py-4 text-center text-sm text-slate-600">無制限</td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 text-sm text-slate-700">習慣機能</td>
-                    <td className="px-6 py-4 text-center text-sm text-slate-600">不可</td>
-                    <td className="px-6 py-4 text-center text-sm text-slate-600">3個まで</td>
-                    <td className="px-6 py-4 text-center text-sm text-slate-600">無制限</td>
-                  </tr>
-                </tbody>
-              </table>
             </div>
           </div>
         </div>

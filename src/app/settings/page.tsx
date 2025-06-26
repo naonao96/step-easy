@@ -85,17 +85,7 @@ export default function SettingsPage() {
         return;
       }
 
-      // 1. Supabase Authでuser_metadataを更新
-      const { error: authError } = await supabase.auth.updateUser({
-        data: { display_name: displayName }
-      });
-
-      if (authError) {
-        console.error('Auth update error:', authError);
-        throw new Error(`認証情報の更新に失敗しました: ${authError.message}`);
-      }
-
-      // 2. データベースのusersテーブルを更新
+      // Usersテーブルのdisplay_nameのみを更新（Auth更新は不要）
       const { error: dbError } = await supabase
         .from('users')
         .update({
@@ -106,12 +96,12 @@ export default function SettingsPage() {
 
       if (dbError) {
         console.error('Database update error:', dbError);
-        throw new Error(`データベースの更新に失敗しました: ${dbError.message}`);
+        throw new Error(`プロフィールの更新に失敗しました: ${dbError.message}`);
       }
 
       toast.success('プロフィールを更新しました');
       
-      // 3. AuthContextのユーザー情報を更新（ページをリロードして反映）
+      // ページをリロードして新しい名前を反映
       window.location.reload();
       
     } catch (error) {
@@ -556,6 +546,9 @@ export default function SettingsPage() {
                   <div className="space-y-6">
                     <div className="flex items-center gap-2 mb-4">
                       <h2 className="text-xl font-semibold text-gray-900">通知設定</h2>
+                      <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-medium">
+                        開発中
+                      </span>
                       <button
                         type="button"
                         onClick={() => openHelp('tasks')}
@@ -565,110 +558,94 @@ export default function SettingsPage() {
                         {FaInfoCircle({ className: "w-4 h-4" })}
                       </button>
                     </div>
-                    <div className="space-y-4">
-                      <label className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          checked={notificationSettings.email_notifications}
-                          onChange={(e) =>
-                            setNotificationSettings({
-                              ...notificationSettings,
-                              email_notifications: e.target.checked,
-                            })
-                          }
-                          className="form-checkbox h-5 w-5 text-blue-600"
-                        />
-                        <span>メール通知</span>
-                      </label>
-                      <label className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          checked={notificationSettings.push_notifications}
-                          onChange={(e) =>
-                            setNotificationSettings({
-                              ...notificationSettings,
-                              push_notifications: e.target.checked,
-                            })
-                          }
-                          className="form-checkbox h-5 w-5 text-blue-600"
-                        />
-                        <span>プッシュ通知</span>
-                      </label>
-                      <label className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          checked={notificationSettings.task_reminders}
-                          onChange={(e) =>
-                            setNotificationSettings({
-                              ...notificationSettings,
-                              task_reminders: e.target.checked,
-                            })
-                          }
-                          className="form-checkbox h-5 w-5 text-blue-600"
-                        />
-                        <span>タスクリマインダー</span>
-                      </label>
-                      <label className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          checked={notificationSettings.habit_reminders}
-                          onChange={(e) =>
-                            setNotificationSettings({
-                              ...notificationSettings,
-                              habit_reminders: e.target.checked,
-                            })
-                          }
-                          className="form-checkbox h-5 w-5 text-blue-600"
-                        />
-                        <span>習慣リマインダー</span>
-                      </label>
-                      <label className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          checked={notificationSettings.ai_suggestions}
-                          onChange={(e) =>
-                            setNotificationSettings({
-                              ...notificationSettings,
-                              ai_suggestions: e.target.checked,
-                            })
-                          }
-                          className="form-checkbox h-5 w-5 text-blue-600"
-                        />
-                        <span>AI提案</span>
-                      </label>
-                      
-                      {/* プレミアム機能通知設定（安全に追加） */}
-                      {!isPremium && (
-                        <div className="border-t border-gray-200 pt-4 mt-4">
-                          <div className="flex items-center gap-2 mb-3">
-                            {FaGem ({className:"w-4 h-4 text-amber-500"})}
-                            <span className="text-sm font-medium text-gray-700">プレミアム機能通知</span>
-                            <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
-                              Coming Soon
-                            </span>
-                          </div>
-                          <label className="flex items-center space-x-3 opacity-75">
-                            <input
-                              type="checkbox"
-                              checked={notificationSettings.premium_updates || false}
-                              onChange={(e) =>
-                                setNotificationSettings({
-                                  ...notificationSettings,
-                                  premium_updates: e.target.checked,
-                                })
-                              }
-                              className="form-checkbox h-5 w-5 text-amber-600"
-                            />
-                            <span className="text-sm">プレミアム機能のアップデート通知</span>
-                          </label>
-                          <p className="text-xs text-gray-500 ml-8 mt-1">
-                            新機能のベータ版リリースやアップデート情報をお知らせします
-                          </p>
+                    
+                    {/* 開発中メッセージ */}
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-6 text-center">
+                      <div className="flex items-center justify-center gap-2 mb-3">
+                        <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs font-bold">!</span>
                         </div>
-                      )}
+                        <h3 className="text-lg font-semibold text-orange-800">開発中</h3>
+                      </div>
+                      <p className="text-orange-700 mb-4">
+                        通知設定機能は現在開発中です。<br />
+                        ベータ版リリース後に実装予定です。
+                      </p>
+                      <div className="space-y-2 text-sm text-orange-600">
+                        <div className="flex items-center gap-2 justify-center">
+                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                          <span>メール通知</span>
+                        </div>
+                        <div className="flex items-center gap-2 justify-center">
+                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                          <span>プッシュ通知</span>
+                        </div>
+                        <div className="flex items-center gap-2 justify-center">
+                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                          <span>タスクリマインダー</span>
+                        </div>
+                        <div className="flex items-center gap-2 justify-center">
+                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                          <span>習慣リマインダー</span>
+                        </div>
+                        <div className="flex items-center gap-2 justify-center">
+                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                          <span>AI提案通知</span>
+                        </div>
+                      </div>
                     </div>
-                    <Button onClick={handleNotificationUpdate} isLoading={isLoading}>
-                      保存
+                    
+                    {/* 開発中の設定項目（無効化） */}
+                    <div className="space-y-4 opacity-50 pointer-events-none">
+                      <label className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          checked={false}
+                          disabled
+                          className="form-checkbox h-5 w-5 text-gray-400"
+                        />
+                        <span className="text-gray-500">メール通知</span>
+                      </label>
+                      <label className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          checked={false}
+                          disabled
+                          className="form-checkbox h-5 w-5 text-gray-400"
+                        />
+                        <span className="text-gray-500">プッシュ通知</span>
+                      </label>
+                      <label className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          checked={false}
+                          disabled
+                          className="form-checkbox h-5 w-5 text-gray-400"
+                        />
+                        <span className="text-gray-500">タスクリマインダー</span>
+                      </label>
+                      <label className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          checked={false}
+                          disabled
+                          className="form-checkbox h-5 w-5 text-gray-400"
+                        />
+                        <span className="text-gray-500">習慣リマインダー</span>
+                      </label>
+                      <label className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          checked={false}
+                          disabled
+                          className="form-checkbox h-5 w-5 text-gray-400"
+                        />
+                        <span className="text-gray-500">AI提案</span>
+                      </label>
+                    </div>
+                    
+                    <Button disabled className="opacity-50 cursor-not-allowed">
+                      開発中
                     </Button>
                   </div>
                 )}
@@ -677,6 +654,9 @@ export default function SettingsPage() {
                   <div className="space-y-6">
                     <div className="flex items-center gap-2 mb-4">
                       <h2 className="text-xl font-semibold text-gray-900">外観設定</h2>
+                      <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-medium">
+                        開発中
+                      </span>
                       <button
                         type="button"
                         onClick={() => openHelp('tasks')}
@@ -687,95 +667,100 @@ export default function SettingsPage() {
                       </button>
                     </div>
                     
-                    {/* テーマ設定 */}
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-3">テーマ</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <div className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:border-blue-300 bg-blue-50 border-blue-300">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-medium text-gray-900">ライト</span>
-                              <div className="w-4 h-4 rounded-full bg-blue-600"></div>
-                            </div>
-                            <div className="text-sm text-gray-600">明るいテーマ（現在選択中）</div>
-                          </div>
-                          <div className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:border-blue-300 opacity-50">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-medium text-gray-900">ダーク</span>
-                              <div className="w-4 h-4 rounded-full border border-gray-300"></div>
-                            </div>
-                            <div className="text-sm text-gray-600">暗いテーマ（準備中）</div>
-                          </div>
-                          <div className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:border-blue-300 opacity-50">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-medium text-gray-900">オート</span>
-                              <div className="w-4 h-4 rounded-full border border-gray-300"></div>
-                            </div>
-                            <div className="text-sm text-gray-600">システム連動（準備中）</div>
-                          </div>
+                    {/* 開発中メッセージ */}
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-6 text-center">
+                      <div className="flex items-center justify-center gap-2 mb-3">
+                        <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs font-bold">!</span>
                         </div>
+                        <h3 className="text-lg font-semibold text-orange-800">開発中</h3>
                       </div>
-
-                      {/* フォントサイズ設定 */}
-                      <div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-3">フォントサイズ</h3>
-                        <div className="space-y-2">
-                          <label className="flex items-center space-x-3">
-                            <input type="radio" name="fontSize" value="small" className="form-radio h-4 w-4 text-blue-600" />
-                            <span className="text-sm">小</span>
-                          </label>
-                          <label className="flex items-center space-x-3">
-                            <input type="radio" name="fontSize" value="medium" defaultChecked className="form-radio h-4 w-4 text-blue-600" />
-                            <span>標準</span>
-                          </label>
-                          <label className="flex items-center space-x-3">
-                            <input type="radio" name="fontSize" value="large" className="form-radio h-4 w-4 text-blue-600" />
-                            <span className="text-lg">大</span>
-                          </label>
+                      <p className="text-orange-700 mb-4">
+                        外観設定機能は現在開発中です。<br />
+                        ベータ版リリース後に実装予定です。
+                      </p>
+                      <div className="space-y-2 text-sm text-orange-600">
+                        <div className="flex items-center gap-2 justify-center">
+                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                          <span>ダークモード</span>
                         </div>
-                      </div>
-
-                      {/* カラーアクセント設定 */}
-                      <div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-3">アクセントカラー</h3>
-                        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-                          <div className="w-8 h-8 rounded-full bg-blue-600 border-2 border-gray-300 cursor-pointer"></div>
-                          <div className="w-8 h-8 rounded-full bg-green-600 border-2 border-transparent cursor-pointer opacity-50"></div>
-                          <div className="w-8 h-8 rounded-full bg-purple-600 border-2 border-transparent cursor-pointer opacity-50"></div>
-                          <div className="w-8 h-8 rounded-full bg-red-600 border-2 border-transparent cursor-pointer opacity-50"></div>
-                          <div className="w-8 h-8 rounded-full bg-yellow-600 border-2 border-transparent cursor-pointer opacity-50"></div>
-                          <div className="w-8 h-8 rounded-full bg-pink-600 border-2 border-transparent cursor-pointer opacity-50"></div>
-                          <div className="w-8 h-8 rounded-full bg-indigo-600 border-2 border-transparent cursor-pointer opacity-50"></div>
-                          <div className="w-8 h-8 rounded-full bg-gray-600 border-2 border-transparent cursor-pointer opacity-50"></div>
+                        <div className="flex items-center gap-2 justify-center">
+                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                          <span>テーマカスタマイズ</span>
                         </div>
-                        <p className="text-sm text-gray-500 mt-2">※ カスタムカラーは今後実装予定</p>
-                      </div>
-
-                      {/* 今後の機能 */}
-                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          {FaGem({ className: "w-4 h-4 text-amber-600" })}
-                          <span className="text-sm font-semibold text-amber-800">今後追加予定の機能</span>
+                        <div className="flex items-center gap-2 justify-center">
+                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                          <span>フォントサイズ調整</span>
                         </div>
-                        <div className="space-y-1 text-xs text-amber-700">
-                          <div className="flex items-center gap-1">
-                            <div className="w-1 h-1 bg-amber-500 rounded-full"></div>
-                            <span>ダークモード対応</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <div className="w-1 h-1 bg-amber-500 rounded-full"></div>
-                            <span>カスタムテーマ作成</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <div className="w-1 h-1 bg-amber-500 rounded-full"></div>
-                            <span>レイアウト調整機能</span>
-                          </div>
+                        <div className="flex items-center gap-2 justify-center">
+                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                          <span>アクセントカラー変更</span>
                         </div>
                       </div>
                     </div>
                     
-                    <Button onClick={() => toast.success('設定を保存しました')} isLoading={isLoading}>
-                      保存
+                    {/* 開発中の設定項目（無効化） */}
+                    <div className="space-y-4 opacity-50 pointer-events-none">
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-500 mb-3">テーマ</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-medium text-gray-400">ライト</span>
+                              <div className="w-4 h-4 rounded-full bg-gray-300"></div>
+                            </div>
+                            <div className="text-sm text-gray-400">明るいテーマ（現在選択中）</div>
+                          </div>
+                          <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-medium text-gray-400">ダーク</span>
+                              <div className="w-4 h-4 rounded-full border border-gray-300"></div>
+                            </div>
+                            <div className="text-sm text-gray-400">暗いテーマ（開発中）</div>
+                          </div>
+                          <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-medium text-gray-400">オート</span>
+                              <div className="w-4 h-4 rounded-full border border-gray-300"></div>
+                            </div>
+                            <div className="text-sm text-gray-400">システム連動（開発中）</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-500 mb-3">フォントサイズ</h3>
+                        <div className="space-y-2">
+                          <label className="flex items-center space-x-3">
+                            <input type="radio" name="fontSize" value="small" disabled className="form-radio h-4 w-4 text-gray-400" />
+                            <span className="text-sm text-gray-400">小</span>
+                          </label>
+                          <label className="flex items-center space-x-3">
+                            <input type="radio" name="fontSize" value="medium" disabled defaultChecked className="form-radio h-4 w-4 text-gray-400" />
+                            <span className="text-gray-400">標準</span>
+                          </label>
+                          <label className="flex items-center space-x-3">
+                            <input type="radio" name="fontSize" value="large" disabled className="form-radio h-4 w-4 text-gray-400" />
+                            <span className="text-lg text-gray-400">大</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-500 mb-3">アクセントカラー</h3>
+                        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                          <div className="w-8 h-8 rounded-full bg-gray-400 border-2 border-gray-300"></div>
+                          <div className="w-8 h-8 rounded-full bg-gray-400 border-2 border-transparent"></div>
+                          <div className="w-8 h-8 rounded-full bg-gray-400 border-2 border-transparent"></div>
+                          <div className="w-8 h-8 rounded-full bg-gray-400 border-2 border-transparent"></div>
+                          <div className="w-8 h-8 rounded-full bg-gray-400 border-2 border-transparent"></div>
+                        </div>
+                      </div>
+
+                    </div>
+                    
+                    <Button disabled className="opacity-50 cursor-not-allowed">
+                      開発中
                     </Button>
                   </div>
                 )}

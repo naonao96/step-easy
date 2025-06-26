@@ -193,7 +193,7 @@ export default function TaskEditPage() {
     habit_frequency: isHabit ? habitFrequency : undefined,
     status: 'todo',
     start_date: startDate ? startDate.toISOString().split('T')[0] : null,
-    due_date: dueDate ? dueDate.toISOString().split('T')[0] : null,
+    due_date: dueDate ? dueDate.toLocaleDateString('sv-SE') : null,
     estimated_duration: estimatedDuration,
     category
   });
