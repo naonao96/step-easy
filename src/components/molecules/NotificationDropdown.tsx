@@ -129,7 +129,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ task
 
       {/* ドロップダウンメニュー */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+        <div className="absolute right-0 mt-2 w-80 sm:w-[calc(100vw-2rem)] md:w-80 max-w-[320px] sm:max-w-none bg-white rounded-lg shadow-lg border border-gray-200 z-50">
           {/* ヘッダー */}
           <div className="px-4 py-3 border-b border-gray-100">
             <h3 className="text-sm font-semibold text-gray-900">

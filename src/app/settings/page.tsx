@@ -66,23 +66,57 @@ export default function SettingsPage() {
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    
     try {
       const { createClientComponentClient } = await import('@supabase/auth-helpers-nextjs');
       const supabase = createClientComponentClient();
       
-      // Supabaseでuser_metadataを更新
-      const { error } = await supabase.auth.updateUser({
-        data: {
-          display_name: profileData.displayName.trim(),
-        }
+      const displayName = profileData.displayName.trim();
+      
+      // 入力値の検証
+      if (!displayName) {
+        toast.error('ユーザー名を入力してください');
+        return;
+      }
+      
+      if (displayName.length > 50) {
+        toast.error('ユーザー名は50文字以内で入力してください');
+        return;
+      }
+
+      // 1. Supabase Authでuser_metadataを更新
+      const { error: authError } = await supabase.auth.updateUser({
+        data: { display_name: displayName }
       });
 
-      if (error) throw error;
+      if (authError) {
+        console.error('Auth update error:', authError);
+        throw new Error(`認証情報の更新に失敗しました: ${authError.message}`);
+      }
+
+      // 2. データベースのusersテーブルを更新
+      const { error: dbError } = await supabase
+        .from('users')
+        .update({
+          display_name: displayName,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user?.id);
+
+      if (dbError) {
+        console.error('Database update error:', dbError);
+        throw new Error(`データベースの更新に失敗しました: ${dbError.message}`);
+      }
 
       toast.success('プロフィールを更新しました');
+      
+      // 3. AuthContextのユーザー情報を更新（ページをリロードして反映）
+      window.location.reload();
+      
     } catch (error) {
       console.error('プロフィール更新エラー:', error);
-      toast.error('プロフィールの更新に失敗しました');
+      const errorMessage = error instanceof Error ? error.message : 'プロフィールの更新に失敗しました';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

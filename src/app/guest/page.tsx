@@ -72,7 +72,7 @@ export default function GuestPage() {
                 </Button>
                 <Button
                   variant="secondary"
-                  onClick={() => router.push('/register-select')}
+                  onClick={() => router.push('/register')}
                   className="w-full"
                 >
                   アカウントを作成する

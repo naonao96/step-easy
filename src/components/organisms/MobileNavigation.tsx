@@ -12,7 +12,8 @@ import {
   FaSignOutAlt,
   FaPlus,
   FaTimes,
-  FaArchive
+  FaArchive,
+  FaUserPlus
 } from 'react-icons/fa';
 
 interface MobileNavigationProps {
@@ -254,16 +255,28 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
             )}
             
             {user?.isGuest ? (
-              <button
-                onClick={() => {
-                  router.push('/login');
-                  onClose();
-                }}
-                className="w-full flex items-center gap-3 px-2 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
-              >
-                {FaSignInAlt({ className: "w-5 h-5 text-green-500" })}
-                <span className="text-green-600 font-medium">ログイン</span>
-              </button>
+              <>
+                <button
+                  onClick={() => {
+                    router.push('/register');
+                    onClose();
+                  }}
+                  className="w-full flex items-center gap-3 px-2 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  {FaUserPlus({ className: "w-5 h-5 text-green-500" })}
+                  <span className="text-green-600 font-medium">新規登録</span>
+                </button>
+                <button
+                  onClick={() => {
+                    router.push('/login');
+                    onClose();
+                  }}
+                  className="w-full flex items-center gap-3 px-2 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  {FaSignInAlt({ className: "w-5 h-5 text-blue-500" })}
+                  <span className="text-blue-600 font-medium">ログイン</span>
+                </button>
+              </>
             ) : (
               <button
                 onClick={handleSignOut}

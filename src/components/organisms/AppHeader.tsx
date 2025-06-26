@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/atoms/Button';
 import { NotificationDropdown } from '@/components/molecules/NotificationDropdown';
 import { HelpPanel } from '@/components/molecules/HelpPanel';
-import { FaArrowLeft, FaSignOutAlt, FaUser, FaQuestionCircle } from 'react-icons/fa';
+import { FaArrowLeft, FaSignOutAlt, FaUser, FaQuestionCircle, FaUserPlus, FaSignInAlt } from 'react-icons/fa';
 import { Task } from '@/types/task';
 
 interface AppHeaderProps {
@@ -149,7 +149,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
       {/* 右側：通知 + デスクトップアクション + ユーザー情報 */}
       <div className="flex items-center gap-2 sm:gap-3">
         {/* 通知ドロップダウン */}
-        {showNotifications && tasks.length > 0 && (
+        {showNotifications && (
           <NotificationDropdown tasks={tasks} />
         )}
 
@@ -189,16 +189,28 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           {showAccountMenu && (
             <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
               {user?.isGuest ? (
-                <button
-                  onClick={() => {
-                    setShowAccountMenu(false);
-                    router.push('/login');
-                  }}
-                  className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  {FaUser({ className: "w-4 h-4" })}
-                  ログイン
-                </button>
+                <>
+                  <button
+                    onClick={() => {
+                      setShowAccountMenu(false);
+                      router.push('/register');
+                    }}
+                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    {FaUserPlus({ className: "w-4 h-4" })}
+                    新規登録
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowAccountMenu(false);
+                      router.push('/login');
+                    }}
+                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    {FaSignInAlt({ className: "w-4 h-4" })}
+                    ログイン
+                  </button>
+                </>
               ) : (
                 <button
                   onClick={() => {
@@ -230,16 +242,28 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         {showAccountMenu && (
           <div className="absolute lg:hidden right-2 top-16 w-44 sm:w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-[9999]" ref={mobileAccountMenuRef}>
             {user?.isGuest ? (
-              <button
-                onClick={() => {
-                  setShowAccountMenu(false);
-                  router.push('/login');
-                }}
-                className="flex items-center gap-3 w-full px-3 sm:px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                {FaUser({ className: "w-4 h-4 flex-shrink-0" })}
-                <span>ログイン</span>
-              </button>
+              <>
+                <button
+                  onClick={() => {
+                    setShowAccountMenu(false);
+                    router.push('/register');
+                  }}
+                  className="flex items-center gap-3 w-full px-3 sm:px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  {FaUserPlus({ className: "w-4 h-4 flex-shrink-0" })}
+                  <span>新規登録</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAccountMenu(false);
+                    router.push('/login');
+                  }}
+                  className="flex items-center gap-3 w-full px-3 sm:px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  {FaSignInAlt({ className: "w-4 h-4 flex-shrink-0" })}
+                  <span>ログイン</span>
+                </button>
+              </>
             ) : (
               <button
                 onClick={() => {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
 import { hasGuestTasks, getGuestTasks } from '@/lib/guestMigration';
@@ -46,24 +46,103 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const supabase = createClientComponentClient();
 
+  // ユーザー情報をデータベースから取得する関数
+  const fetchUserFromDatabase = useCallback(async (userId: string): Promise<AuthUser | null> => {
+    try {
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (userError) {
+        console.error('Error fetching user data:', userError);
+        return null;
+      }
+
+      return {
+        id: userData.id,
+        email: userData.email,
+        displayName: userData.display_name,
+        planType: userData.plan_type || 'free',
+      };
+    } catch (error) {
+      console.error('Error in fetchUserFromDatabase:', error);
+      return null;
+    }
+  }, [supabase]);
+
+  // ユーザー登録確認・作成関数
+  const ensureUserExists = useCallback(async (userId: string, email: string, displayName?: string): Promise<void> => {
+    try {
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', userId)
+        .single();
+
+      if (userError && userError.code === 'PGRST116') {
+        // ユーザーが存在しない場合、手動で作成
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert([{
+            id: userId,
+            email: email,
+            display_name: displayName || email.split('@')[0] || 'User',
+            plan_type: 'free'
+          }]);
+
+        if (insertError) {
+          console.error('Error creating user:', insertError);
+        }
+      }
+    } catch (error) {
+      console.error('Error ensuring user exists:', error);
+    }
+  }, [supabase]);
+
+  // セッションからユーザー情報を設定する関数
+  const setUserFromSession = useCallback(async (session: any): Promise<void> => {
+    if (!session?.user) {
+      setUser(null);
+      return;
+    }
+
+    // ユーザーが存在するかチェック・作成
+    await ensureUserExists(
+      session.user.id,
+      session.user.email || '',
+      session.user.user_metadata?.display_name
+    );
+
+    // データベースから最新情報を取得
+    const userData = await fetchUserFromDatabase(session.user.id);
+    
+    if (userData) {
+      setUser(userData);
+    } else {
+      // フォールバック: セッション情報のみ使用
+      setUser({
+        id: session.user.id,
+        email: session.user.email || '',
+        displayName: session.user.user_metadata?.display_name || '',
+        planType: 'free',
+      });
+    }
+  }, [ensureUserExists, fetchUserFromDatabase]);
+
   useEffect(() => {
     let mounted = true;
 
     const initializeAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (mounted) {
-          if (session?.user) {
-            setUser({
-              id: session.user.id,
-              email: session.user.email || '',
-              displayName: session.user.user_metadata?.display_name || '',
-            });
-          }
-          setIsLoading(false);
+        if (mounted && session) {
+          await setUserFromSession(session);
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
+      } finally {
         if (mounted) {
           setIsLoading(false);
         }
@@ -75,19 +154,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (mounted) {
-          if (session?.user) {
-            const newUser = {
-              id: session.user.id,
-              email: session.user.email || '',
-              displayName: session.user.user_metadata?.display_name || '',
-            };
+          if (session) {
+            await setUserFromSession(session);
             
             // 新規ログイン時にゲストタスクがあるかチェック
             if (event === 'SIGNED_IN' && hasGuestTasks()) {
               setShouldShowMigrationModal(true);
             }
-            
-            setUser(newUser);
           } else {
             setUser(null);
             setShouldShowMigrationModal(false);
@@ -101,15 +174,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [supabase, setUserFromSession]);
 
   const signInWithGoogle = async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
       });
       if (error) throw error;
     } catch (error) {
@@ -133,7 +206,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInAsGuest = async () => {
-    setUser({ id: 'guest', email: '', isGuest: true, planType: 'guest' });
+    setUser({ 
+      id: 'guest', 
+      email: '', 
+      isGuest: true, 
+      planType: 'guest' 
+    });
     setIsLoading(false);
   };
 
@@ -144,8 +222,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push('/lp');
         return;
       }
+      
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      
+      setUser(null);
       router.push('/lp');
     } catch (error) {
       console.error('Error signing out:', error);
@@ -162,15 +243,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // プラン別制限チェック関数群
-  const getPlanType = (): 'guest' | 'free' | 'premium' => {
+  const getPlanType = useCallback((): 'guest' | 'free' | 'premium' => {
     if (devPremiumOverride === true) return 'premium';
     if (devPremiumOverride === false) return 'free';
     if (!user) return 'guest';
     if (user.isGuest) return 'guest';
     return user.planType || 'free';
-  };
+  }, [devPremiumOverride, user]);
 
-  const canAddTaskOnDate = (date: Date): { canAdd: boolean; message: string } => {
+  const canAddTaskOnDate = useCallback((date: Date): { canAdd: boolean; message: string } => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const targetDate = new Date(date);
@@ -213,9 +294,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     
     return { canAdd: true, message: '' };
-  };
+  }, [getPlanType]);
 
-  const canSetDueDate = (): { canSet: boolean; message: string } => {
+  const canSetDueDate = useCallback((): { canSet: boolean; message: string } => {
     const planType = getPlanType();
     
     if (planType === 'guest') {
@@ -226,9 +307,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     
     return { canSet: true, message: '' };
-  };
+  }, [getPlanType]);
 
-  const getStartDateLimits = () => {
+  const getStartDateLimits = useCallback(() => {
     const planType = getPlanType();
     const today = new Date().toISOString().split('T')[0];
     
@@ -264,13 +345,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           message: ''
         };
     }
-  };
+  }, [getPlanType]);
 
-  const canAddPastTask = (): boolean => {
+  const canAddPastTask = useCallback((): boolean => {
     return getPlanType() === 'premium';
-  };
+  }, [getPlanType]);
 
-  const getDataRetentionDays = (): number => {
+  const getDataRetentionDays = useCallback((): number => {
     const planType = getPlanType();
     switch (planType) {
       case 'guest': return 0; // セッション中のみ
@@ -278,7 +359,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       case 'premium': return -1; // 無制限
       default: return 30;
     }
-  };
+  }, [getPlanType]);
 
   const value = {
     user,
