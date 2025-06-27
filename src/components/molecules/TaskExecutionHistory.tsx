@@ -38,7 +38,7 @@ export const TaskExecutionHistory: React.FC<TaskExecutionHistoryProps> = ({ task
       <div className="space-y-3">
         {/* 予想時間 */}
         {estimatedDuration && (
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
             <span className="text-sm text-gray-600">予想時間</span>
             <span className="text-sm font-medium text-blue-600">
               {formatDuration(estimatedDuration)}
@@ -48,7 +48,7 @@ export const TaskExecutionHistory: React.FC<TaskExecutionHistoryProps> = ({ task
 
         {/* 実際の実行時間 */}
         {hasExecutionData && (
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
             <span className="text-sm text-gray-600">実行時間</span>
             <span className="text-sm font-medium text-green-600">
               {formatDuration(actualDuration!)}
@@ -59,7 +59,7 @@ export const TaskExecutionHistory: React.FC<TaskExecutionHistoryProps> = ({ task
         {/* 実行時間と予想時間の比較 */}
         {hasExecutionData && estimatedDuration && (
           <div className="border-t border-gray-100 pt-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
               <span className="text-sm text-gray-600">予想との差</span>
               <span className={`text-sm font-medium ${
                 actualDuration! <= estimatedDuration 
@@ -76,7 +76,7 @@ export const TaskExecutionHistory: React.FC<TaskExecutionHistoryProps> = ({ task
             
             {/* 達成率バー */}
             <div className="mt-2">
-              <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs text-gray-500 mb-1">
                 <span>達成率</span>
                 <span className="font-medium">
                   {Math.round((estimatedDuration / actualDuration!) * 100)}%

@@ -193,7 +193,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({ task, onExecutionComplete 
   const isOtherTaskRunning = Boolean(activeExecution && !isCurrentTaskActive);
 
   return (
-    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 bg-gray-50 rounded-lg">
       {/* 経過時間表示 */}
       <div className="flex items-center gap-2 min-w-0">
         {FaClock ({className:"w-4 h-4 text-gray-500"})}
@@ -203,39 +203,41 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({ task, onExecutionComplete 
       </div>
 
       {/* 時間情報表示 */}
-      {isHabitTask ? (
-        // 習慣タスクの場合
-        <>
-          <div className="text-sm text-gray-500">
-            今日: {task.today_total ? `${Math.floor(task.today_total / 60)}分` : (task.actual_duration && task.actual_duration > 0) ? `${task.actual_duration}分` : '0分'}
-          </div>
-          <div className="text-sm text-blue-600">
-            🔥 継続中
-          </div>
-        </>
-      ) : (
-        // 通常タスクの場合
-        <>
-          {task.estimated_duration && (
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+        {isHabitTask ? (
+          // 習慣タスクの場合
+          <>
             <div className="text-sm text-gray-500">
-              予想: {formatDurationShort(task.estimated_duration)}
+              今日: {task.today_total ? `${Math.floor(task.today_total / 60)}分` : (task.actual_duration && task.actual_duration > 0) ? `${task.actual_duration}分` : '0分'}
             </div>
-          )}
-          <div className="text-sm text-green-600">
-            総累計: {task.all_time_total ? `${Math.floor(task.all_time_total / 60)}分` : (task.actual_duration && task.actual_duration > 0) ? `${task.actual_duration}分` : '0分'}
-          </div>
-        </>
-      )}
+            <div className="text-sm text-blue-600">
+              🔥 継続中
+            </div>
+          </>
+        ) : (
+          // 通常タスクの場合
+          <>
+            {task.estimated_duration && (
+              <div className="text-sm text-gray-500">
+                予想: {formatDurationShort(task.estimated_duration)}
+              </div>
+            )}
+            <div className="text-sm text-green-600">
+              総累計: {task.all_time_total ? `${Math.floor(task.all_time_total / 60)}分` : (task.actual_duration && task.actual_duration > 0) ? `${task.actual_duration}分` : '0分'}
+            </div>
+          </>
+        )}
+      </div>
 
       {/* コントロールボタン */}
-      <div className="flex items-center gap-2 ml-auto relative">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:ml-auto relative w-full sm:w-auto">
         {!isCurrentTaskActive ? (
           // 開始ボタン
           <button
             onClick={handleStart}
             disabled={isOtherTaskRunning}
             className={`
-              flex items-center gap-2 px-3 py-2 rounded-md font-medium text-sm transition-colors
+              flex items-center justify-center gap-2 px-3 py-2 rounded-md font-medium text-sm transition-colors
               ${isOtherTaskRunning
                 ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 : 'bg-green-500 text-white hover:bg-green-600'
@@ -248,11 +250,11 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({ task, onExecutionComplete 
           </button>
         ) : (
           // 実行中のコントロール
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             {isRunning ? (
               <button
                 onClick={handlePause}
-                className="flex items-center gap-2 px-3 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 font-medium text-sm transition-colors"
+                className="flex items-center justify-center gap-2 px-3 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 font-medium text-sm transition-colors"
                 title="一時停止"
               >
                 {FaPause ({className:"w-3 h-3"})}
@@ -261,7 +263,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({ task, onExecutionComplete 
             ) : (
               <button
                 onClick={handleResume}
-                className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 font-medium text-sm transition-colors"
+                className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 font-medium text-sm transition-colors"
                 title="再開"
               >
                 {FaPlay ({className:"w-3 h-3"})}
@@ -271,7 +273,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({ task, onExecutionComplete 
             
             <button
               onClick={handleStop}
-              className="flex items-center gap-2 px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 font-medium text-sm transition-colors"
+              className="flex items-center justify-center gap-2 px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 font-medium text-sm transition-colors"
               title="停止・記録"
             >
               {FaStop ({className:"w-3 h-3"})}
@@ -282,7 +284,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({ task, onExecutionComplete 
             <div className="relative">
               <button
                 onClick={handleResetClick}
-                className="flex items-center gap-2 px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 font-medium text-sm transition-colors"
+                className="flex items-center justify-center gap-2 px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 font-medium text-sm transition-colors w-full sm:w-auto"
                 title="リセット"
               >
                 {FaUndo({className:"w-3 h-3"})}
@@ -361,7 +363,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({ task, onExecutionComplete 
 
       {/* 他のタスク実行中の警告 */}
       {isOtherTaskRunning && (
-        <div className="text-xs text-orange-600 ml-2">
+        <div className="text-xs text-orange-600 sm:ml-2 w-full sm:w-auto text-center sm:text-left">
           他のタスクが実行中
         </div>
       )}

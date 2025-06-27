@@ -129,61 +129,121 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ task
 
       {/* ドロップダウンメニュー */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-[calc(100vw-2rem)] md:w-80 max-w-[320px] sm:max-w-none bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-          {/* ヘッダー */}
-          <div className="px-4 py-3 border-b border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-900">
-              通知 {notificationCount > 0 && `(${notificationCount})`}
-            </h3>
-          </div>
+        <>
+          {/* モバイル用ドロップダウン（中央寄せ） */}
+          <div className="md:hidden fixed left-1/2 -translate-x-1/2 right-0 mt-2 w-80 sm:w-[calc(100vw-2rem)] max-w-[320px] sm:max-w-none bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+            {/* ヘッダー */}
+            <div className="px-4 py-3 border-b border-gray-100">
+              <h3 className="text-sm font-semibold text-gray-900">
+                通知 {notificationCount > 0 && `(${notificationCount})`}
+              </h3>
+            </div>
 
-          {/* 通知一覧 */}
-          <div className="max-h-96 overflow-y-auto">
-            {notifications.length === 0 ? (
-              <div className="px-4 py-6 text-center text-gray-500 text-sm">
-                新しい通知はありません
-              </div>
-            ) : (
-              <div className="py-2">
-                {notifications.map((notification) => (
-                  <div
-                    key={notification.id}
-                    className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-b-0"
-                  >
-                    <div className="flex items-start gap-3">
-                      {getNotificationIcon(notification.type)}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900">
-                          {notification.title}
-                        </p>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {notification.message}
-                        </p>
-                        {notification.time && (
-                          <p className="text-xs text-gray-400 mt-1">
-                            {notification.time}
+            {/* 通知一覧 */}
+            <div className="max-h-96 overflow-y-auto">
+              {notifications.length === 0 ? (
+                <div className="px-4 py-6 text-center text-gray-500 text-sm">
+                  新しい通知はありません
+                </div>
+              ) : (
+                <div className="py-2">
+                  {notifications.map((notification) => (
+                    <div
+                      key={notification.id}
+                      className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-b-0"
+                    >
+                      <div className="flex items-start gap-3">
+                        {getNotificationIcon(notification.type)}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900">
+                            {notification.title}
                           </p>
-                        )}
+                          <p className="text-sm text-gray-600 mt-1">
+                            {notification.message}
+                          </p>
+                          {notification.time && (
+                            <p className="text-xs text-gray-400 mt-1">
+                              {notification.time}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* フッター */}
+            {notifications.length > 0 && (
+              <div className="px-4 py-3 border-t border-gray-100 text-center">
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="text-xs text-gray-500 hover:text-gray-700"
+                >
+                  すべて確認済み
+                </button>
               </div>
             )}
           </div>
 
-          {/* フッター */}
-          {notifications.length > 0 && (
-            <div className="px-4 py-3 border-t border-gray-100 text-center">
-              <button
-                onClick={() => setIsOpen(false)}
-                className="text-xs text-gray-500 hover:text-gray-700"
-              >
-                すべて確認済み
-              </button>
+          {/* デスクトップ用ドロップダウン（右寄せ） */}
+          <div className="hidden md:block absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+            {/* ヘッダー */}
+            <div className="px-4 py-3 border-b border-gray-100">
+              <h3 className="text-sm font-semibold text-gray-900">
+                通知 {notificationCount > 0 && `(${notificationCount})`}
+              </h3>
             </div>
-          )}
-        </div>
+
+            {/* 通知一覧 */}
+            <div className="max-h-96 overflow-y-auto">
+              {notifications.length === 0 ? (
+                <div className="px-4 py-6 text-center text-gray-500 text-sm">
+                  新しい通知はありません
+                </div>
+              ) : (
+                <div className="py-2">
+                  {notifications.map((notification) => (
+                    <div
+                      key={notification.id}
+                      className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-b-0"
+                    >
+                      <div className="flex items-start gap-3">
+                        {getNotificationIcon(notification.type)}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900">
+                            {notification.title}
+                          </p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {notification.message}
+                          </p>
+                          {notification.time && (
+                            <p className="text-xs text-gray-400 mt-1">
+                              {notification.time}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* フッター */}
+            {notifications.length > 0 && (
+              <div className="px-4 py-3 border-t border-gray-100 text-center">
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="text-xs text-gray-500 hover:text-gray-700"
+                >
+                  すべて確認済み
+                </button>
+              </div>
+            )}
+          </div>
+        </>
       )}
     </div>
   );

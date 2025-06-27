@@ -45,17 +45,20 @@ const getJSTDateString = (date?: Date): string => {
 
 /**
  * daily_messagesテーブルから今日のメッセージを取得
+ * 注意: selectedDateパラメータは無視し、常に今日の日付でメッセージを取得
  */
 const fetchDailyMessage = async (userId: string, selectedDate?: Date): Promise<string | null> => {
   try {
     // AuthContextと同じSupabaseクライアントを使用
     const supabase = createClientComponentClient();
-    const targetDate = getJSTDateString(selectedDate);
+    // selectedDateを無視して、常に今日の日付を使用
+    const targetDate = getJSTDateString();
 
     // デバッグ情報を追加
     console.log('=== fetchDailyMessage デバッグ ===')
     console.log('User ID:', userId)
-    console.log('Target Date:', targetDate)
+    console.log('Target Date (always today):', targetDate)
+    console.log('Selected Date (ignored):', selectedDate)
     console.log('Supabase client created:', !!supabase)
 
     const { data: dailyMessage, error } = await supabase
@@ -257,6 +260,11 @@ export const useCharacterMessage = ({ userType, userName, tasks, statistics, sel
 
   useEffect(() => {
     const checkAuth = async () => {
+      // ゲストユーザーの場合は認証チェックをスキップ
+      if (userType === 'guest') {
+        return;
+      }
+      
       const supabase = createClientComponentClient();
       const { data: { session } } = await supabase.auth.getSession()
       const { data: { user } } = await supabase.auth.getUser()
@@ -276,7 +284,7 @@ export const useCharacterMessage = ({ userType, userName, tasks, statistics, sel
     }
     
     checkAuth()
-  }, [router])
+  }, [router, userType])
 
   useEffect(() => {
     const updateSession = async () => {

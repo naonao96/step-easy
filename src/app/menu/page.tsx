@@ -280,20 +280,21 @@ export default function MenuPage() {
 
   useEffect(() => {
     // タスクの状態に応じてキャラクターの表情を更新
-    const { selectedDateCompletedTasks, selectedDateTotalTasks } = statistics;
+    // 注意: 選択された日付に関係なく、常に今日のタスク状況に基づいて表情を決定
+    const { todayCompletedTasks, todayTotalTasks } = statistics;
 
-    if (selectedDateTotalTasks === 0) {
+    if (todayTotalTasks === 0) {
       setCharacterMood('normal');
-    } else if (selectedDateCompletedTasks === selectedDateTotalTasks) {
+    } else if (todayCompletedTasks === todayTotalTasks) {
       setCharacterMood('happy');
-    } else if (selectedDateCompletedTasks / selectedDateTotalTasks >= 0.7) {
+    } else if (todayCompletedTasks / todayTotalTasks >= 0.7) {
       setCharacterMood('happy');
-    } else if (selectedDateCompletedTasks / selectedDateTotalTasks >= 0.3) {
+    } else if (todayCompletedTasks / todayTotalTasks >= 0.3) {
       setCharacterMood('normal');
     } else {
       setCharacterMood('sad');
     }
-  }, [statistics, selectedDate]);
+  }, [statistics]); // selectedDateを依存配列から削除
 
   const handleCompleteTask = async (id: string) => {
     const task = tasks.find(t => t.id === id);
