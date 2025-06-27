@@ -11,7 +11,7 @@ import { AppLayout } from '@/components/templates/AppLayout';
 import { useTaskStore } from '@/stores/taskStore';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
-// Supabaseクライアントはシングルトンとしてモジュールレベルで一度だけ生成
+// AuthContextと同じSupabaseクライアント作成方法を使用して認証状態を統一
 const supabase = createClientComponentClient();
 
 export default function SettingsPage() {
@@ -285,18 +285,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSignOut = async () => {
-    setIsLoading(true);
-    try {
-      await signOut();
-      router.push('/');
-    } catch (error) {
-      toast.error('ログアウトに失敗しました');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // ゲストユーザーの場合は機能制限メッセージを表示
   if (user?.isGuest) {
     return (
@@ -497,7 +485,7 @@ export default function SettingsPage() {
 
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <button
-                    onClick={handleSignOut}
+                    onClick={signOut}
                     className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-red-600 hover:bg-red-50 transition-colors"
                   >
                     {FaSignOutAlt({ className: "w-5 h-5" })}
@@ -860,7 +848,7 @@ export default function SettingsPage() {
                         アカウントからログアウトします。
                       </p>
                       <button
-                        onClick={handleSignOut}
+                        onClick={signOut}
                         className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
                       >
                         {FaSignOutAlt({ className: "w-4 h-4" })}

@@ -1,5 +1,9 @@
 import { create } from 'zustand';
-import { supabase, User, UserSettings } from '@/lib/supabase';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { User, UserSettings } from '@/lib/supabase';
+
+// AuthContextと同じSupabaseクライアント作成方法を使用
+const supabase = createClientComponentClient();
 
 interface UserStore {
   user: User | null;

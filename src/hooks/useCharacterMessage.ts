@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Task } from '@/stores/taskStore';
 import { useAuth } from '@/contexts/AuthContext';
-import { createClient } from '@/lib/supabase';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useRouter } from 'next/navigation';
 
 interface CharacterMessageHookProps {
   userType: 'guest' | 'free' | 'premium';
@@ -47,10 +48,15 @@ const getJSTDateString = (date?: Date): string => {
  */
 const fetchDailyMessage = async (userId: string, selectedDate?: Date): Promise<string | null> => {
   try {
-    const supabase = createClient();
-    const targetDate = getJSTDateString(selectedDate); // 修正: 日本時間での日付取得
+    // AuthContextと同じSupabaseクライアントを使用
+    const supabase = createClientComponentClient();
+    const targetDate = getJSTDateString(selectedDate);
 
-    console.log(`🔍 Fetching daily message for user: ${userId}, date: ${targetDate}`);
+    // デバッグ情報を追加
+    console.log('=== fetchDailyMessage デバッグ ===')
+    console.log('User ID:', userId)
+    console.log('Target Date:', targetDate)
+    console.log('Supabase client created:', !!supabase)
 
     const { data: dailyMessage, error } = await supabase
       .from('daily_messages')
@@ -60,10 +66,10 @@ const fetchDailyMessage = async (userId: string, selectedDate?: Date): Promise<s
       .eq('scheduled_type', 'morning')
       .single();
 
+    console.log('Query result:', { dailyMessage, error })
+
     if (error) {
       console.log(`❌ No daily message found: ${error.message}`);
-      console.log(`   User ID: ${userId}`);
-      console.log(`   Target Date: ${targetDate}`);
       console.log(`   Error Code: ${error.code}`);
       return null;
     }
@@ -174,6 +180,7 @@ export const useCharacterMessage = ({ userType, userName, tasks, statistics, sel
   
   // AuthContextから認証状態を取得
   const { user, isLoading: authLoading } = useAuth();
+  const router = useRouter();
 
   // メッセージ生成関数（DBを優先、フォールバック付き）
   const generateMessage = useCallback(async () => {
@@ -247,6 +254,43 @@ export const useCharacterMessage = ({ userType, userName, tasks, statistics, sel
       generateMessage();
     }
   }, [tasks, selectedDate, generateMessage, authLoading]);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const supabase = createClientComponentClient();
+      const { data: { session } } = await supabase.auth.getSession()
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      console.log('=== 認証状態詳細確認 ===')
+      console.log('Session exists:', !!session)
+      console.log('User exists:', !!user)
+      console.log('User ID:', user?.id)
+      console.log('Session user ID:', session?.user?.id)
+      console.log('Role:', session?.user?.role)
+      
+      if (!user || !session) {
+        console.log('❌ 認証されていません')
+        // ログイン画面にリダイレクト
+        router.push('/login')
+      }
+    }
+    
+    checkAuth()
+  }, [router])
+
+  useEffect(() => {
+    const updateSession = async () => {
+      const supabase = createClientComponentClient();
+      const { data, error } = await supabase.auth.refreshSession()
+      console.log('Session refresh:', { data, error })
+
+      if (data.session) {
+        console.log('New session user ID:', data.session.user.id)
+      }
+    }
+    
+    updateSession()
+  }, [])
 
   return { 
     message, 

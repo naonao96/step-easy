@@ -1,24 +1,13 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
-// サーバーサイド用のクライアント
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// 型定義専用ファイル
+// クライアントサイドでは createClientComponentClient() を使用してください
 
-export const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey);
-
-// クライアント作成関数をエクスポート
+// サーバーサイド用のクライアント作成関数
 export function createClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
   return createSupabaseClient(supabaseUrl, supabaseAnonKey);
-}
-
-// クライアントサイド用シングルトン
-let supabaseClientComponent: ReturnType<typeof createClientComponentClient> | null = null;
-export function getSupabaseClient() {
-  if (!supabaseClientComponent) {
-    supabaseClientComponent = createClientComponentClient();
-  }
-  return supabaseClientComponent;
 }
 
 export type User = {

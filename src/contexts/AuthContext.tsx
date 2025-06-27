@@ -105,27 +105,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // セッションからユーザー情報を設定する関数
+  // セッションからユーザー情報を設定する関数（最適化版）
   const setUserFromSession = useCallback(async (session: any): Promise<void> => {
     if (!session?.user) {
+      console.log('🔐 No user in session, clearing user state');
       setUser(null);
       return;
     }
 
-    // ユーザーが存在するかチェック・作成
-    await ensureUserExists(
-      session.user.id,
-      session.user.email || '',
-      session.user.user_metadata?.display_name
-    );
+    console.log('🔐 Setting user from session:', {
+      userId: session.user.id,
+      email: session.user.email
+    });
 
-    // データベースから最新情報を取得
-    const userData = await fetchUserFromDatabase(session.user.id);
-    
-    if (userData) {
-      setUser(userData);
-    } else {
-      // フォールバック: セッション情報のみ使用
+    try {
+      // まずセッション情報で即座にユーザーを設定（レスポンス向上）
+      const sessionUser = {
+        id: session.user.id,
+        email: session.user.email || '',
+        displayName: session.user.user_metadata?.display_name || '',
+        planType: 'free' as const,
+      };
+      
+      setUser(sessionUser);
+      console.log('🔐 User set from session immediately');
+
+      // バックグラウンドでデータベース情報を更新
+      try {
+        // ユーザーが存在するかチェック・作成（非同期）
+        ensureUserExists(
+          session.user.id,
+          session.user.email || '',
+          session.user.user_metadata?.display_name
+        ).catch(error => {
+          console.warn('🔐 Background ensureUserExists failed:', error);
+        });
+
+        // データベースから最新情報を取得（非同期）
+        fetchUserFromDatabase(session.user.id).then(userData => {
+          if (userData) {
+            console.log('🔐 User data updated from database:', userData);
+            setUser(userData);
+          }
+        }).catch(error => {
+          console.warn('🔐 Background fetchUserFromDatabase failed:', error);
+        });
+        
+      } catch (error) {
+        console.warn('🔐 Background database operations failed:', error);
+      }
+      
+    } catch (error) {
+      console.error('🔐 Error setting user from session:', error);
+      // エラーが発生してもセッション情報でフォールバック
       setUser({
         id: session.user.id,
         email: session.user.email || '',
@@ -140,15 +172,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const initializeAuth = async () => {
       try {
+        console.log('🔐 Initializing auth...');
         const { data: { session } } = await supabase.auth.getSession();
         if (mounted && session) {
+          console.log('🔐 Found existing session, setting user...');
           await setUserFromSession(session);
+        } else {
+          console.log('🔐 No existing session found');
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
       } finally {
         if (mounted) {
           setIsLoading(false);
+          console.log('🔐 Auth initialization complete');
         }
       }
     };
@@ -157,8 +194,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('🔐 Auth state change:', event, session ? 'session exists' : 'no session');
+        
         if (mounted) {
           if (session) {
+            console.log('🔐 Setting user from session...');
             await setUserFromSession(session);
             
             // 新規ログイン時にゲストタスクがあるかチェック
@@ -166,6 +206,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setShouldShowMigrationModal(true);
             }
           } else {
+            console.log('🔐 Clearing user state...');
             setUser(null);
             setShouldShowMigrationModal(false);
           }
@@ -197,14 +238,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithEmail = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log('🔐 AuthContext signInWithEmail called');
+      console.log('🔐 Email:', email);
+      console.log('🔐 Password length:', password.length);
+      
+      // 1. 基本的な認証のみ実行
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-      if (error) throw error;
+      
+      console.log('🔐 Supabase auth result:', { 
+        success: !error, 
+        error: error?.message,
+        hasUser: !!data?.user,
+        userId: data?.user?.id 
+      });
+      
+      if (error) {
+        console.error('🔐 Auth error:', error);
+        throw error;
+      }
+      
+      console.log('🔐 Auth successful, redirecting...');
       router.push('/menu');
+      
     } catch (error) {
-      console.error('Error signing in with email:', error);
+      console.error('🔐 Error in signInWithEmail:', error);
       throw error;
     }
   };
@@ -220,21 +280,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    console.log('🔍 AuthContext signOut called');
+    
     try {
       if (user?.isGuest) {
+        console.log('🔍 Guest user detected, clearing user state');
         setUser(null);
         router.push('/lp');
         return;
       }
       
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      console.log('🔍 Calling supabase.auth.signOut()');
       
+      // シンプルなログアウト
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('🔍 SignOut error:', error);
+      }
+      
+      console.log('🔍 Clearing user state');
+      setUser(null);
+      
+      console.log('🔍 Redirecting to /lp');
+      router.push('/lp');
+      
+    } catch (error) {
+      console.error('🔍 Error signing out:', error);
       setUser(null);
       router.push('/lp');
-    } catch (error) {
-      console.error('Error signing out:', error);
-      throw error;
     }
   };
 

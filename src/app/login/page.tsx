@@ -21,7 +21,7 @@ export default function LoginPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, signInWithEmail } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,31 +31,10 @@ export default function LoginPage() {
     console.log('🔐 ログイン処理開始:', { email, passwordLength: password.length });
 
     try {
-      console.log('📧 Supabaseログイン開始...');
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      console.log('📊 Supabaseログイン結果:', { data, error });
-
-      if (error) {
-        console.error('❌ ログインエラー:', error);
-        throw error;
-      }
-
-      if (data.user) {
-        console.log('✅ ログイン成功:', {
-          userId: data.user.id,
-          email: data.user.email,
-          emailConfirmed: data.user.email_confirmed_at,
-          lastSignIn: data.user.last_sign_in_at
-        });
-      }
-
-      console.log('🚀 メニュー画面にリダイレクト...');
-      router.push('/menu');
-      router.refresh();
+      console.log('📧 AuthContext signInWithEmail呼び出し...');
+      await signInWithEmail(email, password);
+      
+      console.log('✅ ログイン成功・画面遷移完了');
     } catch (error: any) {
       console.error('❌ ログインエラー詳細:', {
         message: error.message,

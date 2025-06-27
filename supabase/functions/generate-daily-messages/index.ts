@@ -23,6 +23,31 @@ interface Task {
   [key: string]: any;
 }
 
+// 環境判定（SUPABASE_プレフィックスを削除）
+const isDevelopment = Deno.env.get('ENVIRONMENT') === 'development' || 
+                     Deno.env.get('NODE_ENV') === 'development' ||
+                     Deno.env.get('APP_ENV') === 'development';
+
+const isProduction = Deno.env.get('ENVIRONMENT') === 'production' || 
+                    Deno.env.get('NODE_ENV') === 'production' ||
+                    Deno.env.get('APP_ENV') === 'production';
+
+// デバッグログ関数
+function debugLog(message: string, data?: any) {
+  if (isDevelopment) {
+    console.log(`[DEV] ${message}`, data || '');
+  } else if (isProduction) {
+    console.log(`[PROD] ${message}`, data || '');
+  }
+}
+
+// 本番環境用のログ関数
+function productionLog(message: string, data?: any) {
+  if (isProduction) {
+    console.log(`[PROD] ${message}`, data || '');
+  }
+}
+
 // 既存のプロンプトとロジックを再利用
 const MESSAGE_LIMITS = {
   free: {
@@ -73,47 +98,82 @@ function analyzeEmotionalState(data: {
 }) {
   const { recentCompletionRate, overallRate, overdueCount, recentCompletions, todayTasks, todayCompleted } = data;
   
+  // ストレスレベルの判定
   let stressLevel = 'low';
-  if (overdueCount > 3) stressLevel = 'high';
-  else if (overdueCount > 1) stressLevel = 'medium';
+  if (overdueCount > 3 || (todayTasks > 0 && todayCompleted / todayTasks < 0.3)) {
+    stressLevel = 'high';
+  } else if (overdueCount > 1 || (todayTasks > 0 && todayCompleted / todayTasks < 0.6)) {
+    stressLevel = 'medium';
+  }
   
-  let motivation = 'stable';
-  if (recentCompletionRate >= 80) motivation = 'high';
-  else if (recentCompletionRate <= 30) motivation = 'low';
+  // モチベーションの判定
+  let motivation = 'high';
+  if (recentCompletionRate < 30 || overallRate < 40) {
+    motivation = 'low';
+  } else if (recentCompletionRate < 60 || overallRate < 60) {
+    motivation = 'medium';
+  }
   
-  let progress = 'steady';
-  if (todayCompleted === todayTasks && todayTasks > 0) progress = 'excellent';
-  else if (todayCompleted === 0 && todayTasks > 0) progress = 'struggling';
+  // 進捗状況の判定
+  let progress = 'good';
+  if (recentCompletions < 2) {
+    progress = 'slow';
+  } else if (recentCompletions > 5) {
+    progress = 'excellent';
+  }
   
-  let consistency = 'regular';
-  if (recentCompletions >= 3) consistency = 'excellent';
-  else if (recentCompletions === 0) consistency = 'concerning';
+  // 継続性の判定
+  let consistency = 'stable';
+  if (recentCompletionRate > 80 && overallRate > 70) {
+    consistency = 'improving';
+  } else if (recentCompletionRate < 40) {
+    consistency = 'declining';
+  }
   
   return {
     stressLevel,
     motivation,
     progress,
     consistency,
-    needsEncouragement: motivation === 'low' || progress === 'struggling',
-    needsRest: stressLevel === 'high' && motivation === 'low'
+    needsEncouragement: motivation === 'low' || stressLevel === 'high',
+    needsRest: stressLevel === 'high' && recentCompletions > 3
   };
 }
 
-// 既存のリトライ機能（簡易版）
+// 既存のリトライ付き生成関数
 async function generateWithRetry(model: any, prompt: string, targetLength: number, maxLength: number): Promise<string> {
-  try {
-    const result = await model.generateContent(prompt);
-    const message = result.response.text().trim();
-    
-    if (message.length <= maxLength) {
-      return message.length <= targetLength + 20 ? message : smartTrim(message, targetLength);
+  const maxRetries = 3;
+  let lastError: any;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      debugLog(`Generating message attempt ${attempt}/${maxRetries}`);
+      
+      const result = await model.generateContent(prompt);
+      const generatedText = result.response.text().trim();
+      
+      // 文字数制限の適用
+      if (generatedText.length <= maxLength) {
+        debugLog(`Message generated successfully: ${generatedText.length} chars`);
+        return generatedText;
+      } else {
+        const trimmedText = smartTrim(generatedText, targetLength);
+        debugLog(`Message trimmed: ${trimmedText.length} chars`);
+        return trimmedText;
+      }
+    } catch (error) {
+      lastError = error;
+      debugLog(`Generation attempt ${attempt} failed:`, error);
+      
+      if (attempt < maxRetries) {
+        // 指数バックオフで待機
+        const delay = Math.pow(2, attempt) * 1000;
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
     }
-    
-    return smartTrim(message, targetLength);
-  } catch (error) {
-    console.error('Gemini generation failed:', error);
-    throw error;
   }
+  
+  throw new Error(`Failed to generate message after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`);
 }
 
 // 既存のフリーユーザー向けメッセージ生成（プロンプト活用）
@@ -172,6 +232,7 @@ ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
 - 今日タスクがある場合: 「${userGreeting}今日は${todayTotal}個のタスクがありますね。焦らずに一つずつ取り組んでいけば大丈夫です。」
 `;
 
+  debugLog('Generating free message with prompt:', { userName, recentCompletionRate, todayTotal, todayCompleted });
   return await generateWithRetry(model, prompt, MESSAGE_LIMITS.free.target, MESSAGE_LIMITS.free.max);
 }
 
@@ -258,9 +319,9 @@ ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
 
 serve(async (_req: any) => {
   try {
-    // 環境変数チェック
+    // 環境変数チェック（SUPABASE_プレフィックスを削除）
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SERVICE_ROLE_KEY')!; // SUPABASE_プレフィックスを削除
     const geminiApiKey = Deno.env.get('GEMINI_API_KEY')!;
 
     if (!supabaseUrl || !supabaseServiceKey || !geminiApiKey) {
@@ -351,10 +412,10 @@ serve(async (_req: any) => {
             overallPercentage
           };
 
-          message = await generatePremiumMessage(genAI, userName, tasks, statistics);
+          message = await generatePremiumMessage(genAI, userName, tasks || [], statistics);
         } else {
           // フリーユーザー：シンプルメッセージ
-          message = await generateFreeMessage(genAI, userName, tasks);
+          message = await generateFreeMessage(genAI, userName, tasks || []);
         }
 
         // メッセージ文字数の最終チェック（データベース制約に合わせる）
