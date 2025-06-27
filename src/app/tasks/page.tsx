@@ -665,48 +665,26 @@ export default function TaskEditPage() {
                             📅 実行頻度を選択してください
                           </label>
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                            <label className="flex items-center p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                              <input
-                                type="radio"
-                                name="habitFrequency"
-                                value="daily"
-                                checked={habitFrequency === 'daily'}
-                                onChange={(e) => setHabitFrequency(e.target.value as 'daily' | 'weekly' | 'monthly')}
-                                className="form-radio h-4 w-4 text-blue-600 mr-2"
-                              />
-                              <div>
-                                <div className="text-sm font-medium text-gray-900">毎日</div>
-                                <div className="text-xs text-gray-500">24時間ごと</div>
-                              </div>
-                            </label>
-                            <label className="flex items-center p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                              <input
-                                type="radio"
-                                name="habitFrequency"
-                                value="weekly"
-                                checked={habitFrequency === 'weekly'}
-                                onChange={(e) => setHabitFrequency(e.target.value as 'daily' | 'weekly' | 'monthly')}
-                                className="form-radio h-4 w-4 text-blue-600 mr-2"
-                              />
-                              <div>
-                                <div className="text-sm font-medium text-gray-900">週1回</div>
-                                <div className="text-xs text-gray-500">7日ごと</div>
-                              </div>
-                            </label>
-                            <label className="flex items-center p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                              <input
-                                type="radio"
-                                name="habitFrequency"
-                                value="monthly"
-                                checked={habitFrequency === 'monthly'}
-                                onChange={(e) => setHabitFrequency(e.target.value as 'daily' | 'weekly' | 'monthly')}
-                                className="form-radio h-4 w-4 text-blue-600 mr-2"
-                              />
-                              <div>
-                                <div className="text-sm font-medium text-gray-900">月1回</div>
-                                <div className="text-xs text-gray-500">30日ごと</div>
-                              </div>
-                            </label>
+                            {[
+                              { value: 'daily', label: '毎日', description: '24時間ごと' },
+                              { value: 'weekly', label: '週1回', description: '7日ごと' },
+                              { value: 'monthly', label: '月1回', description: '30日ごと' }
+                            ].map(({ value, label, description }) => (
+                              <label key={value} className="flex items-center p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name="habitFrequency"
+                                  value={value}
+                                  checked={habitFrequency === value}
+                                  onChange={(e) => setHabitFrequency(e.target.value as 'daily' | 'weekly' | 'monthly')}
+                                  className="form-radio h-4 w-4 text-blue-600 mr-2"
+                                />
+                                <div>
+                                  <div className="text-sm font-medium text-gray-900">{label}</div>
+                                  <div className="text-xs text-gray-500">{description}</div>
+                                </div>
+                              </label>
+                            ))}
                           </div>
                         </div>
                       )}
