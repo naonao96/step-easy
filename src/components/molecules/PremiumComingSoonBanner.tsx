@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaStar, FaChartLine, FaRobot, FaBell, FaGem } from 'react-icons/fa';
+import { FaStar, FaChartLine, FaRobot, FaBell, FaGem, FaInfoCircle } from 'react-icons/fa';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface PremiumComingSoonBannerProps {
@@ -31,37 +31,56 @@ export const PremiumComingSoonBanner: React.FC<PremiumComingSoonBannerProps> = (
       {/* 説明文 */}
       <p className="text-sm text-amber-800 mb-4">
         {isGuest 
-          ? 'アカウント登録すると、将来これらの高度な機能がご利用いただけます'
+          ? 'アカウント登録すると、これらの機能がご利用いただけます'
           : '400円相当の価値ある機能を開発中。あなたのタスク管理を次のレベルへ'
         }
       </p>
 
       {/* 機能プレビュー */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-        <div className="flex items-center gap-2 p-3 bg-white/50 rounded-lg">
-          {FaChartLine ({className:"w-4 h-4 text-amber-600"})}
-          <span className="text-sm font-medium text-amber-800">詳細レポート</span>
-        </div>
-        <div className="flex items-center gap-2 p-3 bg-white/50 rounded-lg">
-          {FaRobot ({className:"w-4 h-4 text-amber-600"})}
-          <span className="text-sm font-medium text-amber-800">AI専属コーチ</span>
-        </div>
-        <div className="flex items-center gap-2 p-3 bg-white/50 rounded-lg">
-          {FaStar ({className:"w-4 h-4 text-amber-600"})}
-          <span className="text-sm font-medium text-amber-800">成長予測</span>
-        </div>
+        {isGuest ? (
+          <>
+            <div className="flex items-center gap-2 p-3 bg-white/50 rounded-lg">
+              {FaChartLine({className:"w-4 h-4 text-amber-600"})}
+              <span className="text-sm font-medium text-amber-800">進捗分析</span>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-white/50 rounded-lg">
+              {FaStar({className:"w-4 h-4 text-amber-600"})}
+              <span className="text-sm font-medium text-amber-800">習慣管理</span>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-white/50 rounded-lg">
+              {FaBell({className:"w-4 h-4 text-amber-600"})}
+              <span className="text-sm font-medium text-amber-800">データ保存</span>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-2 p-3 bg-white/50 rounded-lg">
+              {FaChartLine({className:"w-4 h-4 text-amber-600"})}
+              <span className="text-sm font-medium text-amber-800">詳細レポート</span>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-white/50 rounded-lg">
+              {FaRobot({className:"w-4 h-4 text-amber-600"})}
+              <span className="text-sm font-medium text-amber-800">AI専属コーチ</span>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-white/50 rounded-lg">
+              {FaStar({className:"w-4 h-4 text-amber-600"})}
+              <span className="text-sm font-medium text-amber-800">成長予測</span>
+            </div>
+          </>
+        )}
       </div>
 
       {/* ステータス */}
       <div className="flex items-center justify-between p-3 bg-white/70 rounded-lg mb-4">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+          <div className={`w-2 h-2 rounded-full ${isGuest ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`}></div>
           <span className="text-sm font-medium text-amber-800">
-            🚧 ベータ版リリース準備中
+            {isGuest ? '✅ 今すぐ利用可能' : '🚧 ベータ版リリース準備中'}
           </span>
         </div>
         <span className="text-xs text-amber-600 font-medium">
-          2025年7月リリース予定
+          {isGuest ? '無料で利用開始' : '2025年7月リリース予定'}
         </span>
       </div>
 
@@ -73,8 +92,8 @@ export const PremiumComingSoonBanner: React.FC<PremiumComingSoonBannerProps> = (
               onClick={onPreviewClick}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
             >
-              {FaGem ({className:"w-4 h-4"})}
-              <span>機能詳細を見る</span>
+              {FaInfoCircle({className:"w-4 h-4"})}
+              <span>詳細を見る</span>
             </button>
             <button
               onClick={() => window.location.href = '/register'}
@@ -89,7 +108,7 @@ export const PremiumComingSoonBanner: React.FC<PremiumComingSoonBannerProps> = (
               onClick={onNotificationSignup}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition-colors"
             >
-              {FaBell ({className:"w-4 h-4"})}
+              {FaBell({className:"w-4 h-4"})}
               <span>リリース通知を受け取る</span>
             </button>
             <button 

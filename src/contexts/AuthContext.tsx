@@ -346,7 +346,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         canAdd: false, 
         message: planType === 'guest' 
           ? 'ゲストユーザーは過去の日付にタスクを追加できません。ログインしてプレミアム版で過去のタスクも管理しましょう。'
-          : '無料版は過去の日付にタスクを追加できません。プレミアム版にアップグレードしてください。'
+          : '無料版は過去の日付にタスクを追加できません。ホーム画面のプレミアム機能をご確認ください。'
       };
     }
     
@@ -366,7 +366,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (planType === 'free' && daysDifference > 14) {
       return {
         canAdd: false,
-        message: '無料版は14日後までのタスクのみ追加できます。プレミアム版にアップグレードして長期計画を立てましょう。'
+        message: '無料版は14日後までのタスクのみ追加できます。ホーム画面のプレミアム機能で長期計画を立てましょう。'
       };
     }
     
@@ -403,7 +403,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (daysDifference > 14) {
         return {
           canEdit: false,
-          message: '無料版は14日後までのタスクのみ編集できます。プレミアム版にアップグレードして長期計画を編集しましょう。'
+          message: '無料版は14日後までのタスクのみ編集できます。ホーム画面のプレミアム機能で長期計画を編集しましょう。'
         };
       }
     }

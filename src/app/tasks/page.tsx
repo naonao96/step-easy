@@ -626,6 +626,35 @@ export default function TaskEditPage() {
                         </div>
                       </div>
                     </div>
+                  ) : planType === 'free' && tasks.filter(t => t.is_habit).length >= 3 ? (
+                    // 無料ユーザー向け制限メッセージ（3つ以上の習慣がある場合）
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={false}
+                          disabled={true}
+                          className="form-checkbox h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0"
+                        />
+                        <div className="flex-1">
+                          <div className="text-center">
+                            <div className="flex items-center justify-center gap-2 mb-2">
+                              <span className="text-lg">👑</span>
+                              <span className="text-base font-medium text-purple-900">プレミアムで習慣を無制限に追加できます</span>
+                            </div>
+                            <p className="text-sm text-purple-700 mb-3">
+                              現在のプランでは習慣を3個まで作成できます
+                            </p>
+                            <button
+                              onClick={() => router.push('/menu')}
+                              className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
+                            >
+                              ホーム画面のプレミアム機能を確認
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   ) : (
                     // 通常の習慣タスク設定
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

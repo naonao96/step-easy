@@ -433,7 +433,7 @@ export default function MenuPage() {
             </div>
 
             {/* プレミアム導線（デスクトップ版）- 一番下に移動 */}
-            {!isGuest && planType === 'free' && (
+            {(isGuest || (!isGuest && planType === 'free')) && (
               <div className="mb-6">
                 <PremiumComingSoonBanner
                   onPreviewClick={() => setShowPreviewModal(true)}

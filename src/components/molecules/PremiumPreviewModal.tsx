@@ -1,5 +1,6 @@
 import React from 'react';
-import { FaTimes, FaChartLine, FaRobot, FaStar, FaBrain, FaHeart, FaCalendarAlt } from 'react-icons/fa';
+import { FaTimes, FaChartLine, FaRobot, FaStar, FaBrain, FaHeart, FaCalendarAlt, FaDatabase, FaChartBar, FaFire, FaBell, FaArchive, FaClock } from 'react-icons/fa';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PremiumPreviewModalProps {
   isOpen: boolean;
@@ -12,9 +13,52 @@ export const PremiumPreviewModal: React.FC<PremiumPreviewModalProps> = ({
   onClose,
   onNotificationSignup
 }) => {
+  const { isGuest } = useAuth();
+  
   if (!isOpen) return null;
 
-  const features = [
+  // ゲストユーザー向け機能（アカウント登録で解放される機能）
+  const guestFeatures = [
+    {
+      icon: FaChartBar,
+      title: '📊 進捗分析',
+      description: '日々の達成状況をグラフで可視化し、成長を実感できます',
+      preview: '今週の達成率: 75%\n完了タスク: 12個\n継続日数: 8日間'
+    },
+    {
+      icon: FaFire,
+      title: '🔥 習慣管理',
+      description: '継続したい習慣を3個まで管理し、ストリークを記録',
+      preview: '読書習慣: 15日継続中\n運動習慣: 8日継続中\n学習習慣: 新規開始'
+    },
+    {
+      icon: FaDatabase,
+      title: '💾 データ保存',
+      description: 'タスクと進捗を永続的に保存し、いつでも確認可能',
+      preview: '30日間のデータを安全に保存\nブラウザを閉じてもデータ維持\n複数デバイスで同期'
+    },
+    {
+      icon: FaChartLine,
+      title: '📈 統計機能',
+      description: '詳細な統計とヒートマップで行動パターンを分析',
+      preview: '月間統計・週間分析\nカテゴリ別達成率\n時間帯別パフォーマンス'
+    },
+    {
+      icon: FaClock,
+      title: '⏰ 期限設定',
+      description: 'タスクに開始日・期限日を設定して計画的な管理',
+      preview: '開始日・期限日の設定\n14日先までの計画\n過去日からの編集'
+    },
+    {
+      icon: FaArchive,
+      title: '📁 アーカイブ',
+      description: '完了したタスクを整理・保存して達成記録を残す',
+      preview: '過去の達成記録を確認\n完了タスクの検索\n達成感の振り返り'
+    }
+  ];
+
+  // プレミアム機能（無料ユーザー向け）
+  const premiumFeatures = [
     {
       icon: FaChartLine,
       title: '📊 週次・月次レポート',
@@ -53,6 +97,8 @@ export const PremiumPreviewModal: React.FC<PremiumPreviewModalProps> = ({
     }
   ];
 
+  const features = isGuest ? guestFeatures : premiumFeatures;
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -61,17 +107,20 @@ export const PremiumPreviewModal: React.FC<PremiumPreviewModalProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">
-                ✨ StepEasy Premium プレビュー
+                {isGuest ? '✨ StepEasy アカウント機能 プレビュー' : '✨ StepEasy Premium プレビュー'}
               </h2>
               <p className="text-gray-600 mt-1">
-                あなた専属のAIコーチが、より深い分析とサポートを提供します
+                {isGuest 
+                  ? 'アカウント登録で利用できる機能をご紹介します'
+                  : 'あなた専属のAIコーチが、より深い分析とサポートを提供します'
+                }
               </p>
             </div>
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
             >
-              {FaTimes ({className:"w-5 h-5 text-gray-500"})}
+              {FaTimes({className:"w-5 h-5 text-gray-500"})}
             </button>
           </div>
         </div>
@@ -101,53 +150,108 @@ export const PremiumPreviewModal: React.FC<PremiumPreviewModalProps> = ({
             ))}
           </div>
 
-          {/* 開発進捗 */}
-          <div className="bg-blue-50 rounded-xl p-6 mb-6">
-            <h3 className="text-lg font-bold text-blue-900 mb-4">
-              🚀 開発進捗状況
-            </h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-blue-800">データ分析エンジン</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-24 bg-blue-200 rounded-full h-2">
-                    <div className="w-4/5 bg-blue-600 h-2 rounded-full"></div>
+          {/* 開発進捗 / 機能説明 */}
+          <div className="bg-blue-50 rounded-xl p-6 mb-8">
+            {isGuest ? (
+              <>
+                <h3 className="text-lg font-bold text-blue-900 mb-4">
+                  ✅ 今すぐ利用可能な機能
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-blue-800">データ保存機能</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-24 bg-blue-200 rounded-full h-2">
+                        <div className="w-full bg-green-600 h-2 rounded-full"></div>
+                      </div>
+                      <span className="text-xs text-green-600 font-medium">利用可能</span>
+                    </div>
                   </div>
-                  <span className="text-xs text-blue-600 font-medium">80%</span>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-blue-800">AIメッセージ強化</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-24 bg-blue-200 rounded-full h-2">
-                    <div className="w-3/5 bg-blue-600 h-2 rounded-full"></div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-blue-800">進捗分析・統計</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-24 bg-blue-200 rounded-full h-2">
+                        <div className="w-full bg-green-600 h-2 rounded-full"></div>
+                      </div>
+                      <span className="text-xs text-green-600 font-medium">利用可能</span>
+                    </div>
                   </div>
-                  <span className="text-xs text-blue-600 font-medium">60%</span>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-blue-800">レポート機能</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-24 bg-blue-200 rounded-full h-2">
-                    <div className="w-2/5 bg-blue-600 h-2 rounded-full"></div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-blue-800">習慣管理（3個まで）</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-24 bg-blue-200 rounded-full h-2">
+                        <div className="w-full bg-green-600 h-2 rounded-full"></div>
+                      </div>
+                      <span className="text-xs text-green-600 font-medium">利用可能</span>
+                    </div>
                   </div>
-                  <span className="text-xs text-blue-600 font-medium">40%</span>
                 </div>
-              </div>
-            </div>
+              </>
+            ) : (
+              <>
+                <h3 className="text-lg font-bold text-blue-900 mb-4">
+                  🚀 開発進捗状況
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-blue-800">データ分析エンジン</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-24 bg-blue-200 rounded-full h-2">
+                        <div className="w-4/5 bg-blue-600 h-2 rounded-full"></div>
+                      </div>
+                      <span className="text-xs text-blue-600 font-medium">80%</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-blue-800">AIメッセージ強化</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-24 bg-blue-200 rounded-full h-2">
+                        <div className="w-3/5 bg-blue-600 h-2 rounded-full"></div>
+                      </div>
+                      <span className="text-xs text-blue-600 font-medium">60%</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-blue-800">レポート機能</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-24 bg-blue-200 rounded-full h-2">
+                        <div className="w-2/5 bg-blue-600 h-2 rounded-full"></div>
+                      </div>
+                      <span className="text-xs text-blue-600 font-medium">40%</span>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {/* アクション */}
           <div className="text-center">
-            <button
-              onClick={onNotificationSignup}
-              className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105"
-            >
-              🔔 リリース通知を受け取る
-            </button>
-            <p className="text-sm text-gray-500 mt-3">
-              ベータ版リリース時に優先的にご案内いたします
-            </p>
+            {isGuest ? (
+              <>
+                <button
+                  onClick={() => window.location.href = '/register'}
+                  className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-green-600 text-white rounded-xl font-bold hover:from-blue-700 hover:to-green-700 transition-all transform hover:scale-105"
+                >
+                  🚀 アカウント登録で利用開始
+                </button>
+                <p className="text-sm text-gray-500 mt-3">
+                  登録は無料です。現在の進捗は引き継がれます
+                </p>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={onNotificationSignup}
+                  className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105"
+                >
+                  🔔 リリース通知を受け取る
+                </button>
+                <p className="text-sm text-gray-500 mt-3">
+                  ベータ版リリース時に優先的にご案内いたします
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>

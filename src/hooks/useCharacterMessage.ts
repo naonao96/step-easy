@@ -30,6 +30,13 @@ const GUEST_MESSAGES = [
   '目標に向かって頑張りましょう',
 ];
 
+// アカウント登録完了時の特別メッセージ
+const REGISTRATION_MESSAGES = [
+  "ようこそStepEasyへ！タスク管理はもうひとりじゃありません。一緒にこっそり頑張っていきましょう。",
+  "登録完了！ここからは、あなたの習慣を全力で見守る係です。サボっても怒らないので安心してくださいね。",
+  "アカウント登録、おめでとうございます🎉（←心の中で鳴ってるファンファーレ）今日からは、あなたの\"ちいさな一歩\"を全力応援します！"
+];
+
 /**
  * 日本時間での日付文字列を取得する関数
  */
@@ -114,12 +121,28 @@ const generatePersonalizedMessage = (
   userType: 'guest' | 'free' | 'premium',
   userName?: string,
   tasks?: Task[],
-  selectedDate?: Date
+  selectedDate?: Date,
+  user?: any
 ): string => {
   // ゲストユーザーの場合はランダムメッセージ
   if (userType === 'guest') {
     const randomIndex = Math.floor(Math.random() * GUEST_MESSAGES.length);
     return GUEST_MESSAGES[randomIndex];
+  }
+
+  // 新規登録判定（翌日9時まで）
+  if (user?.created_at) {
+    const registrationTime = new Date(user.created_at);
+    const nextDay9AM = new Date(registrationTime);
+    nextDay9AM.setDate(nextDay9AM.getDate() + 1);
+    nextDay9AM.setHours(9, 0, 0, 0);
+
+    const isNewRegistration = new Date() < nextDay9AM;
+    
+    if (isNewRegistration) {
+      const randomIndex = Math.floor(Math.random() * REGISTRATION_MESSAGES.length);
+      return REGISTRATION_MESSAGES[randomIndex];
+    }
   }
 
   // 選択された日付が今日かどうか
@@ -214,7 +237,8 @@ export const useCharacterMessage = ({ userType, userName, tasks, statistics, sel
           userType,
           userName,
           tasks,
-          selectedDate
+          selectedDate,
+          user
         );
         setMessage(personalizedMessage);
         console.log('✅ Guest/unauthenticated message generated');
@@ -235,7 +259,8 @@ export const useCharacterMessage = ({ userType, userName, tasks, statistics, sel
         userType,
         userName,
         tasks,
-        selectedDate
+        selectedDate,
+        user
       );
       
       setMessage(personalizedMessage);

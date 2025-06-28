@@ -25,7 +25,8 @@ import {
   FaHome,
   FaTimes,
   FaTrash,
-  FaChartBar
+  FaChartBar,
+  FaCrown
 } from 'react-icons/fa';
 
 interface ModernMobileHomeProps {
@@ -285,7 +286,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
         </div>
 
                  {/* Plan Restriction Notice for Habits */}
-         {activeTab === 'habits' && planType !== 'premium' && habitTasks.length === 0 && (
+         {activeTab === 'habits' && planType === 'guest' && (
            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
              <div className="flex items-start space-x-2">
                {React.createElement(FaFire as React.ComponentType<any>, { className: "text-yellow-500 mt-0.5 flex-shrink-0" })}
@@ -299,6 +300,21 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
                  </p>
                </div>
              </div>
+           </div>
+         )}
+
+         {/* 無料ユーザー向けプレミアム誘導 */}
+         {activeTab === 'habits' && planType === 'free' && habitTasks.length > 0 && (
+           <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
+             <div className="flex items-center gap-2 mb-1">
+               {React.createElement(FaCrown as React.ComponentType<any>, { className: "w-3 h-3 text-purple-600" })}
+               <span className="text-xs font-medium text-purple-900">
+                 プレミアムで習慣を無制限に ({habitTasks.length}/{maxHabits}個)
+               </span>
+             </div>
+             <p className="text-xs text-purple-700">
+               ストリークも永続保存！高度な分析機能も利用可能
+             </p>
            </div>
          )}
 

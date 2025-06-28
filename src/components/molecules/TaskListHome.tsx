@@ -356,6 +356,13 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
     if (activeTab === 'habits') {
       if (planType === 'guest') return 'ログインが必要';
       if (habitTasks.length >= maxHabits && maxHabits !== Infinity) return 'プレミアム版が必要';
+      // 過去日付制限をチェック
+      if (selectedDate) {
+        const checkResult = canAddTaskOnDate(selectedDate);
+        if (!checkResult.canAdd) {
+          return 'プレミアム版が必要';
+        }
+      }
       return '習慣追加';
     }
     const { label } = getAddTaskButtonInfo();
@@ -367,6 +374,11 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
     if (activeTab === 'habits') {
       if (planType === 'guest') return false;
       if (habitTasks.length >= maxHabits && maxHabits !== Infinity) return false;
+      // 過去日付制限をチェック
+      if (selectedDate) {
+        const checkResult = canAddTaskOnDate(selectedDate);
+        if (!checkResult.canAdd) return false;
+      }
       return true;
     }
     const { canAdd } = getAddTaskButtonInfo();
@@ -403,7 +415,9 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
           }`}
           title={!getTabAddButtonEnabled() ? 
             (activeTab === 'habits' ? 
-              (planType === 'guest' ? 'ユーザー登録が必要です' : 'プレミアム版で習慣を無制限に追加できます') :
+              (planType === 'guest' ? 'ユーザー登録が必要です' : 
+               (habitTasks.length >= maxHabits && maxHabits !== Infinity) ? 'プレミアム版で習慣を無制限に追加できます' :
+               (selectedDate && !canAddTaskOnDate(selectedDate).canAdd) ? canAddTaskOnDate(selectedDate).message : 'プレミアム版で習慣を無制限に追加できます') :
               getAddTaskButtonInfo().message
             ) : ''
           }
