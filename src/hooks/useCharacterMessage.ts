@@ -130,14 +130,21 @@ const generatePersonalizedMessage = (
     return GUEST_MESSAGES[randomIndex];
   }
 
-  // 新規登録判定（翌日9時まで）
+  // 新規登録判定（翌日9時まで）- 日本時間基準
   if (user?.created_at) {
     const registrationTime = new Date(user.created_at);
-    const nextDay9AM = new Date(registrationTime);
+    
+    // 日本時間に変換（+9時間）
+    const jstRegistrationTime = new Date(registrationTime.getTime() + (9 * 60 * 60 * 1000));
+    const nextDay9AM = new Date(jstRegistrationTime);
     nextDay9AM.setDate(nextDay9AM.getDate() + 1);
     nextDay9AM.setHours(9, 0, 0, 0);
-
-    const isNewRegistration = new Date() < nextDay9AM;
+    
+    // 現在時刻も日本時間で比較
+    const now = new Date();
+    const jstNow = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+    
+    const isNewRegistration = jstNow < nextDay9AM;
     
     if (isNewRegistration) {
       const randomIndex = Math.floor(Math.random() * REGISTRATION_MESSAGES.length);
