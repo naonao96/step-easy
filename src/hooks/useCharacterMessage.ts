@@ -34,8 +34,11 @@ const GUEST_MESSAGES = [
 const REGISTRATION_MESSAGES = [
   "ようこそStepEasyへ！タスク管理はもうひとりじゃありません。一緒にこっそり頑張っていきましょう。",
   "登録完了！ここからは、あなたの習慣を全力で見守る係です。サボっても怒らないので安心してくださいね。",
-  "アカウント登録、おめでとうございます🎉（←心の中で鳴ってるファンファーレ）今日からは、あなたの\"ちいさな一歩\"を全力応援します！"
+  "アカウント登録、おめでとうございます🎉今日からは、あなたの\"ちいさな一歩\"を全力応援します！"
 ];
+
+// Supabaseクライアント
+const supabase = createClientComponentClient();
 
 /**
  * 日本時間での日付文字列を取得する関数
@@ -56,8 +59,7 @@ const getJSTDateString = (date?: Date): string => {
  */
 const fetchDailyMessage = async (userId: string, selectedDate?: Date): Promise<string | null> => {
   try {
-    // AuthContextと同じSupabaseクライアントを使用
-    const supabase = createClientComponentClient();
+    // 既存のSupabaseクライアントを使用（40行目で定義済み）
     
     // 現在時刻を取得（日本時間）
     const now = new Date();
@@ -117,38 +119,64 @@ const fetchDailyMessage = async (userId: string, selectedDate?: Date): Promise<s
  * 統一されたメッセージ生成関数（フォールバック用）
  * 認証状態に関係なく、現在のタスクデータから動的にメッセージを生成
  */
-const generatePersonalizedMessage = (
+const generatePersonalizedMessage = async (
   userType: 'guest' | 'free' | 'premium',
   userName?: string,
   tasks?: Task[],
   selectedDate?: Date,
   user?: any
-): string => {
+): Promise<{ message: string; isNewRegistration: boolean }> => {
   // ゲストユーザーの場合はランダムメッセージ
   if (userType === 'guest') {
     const randomIndex = Math.floor(Math.random() * GUEST_MESSAGES.length);
-    return GUEST_MESSAGES[randomIndex];
+    return { message: GUEST_MESSAGES[randomIndex], isNewRegistration: false };
   }
 
   // 新規登録判定（翌日9時まで）- 日本時間基準
-  if (user?.created_at) {
-    const registrationTime = new Date(user.created_at);
+  if (user?.id) {
+    // user?.created_atがundefinedの場合、直接Supabaseから取得
+    let created_at = user.created_at;
+    if (!created_at) {
+      try {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('created_at')
+          .eq('id', user.id)
+          .single();
+        created_at = userData?.created_at;
+      } catch (error) {
+        console.warn('Failed to fetch created_at from database:', error);
+      }
+    }
     
-    // 日本時間に変換（+9時間）
-    const jstRegistrationTime = new Date(registrationTime.getTime() + (9 * 60 * 60 * 1000));
-    const nextDay9AM = new Date(jstRegistrationTime);
-    nextDay9AM.setDate(nextDay9AM.getDate() + 1);
-    nextDay9AM.setHours(9, 0, 0, 0);
-    
-    // 現在時刻も日本時間で比較
-    const now = new Date();
-    const jstNow = new Date(now.getTime() + (9 * 60 * 60 * 1000));
-    
-    const isNewRegistration = jstNow < nextDay9AM;
-    
-    if (isNewRegistration) {
-      const randomIndex = Math.floor(Math.random() * REGISTRATION_MESSAGES.length);
-      return REGISTRATION_MESSAGES[randomIndex];
+    if (created_at) {
+      const registrationTime = new Date(created_at);
+      
+      // 日本時間に変換（+9時間）
+      const jstRegistrationTime = new Date(registrationTime.getTime() + (9 * 60 * 60 * 1000));
+      const nextDay9AM = new Date(jstRegistrationTime);
+      nextDay9AM.setDate(nextDay9AM.getDate() + 1);
+      nextDay9AM.setUTCHours(0, 0, 0, 0); // UTCの0時 = 日本時間9時
+      
+      // 現在時刻も日本時間で比較
+      const now = new Date();
+      const jstNow = now; // 既に日本時間なのでそのまま使用
+      
+      // デバッグログを追加
+      console.log('=== 新規登録判定デバッグ ===');
+      console.log('登録時刻（UTC）:', created_at);
+      console.log('登録時刻（日本時間）:', jstRegistrationTime);
+      console.log('期限（日本時間）:', nextDay9AM);
+      console.log('現在時刻（日本時間）:', jstNow);
+      console.log('判定結果:', jstNow < nextDay9AM);
+      
+      const isNewRegistration = jstNow < nextDay9AM;
+      
+      if (isNewRegistration) {
+        // ユーザーIDに基づいて一貫したメッセージを選択
+        const messageIndex = user.id.charCodeAt(0) % REGISTRATION_MESSAGES.length;
+        return { message: REGISTRATION_MESSAGES[messageIndex], isNewRegistration: true };
+      }
     }
   }
 
@@ -169,9 +197,10 @@ const generatePersonalizedMessage = (
 
   // タスクが存在しない場合
   if (!tasks || tasks.length === 0) {
-    return isToday ? 
+    const message = isToday ? 
       `${greeting}新しい一日の始まりですね！今日はどんなことにチャレンジしますか？✨` : 
       `${greeting}この日はお休みの日だったようですね。`;
+    return { message, isNewRegistration: false };
   }
 
   // 対象日のタスクをフィルタリング
@@ -190,36 +219,43 @@ const generatePersonalizedMessage = (
 
   // タスクがない日
   if (totalTasks === 0) {
-    return isToday ? 
+    const message = isToday ? 
       `${greeting}今日はゆっくり過ごす日ですね。新しいタスクを追加して、小さな一歩から始めてみませんか？` : 
       `${greeting}この日はゆっくり過ごされた日でした。`;
+    return { message, isNewRegistration: false };
   }
 
   // 完了率に基づいたメッセージ生成
   if (completionRate >= 100) {
-    return isToday ? 
+    const message = isToday ? 
       `${greeting}🎉 完璧です！全てのタスクを完了しました。今日は本当によく頑張りましたね！` : 
       `${greeting}素晴らしい一日でした！全てのタスクを完了されていますね。`;
+    return { message, isNewRegistration: false };
   } else if (completionRate >= 80) {
-    return isToday ? 
+    const message = isToday ? 
       `${greeting}💪 とても順調に進んでいます！あと少しで今日の目標達成ですね。` : 
       `${greeting}とても良いペースで進められた一日でした。`;
+    return { message, isNewRegistration: false };
   } else if (completionRate >= 50) {
-    return isToday ? 
+    const message = isToday ? 
       `${greeting}📈 半分以上完了していて素晴らしいです。この調子で最後まで頑張りましょう！` : 
       `${greeting}まずまずの進捗でした。着実に進歩されています。`;
+    return { message, isNewRegistration: false };
   } else if (completionRate >= 20) {
-    return isToday ? 
+    const message = isToday ? 
       `${greeting}🚀 良いスタートを切れていますね！一歩ずつ、着実に進んでいきましょう。` : 
       `${greeting}少しずつでも前進されています。それが大切です。`;
+    return { message, isNewRegistration: false };
   } else if (completedTasks.length > 0) {
-    return isToday ? 
+    const message = isToday ? 
       `${greeting}✨ 第一歩を踏み出せました！小さな一歩も大きな成果につながります。` : 
       `${greeting}何かを始めることができた日でした。`;
+    return { message, isNewRegistration: false };
   } else {
-    return isToday ? 
+    const message = isToday ? 
       `${greeting}💡 今日はまだこれからです。最初の小さな一歩から始めてみませんか？` : 
       `${greeting}時にはチャレンジが難しい日もありますね。それも大切な経験です。`;
+    return { message, isNewRegistration: false };
   }
 };
 
@@ -232,7 +268,7 @@ export const useCharacterMessage = ({ userType, userName, tasks, statistics, sel
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
 
-  // メッセージ生成関数（DBを優先、フォールバック付き）
+  // メッセージ生成関数（新規登録判定を最優先、DBを2番目、フォールバック付き）
   const generateMessage = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -240,19 +276,35 @@ export const useCharacterMessage = ({ userType, userName, tasks, statistics, sel
 
       // ゲストユーザーの場合は即座にフォールバック
       if (userType === 'guest' || !user) {
-        const personalizedMessage = generatePersonalizedMessage(
+        const personalizedMessage = await generatePersonalizedMessage(
           userType,
           userName,
           tasks,
           selectedDate,
           user
         );
-        setMessage(personalizedMessage);
+        setMessage(personalizedMessage.message);
         console.log('✅ Guest/unauthenticated message generated');
         return;
       }
 
-      // 認証ユーザーの場合：まずDBから取得を試行
+      // 新規登録判定を最優先で実行
+      const personalizedMessage = await generatePersonalizedMessage(
+        userType,
+        userName,
+        tasks,
+        selectedDate,
+        user
+      );
+
+      // 新規登録の場合は即座に返す（文字列判定ではなく、関数内で判定済み）
+      if (personalizedMessage.isNewRegistration) {
+        setMessage(personalizedMessage.message);
+        console.log('✅ New registration message displayed');
+        return;
+      }
+
+      // 新規登録でない場合のみDBから取得を試行
       const dailyMessage = await fetchDailyMessage(user.id, selectedDate);
       
       if (dailyMessage) {
@@ -261,16 +313,8 @@ export const useCharacterMessage = ({ userType, userName, tasks, statistics, sel
         return;
       }
 
-      // DBにメッセージがない場合のみフォールバック
-      const personalizedMessage = generatePersonalizedMessage(
-        userType,
-        userName,
-        tasks,
-        selectedDate,
-        user
-      );
-      
-      setMessage(personalizedMessage);
+      // DBにメッセージがない場合のフォールバック
+      setMessage(personalizedMessage.message);
       console.log('✅ Fallback message generated (no DB message found)');
       
     } catch (err) {
