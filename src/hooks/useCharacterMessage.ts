@@ -45,19 +45,36 @@ const getJSTDateString = (date?: Date): string => {
 
 /**
  * daily_messagesテーブルから今日のメッセージを取得
- * 注意: selectedDateパラメータは無視し、常に今日の日付でメッセージを取得
+ * 0-9時の期間は前日のメッセージを表示（CronJob実行前のフォールバック）
  */
 const fetchDailyMessage = async (userId: string, selectedDate?: Date): Promise<string | null> => {
   try {
     // AuthContextと同じSupabaseクライアントを使用
     const supabase = createClientComponentClient();
-    // selectedDateを無視して、常に今日の日付を使用
-    const targetDate = getJSTDateString();
+    
+    // 現在時刻を取得（日本時間）
+    const now = new Date();
+    const hour = now.getHours();
+    
+    // 0-9時の場合は前日のメッセージを取得
+    let targetDate: string;
+    if (hour >= 0 && hour < 9) {
+      // 前日の日付を計算
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      targetDate = getJSTDateString(yesterday);
+      console.log('🕐 Early morning (0-9am): fetching yesterday\'s message for date:', targetDate);
+    } else {
+      // 通常は今日の日付
+      targetDate = getJSTDateString();
+      console.log('📅 Normal hours: fetching today\'s message for date:', targetDate);
+    }
 
     // デバッグ情報を追加
     console.log('=== fetchDailyMessage デバッグ ===')
     console.log('User ID:', userId)
-    console.log('Target Date (always today):', targetDate)
+    console.log('Current hour (JST):', hour)
+    console.log('Target Date:', targetDate)
     console.log('Selected Date (ignored):', selectedDate)
     console.log('Supabase client created:', !!supabase)
 
@@ -213,7 +230,7 @@ export const useCharacterMessage = ({ userType, userName, tasks, statistics, sel
         return;
       }
 
-      // DBにメッセージがない場合はフォールバック
+      // DBにメッセージがない場合のみフォールバック
       const personalizedMessage = generatePersonalizedMessage(
         userType,
         userName,

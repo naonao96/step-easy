@@ -4,9 +4,25 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:development": "cp .env.development .env.local && next dev",
+    "dev:production": "cp .env.production .env.local && next dev",
     "build": "next build",
+    "build:development": "cp .env.development .env.local && next build",
+    "build:production": "cp .env.production .env.local && next build",
     "start": "next start",
-    "lint": "next lint"
+    "start:development": "cp .env.development .env.local && next start",
+    "start:production": "cp .env.production .env.local && next start",
+    "lint": "next lint",
+    "deploy:dev": "chmod +x scripts/deploy.sh && ./scripts/deploy.sh development",
+    "deploy:prod": "chmod +x scripts/deploy.sh && ./scripts/deploy.sh production",
+    "setup:dev": "cp env.example .env.development && echo '開発環境用の設定ファイルを作成しました。.env.development を編集してください。'",
+    "setup:prod": "cp env.example .env.production && echo '本番環境用の設定ファイルを作成しました。.env.production を編集してください。'",
+    "supabase:dev": "supabase link --project-ref $(grep NEXT_PUBLIC_SUPABASE_URL .env.development | cut -d'=' -f2 | sed 's|https://||' | sed 's|.supabase.co||')",
+    "supabase:prod": "supabase link --project-ref $(grep NEXT_PUBLIC_SUPABASE_URL .env.production | cut -d'=' -f2 | sed 's|https://||' | sed 's|.supabase.co||')",
+    "db:push:dev": "npm run supabase:dev && supabase db push",
+    "db:push:prod": "npm run supabase:prod && supabase db push",
+    "functions:deploy:dev": "npm run supabase:dev && supabase functions deploy generate-daily-messages",
+    "functions:deploy:prod": "npm run supabase:prod && supabase functions deploy generate-daily-messages"
   },
   "dependencies": {
     "@fontsource/noto-sans-jp": "^5.2.5",

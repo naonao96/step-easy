@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/trigger-daily-messages",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/trigger-daily-messages-cleanup",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}

@@ -127,6 +127,7 @@ step-easy/
 │   └── types/                 # TypeScript 型定義
 ├── public/                    # 静的ファイル
 ├── supabase/                  # データベースマイグレーション
+├── scripts/                   # デプロイスクリプト
 └── StepEasyの開発/           # 開発ドキュメント
 ```
 
@@ -152,26 +153,73 @@ npm install
 yarn install
 ```
 
-3. **環境変数の設定**
+3. **環境設定ファイルの作成**
 ```bash
-cp .env.example .env.local
+# 開発環境用の設定ファイルを作成
+npm run setup:dev
+
+# 本番環境用の設定ファイルを作成（必要に応じて）
+npm run setup:prod
 ```
 
-`.env.local` に以下の環境変数を設定：
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+4. **環境変数の設定**
+```bash
+# .env.development ファイルを編集
+# Supabase設定、AI設定などを入力
 ```
 
-4. **開発サーバーの起動**
+5. **開発サーバーの起動**
 ```bash
+# 開発環境で起動
+npm run dev:development
+
+# または通常の起動
 npm run dev
-# または
-yarn dev
 ```
 
-5. **ブラウザでアクセス**
+6. **ブラウザでアクセス**
 [http://localhost:3000](http://localhost:3000) を開く
+
+## 🔄 環境分離
+
+StepEasyは開発・本番環境の完全分離をサポートしています。
+
+### 環境別設定
+
+```bash
+# 開発環境
+.env.development    # 開発環境用設定
+.env.local         # 個人固有設定（Git管理外）
+
+# 本番環境
+.env.production    # 本番環境用設定
+```
+
+### 環境別コマンド
+
+```bash
+# 開発環境
+npm run dev:development      # 開発サーバー起動
+npm run build:development    # 開発環境用ビルド
+npm run db:push:dev         # 開発DBマイグレーション
+npm run functions:deploy:dev # 開発Edge Functionデプロイ
+
+# 本番環境
+npm run dev:production       # 本番設定で開発サーバー起動
+npm run build:production     # 本番環境用ビルド
+npm run db:push:prod        # 本番DBマイグレーション
+npm run functions:deploy:prod # 本番Edge Functionデプロイ
+
+# 一括デプロイ
+npm run deploy:dev          # 開発環境にデプロイ
+npm run deploy:prod         # 本番環境にデプロイ
+```
+
+### 詳細な環境分離ガイド
+
+- [クイックスタートガイド](./QUICK_START_GUIDE.md) - 5分で環境分離を完了
+- [環境分離ガイド](./ENVIRONMENT_SEPARATION_GUIDE.md) - 包括的な環境分離手順
+- [本番環境マイグレーションガイド](./PRODUCTION_MIGRATION_GUIDE.md) - 本番環境への移行
 
 ## 📊 データベース設定
 
@@ -199,16 +247,23 @@ npm run test:e2e
 
 ## 🚀 デプロイ
 
-### Vercel へのデプロイ
-
-1. [Vercel](https://vercel.com) でプロジェクトをインポート
-2. 環境変数を設定
-3. 自動デプロイの設定
-
+### 開発環境へのデプロイ
 ```bash
-# Vercel CLI を使用
-npm i -g vercel
-vercel --prod
+# 開発環境にデプロイ
+npm run deploy:dev
+```
+
+### 本番環境へのデプロイ
+```bash
+# 本番環境にデプロイ
+npm run deploy:prod
+```
+
+### 手動デプロイ
+```bash
+# スクリプトを使用した手動デプロイ
+./scripts/deploy.sh development  # 開発環境
+./scripts/deploy.sh production   # 本番環境
 ```
 
 ## 📚 ドキュメント
@@ -216,6 +271,8 @@ vercel --prod
 - [機能説明書](./StepEasyの開発/機能説明書/StepEasy機能説明書.md) - 詳細な機能説明
 - [アーキテクチャ設計書](./StepEasyの開発/アーキテクチャ設計書/) - システム設計
 - [事業計画書](./StepEasyの開発/事業計画書/) - プロダクト戦略
+- [環境分離ガイド](./ENVIRONMENT_SEPARATION_GUIDE.md) - 開発・本番環境分離
+- [クイックスタートガイド](./QUICK_START_GUIDE.md) - 環境分離のクイックスタート
 
 ## 🤝 コントリビューション
 
@@ -231,26 +288,28 @@ vercel --prod
 - [x] MVP機能の実装
 - [x] 基本的なタスク管理機能
 - [x] AIキャラクターサポート
-- [x] 習慣継続機能
+- [x] 習慣管理機能
+- [x] 環境分離の実装
 
 ### 2025年Q1
-- [ ] プレミアム機能の拡充
-- [ ] AIサポートスタイル選択
-- [ ] データエクスポート機能
-- [ ] モバイルアプリ対応検討
-
-## 📄 ライセンス
-
-このプロジェクトは MIT ライセンスの下で公開されています。詳細は [LICENSE](LICENSE) ファイルを参照してください。
+- [ ] プレミアム機能の実装
+- [ ] 高度な分析機能
+- [ ] モバイルアプリの開発
+- [ ] チーム機能の追加
 
 ## 📞 サポート
 
-- **Issue**: [GitHub Issues](https://github.com/your-username/step-easy/issues)
-- **Email**: support@stepeasy.example.com
+- **開発チーム**: naonao96
+- **お問い合わせ**: stepeasytasks@gmail.com
+- **緊急時**: 上記メールアドレスまでご連絡ください
+
+## 📄 ライセンス
+
+このプロジェクトはMITライセンスの下で公開されています。詳細は[LICENSE](LICENSE)ファイルを参照してください。
 
 ---
 
 <div align="center">
-  <p>Made with ❤️ by StepEasy Team</p>
-  <p>© 2024 StepEasy. All rights reserved.</p>
+  <p>Made with ❤️ by the StepEasy Team</p>
+  <p>タスク管理を、もっと楽しく。</p>
 </div>
