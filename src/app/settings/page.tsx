@@ -250,11 +250,20 @@ export default function SettingsPage() {
       console.log('🔐 Supabase Authユーザー本体削除リクエスト...');
       console.log('🌐 Edge Function URL:', edgeFunctionUrl);
       console.log('🆔 User ID:', currentUser.id);
+      
+      // ユーザーのアクセストークンを取得
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      
+      if (!accessToken) {
+        throw new Error('アクセストークンが取得できませんでした');
+      }
+      
       const res = await fetch(edgeFunctionUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`
+          'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify({ userId: currentUser.id }),
       });
