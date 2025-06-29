@@ -1,0 +1,17 @@
+name: Daily Messages Generation
+
+on:
+  schedule:
+    # 毎日午前9時（JST）に実行
+    - cron: '0 0 * * *'  # UTC 00:00 = JST 09:00
+  workflow_dispatch:  # 手動実行も可能
+
+jobs:
+  generate-messages:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Trigger Daily Messages
+      run: |
+        curl -X POST ${{ secrets.API_URL }}/api/trigger-daily-messages \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

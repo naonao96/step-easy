@@ -908,4 +908,24 @@ BEGIN
   ELSE
     RAISE NOTICE 'pg_cron extension not available (free plan) - Vercel Cron Jobs are used instead';
   END IF;
+END $$;
+
+-- 追加: 利用規約同意フラグの安全な追加（2025-06-29）
+DO $$
+BEGIN
+    -- user_settingsテーブルが存在する場合のみカラムを追加
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'user_settings') THEN
+        -- terms_agreedカラムが存在しない場合のみ追加
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_name = 'user_settings' AND column_name = 'terms_agreed'
+        ) THEN
+            ALTER TABLE user_settings ADD COLUMN terms_agreed BOOLEAN DEFAULT false;
+            RAISE NOTICE 'terms_agreed column added to user_settings table';
+        ELSE
+            RAISE NOTICE 'terms_agreed column already exists in user_settings table';
+        END IF;
+    ELSE
+        RAISE NOTICE 'user_settings table does not exist, skipping terms_agreed column addition';
+    END IF;
 END $$; 
