@@ -11,7 +11,7 @@ if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
   throw new Error('Supabase URLまたはService Role Keyが設定されていません');
 }
 const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-serve(async (req)=>{
+serve(async (req: Request) => {
   console.log('🔍 Edge Function called');
   console.log('📡 Method:', req.method);
   console.log('🌐 URL:', req.url);
