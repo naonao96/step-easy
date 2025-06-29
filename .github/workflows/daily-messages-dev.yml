@@ -1,0 +1,17 @@
+name: Daily Messages Generation (Development)
+
+on:
+  schedule:
+    # 開発環境は毎時実行（テスト用）
+    - cron: '0 * * * *'  # 毎時0分に実行
+  workflow_dispatch:  # 手動実行も可能
+
+jobs:
+  generate-messages-dev:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Trigger Daily Messages (Dev)
+      run: |
+        curl -X POST ${{ secrets.API_URL_DEV }}/api/trigger-daily-messages \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET_DEV }}" 
