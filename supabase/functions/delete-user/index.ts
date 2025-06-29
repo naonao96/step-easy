@@ -44,6 +44,78 @@ serve(async (req: Request) => {
     });
   }
 
+  // Authorizationヘッダーのチェック
+  const authHeader = req.headers.get('authorization');
+  console.log('🔐 Authorization header:', authHeader ? 'Present' : 'Missing');
+  
+  if (!authHeader) {
+    console.log('❌ Missing authorization header');
+    return new Response(JSON.stringify({ 
+      code: 401,
+      message: 'Missing authorization header' 
+    }), {
+      status: 401,
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
+  }
+
+  // Bearer トークンの形式チェック
+  if (!authHeader.startsWith('Bearer ')) {
+    console.log('❌ Invalid authorization header format');
+    return new Response(JSON.stringify({ 
+      code: 401,
+      message: 'Invalid authorization header format' 
+    }), {
+      status: 401,
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  console.log('🔑 Token received:', token.substring(0, 20) + '...');
+
+  // JWT認証の検証
+  try {
+    const supabaseClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+    
+    if (authError || !user) {
+      console.log('❌ JWT authentication failed:', authError);
+      return new Response(JSON.stringify({ 
+        code: 401,
+        message: 'Invalid JWT token',
+        details: authError 
+      }), {
+        status: 401,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    }
+    
+    console.log('✅ JWT authentication successful for user:', user.email);
+  } catch (authError) {
+    console.log('❌ JWT verification error:', authError);
+    return new Response(JSON.stringify({ 
+      code: 401,
+      message: 'JWT verification failed',
+      details: authError 
+    }), {
+      status: 401,
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
+  }
+
   let userId: string | undefined;
   try {
     const body = await req.json();
