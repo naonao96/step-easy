@@ -74,8 +74,8 @@ export const MobileOthersContent: React.FC = () => {
             >
               <span className="font-medium text-slate-900 text-sm pr-2">{faq.question}</span>
               {expandedFaq === index ? 
-                FaChevronUp({ className: "w-4 h-4 text-slate-500 flex-shrink-0" }) :
-                FaChevronDown({ className: "w-4 h-4 text-slate-500 flex-shrink-0" })
+                React.createElement(FaChevronUp as any, { className: "w-4 h-4 text-slate-500 flex-shrink-0" }) :
+                React.createElement(FaChevronDown as any, { className: "w-4 h-4 text-slate-500 flex-shrink-0" })
               }
             </button>
             {expandedFaq === index && (
