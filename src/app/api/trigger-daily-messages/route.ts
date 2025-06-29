@@ -208,7 +208,13 @@ export async function POST(req: NextRequest) {
   try {
     // 権限チェック（Vercel Cron Jobsからの呼び出しのみ許可）
     const authHeader = headers().get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    const vercelEnv = process.env.VERCEL_ENV; // 'production' | 'preview' | 'development'
+    const secret =
+      vercelEnv === 'production'
+        ? process.env.CRON_SECRET
+        : process.env.CRON_SECRET_DEV;
+
+    if (authHeader !== `Bearer ${secret}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
