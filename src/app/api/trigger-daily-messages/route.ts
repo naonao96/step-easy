@@ -268,4 +268,9 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function GET(req: NextRequest) {
+  // Vercel Cron JobのGETリクエストにもPOSTと同じ処理を適用
+  return await POST(req);
 } 

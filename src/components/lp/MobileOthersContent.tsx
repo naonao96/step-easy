@@ -174,11 +174,22 @@ export const MobileOthersContent: React.FC = () => {
       </div>
       
       <div className="space-y-4 text-sm text-slate-700">
-        <p>本利用規約は、StepEasyの利用条件を定めるものです。ご利用の際には、本規約に同意いただく必要があります。</p>
+        <p>本利用規約は、StepEasyの利用条件を定めるものです。ユーザーは本サービスを利用することにより、本規約に同意したものとみなします。</p>
         
         <section>
           <h3 className="font-semibold text-slate-900 mb-2">第1条（適用）</h3>
-          <p>本規約は、naonao96（当方）が提供する本サービスの利用に関して、当方とユーザーとの間に適用されます。</p>
+          <p>本利用規約は、StepEasyの利用条件を定めるものです。ユーザーは本サービスを利用することにより、本規約に同意したものとみなします。</p>
+          <p>本サービスは、18歳以上の方を対象としています。18歳未満の方は、保護者の同意を得た上でご利用ください。</p>
+        </section>
+
+        <section>
+          <h3 className="font-semibold text-slate-900 mb-2">事業者情報</h3>
+          <div className="bg-slate-100 p-3 rounded">
+            <p><strong>運営者名：</strong> naonao96</p>
+            <p><strong>連絡先：</strong> stepeasytasks@gmail.com</p>
+            <p><strong>サービス名：</strong> StepEasy</p>
+            <p><strong>サービス内容：</strong> タスク管理アプリケーション</p>
+          </div>
         </section>
 
         <section>

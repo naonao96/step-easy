@@ -24,6 +24,24 @@ export const TermsOfServiceContent: React.FC = () => {
                 ユーザーは、本サービスを利用することにより、本規約に同意したものとみなします。
                 本規約に同意できない場合は、本サービスの利用をお控えください。
               </p>
+              <p>
+                本サービスは、18歳以上の方を対象としています。
+                18歳未満の方は、保護者の同意を得た上でご利用ください。
+                保護者の同意がない場合の利用は禁止いたします。
+              </p>
+            </div>
+          </section>
+
+          {/* 事業者情報 */}
+          <section>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">事業者情報</h2>
+            <div className="space-y-4 text-gray-700">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p><strong>運営者名：</strong> naonao96</p>
+                <p><strong>連絡先：</strong> stepeasytasks@gmail.com</p>
+                <p><strong>サービス名：</strong> StepEasy</p>
+                <p><strong>サービス内容：</strong> タスク管理アプリケーション</p>
+              </div>
             </div>
           </section>
 
