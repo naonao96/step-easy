@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
 interface RequestBody {
   userType: 'free' | 'premium';
@@ -12,6 +14,16 @@ interface RequestBody {
     todayPercentage: number;
     overallPercentage: number;
   };
+}
+
+interface ExecutionData {
+  totalExecutions: number;
+  totalDuration: number;
+  peakHour: number;
+  peakDay: number;
+  averageSessionDuration: number;
+  mostProductiveTime: string;
+  consistencyScore: number;
 }
 
 const MESSAGE_LIMITS = {
@@ -138,7 +150,77 @@ async function generateWithRetry(
   return bestMessage ? smartTrim(bestMessage, targetLength) : '';
 }
 
-// 感情分析ヘルパー関数
+// 実行データを取得する関数
+async function getExecutionData(userId: string): Promise<ExecutionData | null> {
+  try {
+    const supabase = createRouteHandlerClient({ cookies });
+    
+    // 過去30日分の実行ログを取得
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const { data: executionLogs, error } = await supabase
+      .from('execution_logs')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_completed', true)
+      .gte('start_time', thirtyDaysAgo.toISOString());
+
+    if (error || !executionLogs || executionLogs.length === 0) {
+      return null;
+    }
+
+    // 統計データを計算
+    const totalExecutions = executionLogs.length;
+    const totalDuration = executionLogs.reduce((sum, log) => sum + (log.duration || 0), 0);
+    const averageSessionDuration = totalDuration / totalExecutions;
+
+    // 時間帯別の実行回数を集計
+    const hourCounts = Array(24).fill(0);
+    executionLogs.forEach(log => {
+      const startDate = new Date(log.start_time);
+      const hour = startDate.getHours();
+      hourCounts[hour]++;
+    });
+    const peakHour = hourCounts.indexOf(Math.max(...hourCounts));
+
+    // 曜日別の実行回数を集計
+    const dayCounts = Array(7).fill(0);
+    executionLogs.forEach(log => {
+      const startDate = new Date(log.start_time);
+      const day = startDate.getDay();
+      dayCounts[day]++;
+    });
+    const peakDay = dayCounts.indexOf(Math.max(...dayCounts));
+
+    // 最も生産的な時間帯の文字列
+    const weekDays = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
+    const mostProductiveTime = `${weekDays[peakDay]}の${peakHour}時`;
+
+    // 継続性スコア（過去7日間の実行回数）
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const recentExecutions = executionLogs.filter(log => 
+      new Date(log.start_time) >= sevenDaysAgo
+    ).length;
+    const consistencyScore = Math.min(recentExecutions / 7, 1); // 0-1の範囲
+
+    return {
+      totalExecutions,
+      totalDuration,
+      peakHour,
+      peakDay,
+      averageSessionDuration,
+      mostProductiveTime,
+      consistencyScore
+    };
+  } catch (error) {
+    console.error('実行データ取得エラー:', error);
+    return null;
+  }
+}
+
+// 感情分析ヘルパー関数（実行データも含める）
 function analyzeEmotionalState(data: {
   recentCompletionRate: number;
   overallRate: number;
@@ -146,8 +228,9 @@ function analyzeEmotionalState(data: {
   recentCompletions: number;
   todayTasks: number;
   todayCompleted: number;
+  executionData?: ExecutionData | null;
 }) {
-  const { recentCompletionRate, overallRate, overdueCount, recentCompletions, todayTasks, todayCompleted } = data;
+  const { recentCompletionRate, overallRate, overdueCount, recentCompletions, todayTasks, todayCompleted, executionData } = data;
   
   // ストレスレベル判定
   let stressLevel = 'low';
@@ -164,18 +247,33 @@ function analyzeEmotionalState(data: {
   if (todayCompleted === todayTasks && todayTasks > 0) progress = 'excellent';
   else if (todayCompleted === 0 && todayTasks > 0) progress = 'struggling';
   
-  // 継続性判定
+  // 継続性判定（実行データも考慮）
   let consistency = 'regular';
-  if (recentCompletions >= 3) consistency = 'excellent';
-  else if (recentCompletions === 0) consistency = 'concerning';
+  if (executionData) {
+    if (executionData.consistencyScore >= 0.7) consistency = 'excellent';
+    else if (executionData.consistencyScore <= 0.3) consistency = 'concerning';
+  } else {
+    if (recentCompletions >= 3) consistency = 'excellent';
+    else if (recentCompletions === 0) consistency = 'concerning';
+  }
+  
+  // 生産性パターン
+  let productivityPattern = 'unknown';
+  if (executionData) {
+    if (executionData.averageSessionDuration >= 3600) productivityPattern = 'long_sessions';
+    else if (executionData.averageSessionDuration <= 900) productivityPattern = 'short_sessions';
+    else productivityPattern = 'balanced';
+  }
   
   return {
     stressLevel,
     motivation,
     progress,
     consistency,
+    productivityPattern,
     needsEncouragement: motivation === 'low' || progress === 'struggling',
-    needsRest: stressLevel === 'high' && motivation === 'low'
+    needsRest: stressLevel === 'high' && motivation === 'low',
+    needsOptimization: executionData && executionData.consistencyScore < 0.5
   };
 }
 
@@ -183,10 +281,21 @@ export async function POST(req: NextRequest) {
   try {
     const { userType, userName, tasks, statistics }: RequestBody = await req.json();
 
+    // ユーザーIDを取得
+    const supabase = createRouteHandlerClient({ cookies });
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+    }
+
+    // 実行データを取得
+    const executionData = await getExecutionData(user.id);
+
     if (userType === 'free') {
-      return await generateFreeMessage(userName);
+      return await generateFreeMessage(userName, executionData);
     } else if (userType === 'premium') {
-      return await generatePremiumMessage(userName, tasks, statistics);
+      return await generatePremiumMessage(userName, tasks, statistics, executionData);
     }
 
     return NextResponse.json({ error: 'Invalid user type' }, { status: 400 });
@@ -199,11 +308,22 @@ export async function POST(req: NextRequest) {
   }
 }
 
-async function generateFreeMessage(userName?: string) {
+async function generateFreeMessage(userName?: string, executionData?: ExecutionData | null) {
   try {
+    // 日本時間での日付取得（統一処理）
+    const getJSTDateString = (): string => {
+      const now = new Date();
+      const jstOffset = 9 * 60;
+      const jstTime = new Date(now.getTime() + (jstOffset * 60 * 1000));
+      return jstTime.toISOString().split('T')[0];
+    };
+
     // キャッシュキーの生成
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    const cacheKey = `free_${userName || 'anonymous'}_${today}`;
+    const today = getJSTDateString();
+    const executionHash = executionData ? 
+      `${executionData.totalExecutions}_${executionData.peakHour}_${executionData.consistencyScore}` : 
+      'noexec';
+    const cacheKey = `free_${userName || 'anonymous'}_${today}_${executionHash}`;
     
     // キャッシュチェック
     const cached = messageCache.get(cacheKey);
@@ -217,6 +337,7 @@ async function generateFreeMessage(userName?: string) {
     }
 
     console.log('Generating new message for free user:', userName || 'anonymous');
+    console.log('Execution data:', executionData);
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
@@ -224,7 +345,7 @@ async function generateFreeMessage(userName?: string) {
     // 日本時間での日付取得（統一処理）
     const getJSTDate = (): Date => {
       const now = new Date();
-      const jstOffset = 9 * 60;
+      const jstOffset = 9 * 60; // 日本時間は UTC+9
       return new Date(now.getTime() + (jstOffset * 60 * 1000));
     };
 
@@ -236,29 +357,39 @@ async function generateFreeMessage(userName?: string) {
 
     const userGreeting = userName ? `${userName}さん、` : '';
     
-    // 無料版向けのシンプルで親しみやすいプロンプト
+    // 実行データに基づく個別化されたメッセージ
+    let executionInsight = '';
+    if (executionData) {
+      const avgMinutes = Math.floor(executionData.averageSessionDuration / 60);
+      const totalHours = Math.floor(executionData.totalDuration / 3600);
+      
+      if (executionData.consistencyScore >= 0.7) {
+        executionInsight = `過去30日間で${executionData.totalExecutions}回のタスク実行、平均${avgMinutes}分の集中時間を記録しています。特に${executionData.mostProductiveTime}が最も生産的ですね。`;
+      } else if (executionData.consistencyScore >= 0.4) {
+        executionInsight = `過去30日間で${executionData.totalExecutions}回のタスク実行、合計${totalHours}時間の作業時間を積み重ねています。継続が力になりますよ。`;
+      } else {
+        executionInsight = `過去30日間で${executionData.totalExecutions}回のタスク実行を記録しています。小さな一歩から始めて、習慣を築いていきましょう。`;
+      }
+    }
+
     const prompt = `
-あなたは優しいタスク管理アプリのキャラクターです。
+あなたは優しく寄り添うタスク管理アプリのキャラクターです。
 今日は${todayFormatted}です。
 ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
 
-【重要】無料版ユーザー向けの親しみやすいメッセージを以下の条件で生成してください：
+${executionData ? `実行データ分析：
+${executionInsight}` : ''}
+
+【重要】無料ユーザー向けの励ましメッセージを以下の条件で生成してください：
 - 必ず100文字以内（絶対条件）
-- 親しみやすく優しい口調
 - ${userName ? `「${userName}さん」という呼びかけを自然に含める` : ''}
-- 今日の天気や季節感を含める
-- タスク管理へのモチベーションを上げる内容
+- 優しく寄り添う口調
+- ${executionData ? '実行データに基づいた具体的な励まし' : '一般的な励まし'}
 - 絵文字は使わない
-- プレッシャーを与えず、優しく寄り添う内容
-- 新しい一日への希望と励ましを込める
+- シンプルで分かりやすい言葉
 
-例：「${userGreeting}今日は晴れて気持ちの良い一日ですね！新しいタスクにチャレンジするのにぴったりです。一歩ずつゆっくりと進んでいきましょう。」
-
-基本的な励ましの要素：
-- 今日という新しい一日への期待
-- ユーザーの取り組みへの肯定的な評価
-- 無理のないペースでの進歩を推奨
-- 寄り添うようなサポートの姿勢
+例：
+${userGreeting}${executionData ? executionInsight : '今日も一緒に頑張りましょう！小さな進歩が大きな成果につながります。'}
 `;
 
     // レート制限対応リトライ付き生成
@@ -297,7 +428,7 @@ ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
   }
 }
 
-async function generatePremiumMessage(userName?: string, tasks?: any[], statistics?: any) {
+async function generatePremiumMessage(userName?: string, tasks?: any[], statistics?: any, executionData?: ExecutionData | null) {
   try {
     // 日本時間での日付取得（統一処理）
     const getJSTDateString = (): string => {
@@ -307,12 +438,15 @@ async function generatePremiumMessage(userName?: string, tasks?: any[], statisti
       return jstTime.toISOString().split('T')[0];
     };
 
-    // キャッシュキーの生成（統計情報も含める）
+    // キャッシュキーの生成（統計情報と実行データも含める）
     const today = getJSTDateString(); // YYYY-MM-DD (JST)
     const statsHash = statistics ? 
       `${statistics.selectedDatePercentage}_${statistics.todayPercentage}_${statistics.overallPercentage}` : 
       'nostats';
-    const cacheKey = `premium_${userName || 'anonymous'}_${today}_${statsHash}`;
+    const executionHash = executionData ? 
+      `${executionData.totalExecutions}_${executionData.peakHour}_${executionData.consistencyScore}` : 
+      'noexec';
+    const cacheKey = `premium_${userName || 'anonymous'}_${today}_${statsHash}_${executionHash}`;
     
     // キャッシュチェック（プレミアムは5分キャッシュで頻度高め）
     const cached = messageCache.get(cacheKey);
@@ -328,6 +462,7 @@ async function generatePremiumMessage(userName?: string, tasks?: any[], statisti
 
     console.log('Generating new message for premium user:', userName || 'anonymous');
     console.log('Statistics:', statistics);
+    console.log('Execution data:', executionData);
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
@@ -364,17 +499,36 @@ async function generatePremiumMessage(userName?: string, tasks?: any[], statisti
       t.due_date && new Date(t.due_date) < now && t.status !== 'done'
     ).length || 0;
 
-    // 感情状態の推定
+    // 感情状態の推定（実行データも含める）
     const emotionalState = analyzeEmotionalState({
       recentCompletionRate,
       overallRate: statistics?.overallPercentage || 0,
       overdueCount,
       recentCompletions: recentCompletions.length,
       todayTasks: statistics?.selectedDateTotalTasks || 0,
-      todayCompleted: statistics?.selectedDateCompletedTasks || 0
+      todayCompleted: statistics?.selectedDateCompletedTasks || 0,
+      executionData
     });
 
     const userGreeting = userName ? `${userName}さん、` : '';
+    
+    // 実行データに基づく高度な分析
+    let executionAnalysis = '';
+    if (executionData) {
+      const avgMinutes = Math.floor(executionData.averageSessionDuration / 60);
+      const totalHours = Math.floor(executionData.totalDuration / 3600);
+      const weekDays = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
+      
+      executionAnalysis = `
+実行パターン分析：
+- 過去30日間の総実行回数: ${executionData.totalExecutions}回
+- 総実行時間: ${totalHours}時間
+- 平均セッション時間: ${avgMinutes}分
+- 最も生産的な時間: ${executionData.mostProductiveTime}
+- 継続性スコア: ${Math.round(executionData.consistencyScore * 100)}%
+- 生産性パターン: ${emotionalState.productivityPattern === 'long_sessions' ? '長時間集中型' : emotionalState.productivityPattern === 'short_sessions' ? '短時間効率型' : 'バランス型'}
+`;
+    }
     
     const prompt = `
 あなたは優しく寄り添うタスク管理アプリのキャラクターです。
@@ -390,18 +544,22 @@ ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
 - 期限切れタスク: ${overdueCount}個
 - 最近3日間の完了: ${recentCompletions.length}個
 
+${executionAnalysis}
+
 感情分析結果：
 - ストレスレベル: ${emotionalState.stressLevel}
 - モチベーション: ${emotionalState.motivation}
 - 進捗状況: ${emotionalState.progress}
 - 継続性: ${emotionalState.consistency}
+- 生産性パターン: ${emotionalState.productivityPattern}
 - 励ましが必要: ${emotionalState.needsEncouragement ? 'はい' : 'いいえ'}
 - 休息が必要: ${emotionalState.needsRest ? 'はい' : 'いいえ'}
+- 最適化が必要: ${emotionalState.needsOptimization ? 'はい' : 'いいえ'}
 
 【重要】プレミアムユーザー向けの特別なメッセージを以下の条件で生成してください：
 - 必ず200文字以内（絶対条件）
 - ${userName ? `「${userName}さん」という呼びかけを自然に含める` : ''}
-- 感情分析に基づいた深い心理的サポートと具体的な行動提案
+- 感情分析と実行データに基づいた深い心理的サポートと具体的な行動提案
 - データに基づいた個人化されたアドバイス
 - プレミアムユーザーとしての特別感を演出
 - 優しく寄り添う専属コーチのような口調
@@ -412,11 +570,12 @@ ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
 2. 今日の感情状態に基づく最適な行動提案
 3. 継続性向上のための具体的なアドバイス
 4. 成長を実感できる励ましの言葉
+5. ${executionData ? '実行データに基づいた生産性向上の提案' : '習慣形成のための戦略'}
 
-例（感情状態に応じて）：
-- 高ストレス時: 「${userGreeting}データを見ると期限切れタスクでプレッシャーを感じていますね。まずは最も重要なタスク1つに集中し、15分間の作業から始めてみませんか？あなたの継続力なら必ず乗り越えられます。」
-- 好調時: 「${userGreeting}今日は${statistics?.selectedDatePercentage || 0}%の達成率、素晴らしいペースです！この調子を維持しつつ、明日のタスクも1つ準備しておくと、さらに効率的になりそうですね。」
-- 低調時: 「${userGreeting}今日は${statistics?.selectedDatePercentage || 0}%の達成率ですが、焦る必要はありません。過去のデータを見ると、あなたは着実に成長しています。小さなタスクから始めて、達成感を積み重ねていきましょう。」
+例（感情状態と実行データに応じて）：
+- 高ストレス時: 「${userGreeting}データを見ると期限切れタスクでプレッシャーを感じていますね。${executionData ? `あなたの最適な作業時間は${executionData.mostProductiveTime}です。` : ''}まずは最も重要なタスク1つに集中し、15分間の作業から始めてみませんか？あなたの継続力なら必ず乗り越えられます。」
+- 好調時: 「${userGreeting}今日は${statistics?.selectedDatePercentage || 0}%の達成率、素晴らしいペースです！${executionData ? `過去30日間で${executionData.totalExecutions}回の実行を記録し、継続性スコア${Math.round(executionData.consistencyScore * 100)}%と着実に成長しています。` : ''}この調子を維持しつつ、明日のタスクも1つ準備しておくと、さらに効率的になりそうですね。」
+- 低調時: 「${userGreeting}今日は${statistics?.selectedDatePercentage || 0}%の達成率ですが、焦る必要はありません。${executionData ? `過去の実行データを見ると、あなたは平均${Math.floor(executionData.averageSessionDuration / 60)}分の集中時間で着実に成果を上げています。` : ''}小さなタスクから始めて、達成感を積み重ねていきましょう。」
 `;
 
     // レート制限対応リトライ付き生成
