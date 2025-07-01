@@ -139,6 +139,7 @@ async function generateDailyMessagesLocally(
       // パーソナライズされたプロンプト（昨日のデータ使用）
       const prompt = `
 あなたは優しいタスク管理アプリのキャラクターです。
+今日は${new Date().toLocaleDateString('ja-JP', { weekday: 'long', month: 'long', day: 'numeric' })}です。
 ${userName}さんに向けて、今日一日のモチベーションを上げるメッセージを100文字以内で生成してください。
 
 ユーザーの状況：
@@ -154,6 +155,7 @@ ${userName}さんに向けて、今日一日のモチベーションを上げる
 - ${userName}さんの頑張りを認めて、今日への励ましを込めてください
 - プレッシャーを与えず、寄り添うような内容でお願いします
 - 鳥風なしゃべり口調でお願いします
+- 今日の天気や季節感を含める
 `;
 
       // プロンプト全体のログ
