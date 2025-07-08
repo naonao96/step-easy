@@ -8,6 +8,15 @@
   --background-end-rgb: 255, 255, 255;
 }
 
+/* セーフエリア対応 */
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -17,11 +26,7 @@
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-start-rgb));
   font-family: Arial, Helvetica, sans-serif;
-  background-color: #f0f9ff;
-  background-image: radial-gradient(#c7e9fb 1px, transparent 1px);
-  background-size: 20px 20px;
   font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
   margin: 0;
   padding: 0;
@@ -189,4 +194,227 @@ body {
 
 .react-datepicker__portal {
   @apply z-50;
+}
+
+@keyframes cloud-move-slow {
+  0% { transform: translateX(-15vw); }
+  100% { transform: translateX(110vw); }
+}
+@keyframes cloud-move {
+  0% { transform: translateX(-10vw); }
+  100% { transform: translateX(120vw); }
+}
+@keyframes cloud-move-fast {
+  0% { transform: translateX(-20vw); }
+  100% { transform: translateX(130vw); }
+}
+
+/* タイピングアニメーション用のカーソル */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.animate-blink {
+  animation: blink 1s infinite;
+}
+
+/* タイプライター効果用のアニメーション */
+@keyframes typewriter {
+  0% { opacity: 0; transform: translateY(2px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.typewriter-char {
+  animation: typewriter 0.1s ease-out;
+}
+
+/* タイピング中のバブル効果 */
+@keyframes typing-bubble {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+.typing-bubble {
+  animation: typing-bubble 0.3s ease-in-out;
+}
+
+.animate-cloud-move-slow {
+  animation: cloud-move-slow 120s linear infinite;
+}
+.animate-cloud-move {
+  animation: cloud-move 80s linear infinite;
+}
+.animate-cloud-move-fast {
+  animation: cloud-move-fast 50s linear infinite;
+}
+
+/* 感情記録促進アニメーション */
+@keyframes character-pulse {
+  0%, 100% { 
+    opacity: 1; 
+    transform: scale(1);
+    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4));
+  }
+  50% { 
+    opacity: 0.8; 
+    transform: scale(1.02);
+    filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.8));
+  }
+}
+
+@keyframes circle-pulse {
+  0%, 100% { 
+    background-color: rgba(147, 197, 253, 0.2);
+    border-color: rgba(147, 197, 253, 0.3);
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% { 
+    background-color: rgba(59, 130, 246, 0.4);
+    border-color: rgba(59, 130, 246, 0.6);
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+@keyframes hint-fade {
+  0%, 100% { 
+    opacity: 0; 
+    transform: translateY(5px); 
+  }
+  20%, 80% { 
+    opacity: 1; 
+    transform: translateY(0px); 
+  }
+}
+
+.character-unrecorded {
+  animation: character-pulse 2s ease-in-out infinite;
+}
+
+.background-circle-unrecorded {
+  animation: circle-pulse 2s ease-in-out infinite;
+}
+
+.hint-text {
+  animation: hint-fade 3s ease-in-out infinite;
+}
+
+/* モバイルタスクカルーセル用スタイル */
+.mobile-carousel-container {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.mobile-carousel-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+.mobile-carousel-card:hover {
+  transform: scale(1.02) translateZ(10px);
+}
+
+/* ポケモンカード風の3D効果 */
+@keyframes carousel-float {
+  0%, 100% { 
+    transform: translateY(0px) translateZ(0px) rotateY(0deg); 
+  }
+  50% { 
+    transform: translateY(-3px) translateZ(8px) rotateY(1.5deg); 
+  }
+}
+
+/* ポケモンカード風の影効果 */
+.mobile-carousel-shadow {
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.15));
+}
+
+.mobile-carousel-shadow-center {
+  filter: drop-shadow(0 16px 32px rgba(0, 0, 0, 0.25));
+}
+
+/* ポケモンカード風のスムーズな動き */
+.mobile-carousel-swipe {
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ポケモンカード風の3D空間 */
+.mobile-carousel-container {
+  perspective: 1500px;
+  transform-style: preserve-3d;
+}
+
+.mobile-carousel-card-center {
+  /* 浮遊アニメーションを削除して統一された動きに */
+}
+
+/* スワイプ時のスムーズなアニメーション */
+.mobile-carousel-swipe {
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ドラッグ中の滑らかな動き */
+.mobile-carousel-card {
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  -webkit-transform-style: preserve-3d;
+  transform-style: preserve-3d;
+}
+
+/* カードの影効果 */
+.mobile-carousel-shadow {
+  filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.1));
+}
+
+.mobile-carousel-shadow-center {
+  filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.15));
+}
+
+/* Instagram Stories風のアニメーション */
+@keyframes instagram-slide-in {
+  0% {
+    transform: translateX(100%) scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0%) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes instagram-slide-out {
+  0% {
+    transform: translateX(0%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-100%) scale(0.8);
+    opacity: 0;
+  }
+}
+
+@keyframes instagram-fade-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.instagram-slide-in {
+  animation: instagram-slide-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.instagram-slide-out {
+  animation: instagram-slide-out 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.instagram-fade-in {
+  animation: instagram-fade-in 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }

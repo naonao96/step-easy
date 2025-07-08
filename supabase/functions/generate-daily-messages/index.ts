@@ -177,7 +177,7 @@ async function generateWithRetry(model: any, prompt: string, targetLength: numbe
 }
 
 // 既存のフリーユーザー向けメッセージ生成（プロンプト活用）
-async function generateFreeMessage(genAI: GoogleGenerativeAI, userName?: string, tasks?: Task[]): Promise<string> {
+async function generateFreeMessage(genAI: GoogleGenerativeAI, userName?: string, tasks?: Task[], promptTrends: string = ''): Promise<string> {
   const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
   
   const today = new Date().toLocaleDateString('ja-JP', {
@@ -205,11 +205,31 @@ async function generateFreeMessage(genAI: GoogleGenerativeAI, userName?: string,
   const todayCompleted = todayTasks.filter(t => t.status === 'done').length;
   const todayTotal = todayTasks.length;
 
+  // 時間帯と曜日の取得
+  const getTimeBasedGreeting = (): string => {
+    const hour = new Date().getHours();
+    if (hour >= 6 && hour < 10) return 'morning';
+    if (hour >= 11 && hour < 15) return 'afternoon';
+    if (hour >= 16 && hour < 20) return 'evening';
+    return 'night';
+  };
+
+  const getDayOfWeek = (): string => {
+    const days = ['日', '月', '火', '水', '木', '金', '土'];
+    return days[new Date().getDay()];
+  };
+
+  const timeGreeting = getTimeBasedGreeting();
+  const dayOfWeek = getDayOfWeek();
+  
   // パーソナライズされたプロンプト（無料版）
   const prompt = `
 あなたは優しいタスク管理アプリのキャラクターです。
 今日は${today}です。
 ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
+
+時間帯: ${timeGreeting}
+曜日: ${dayOfWeek}
 
 ユーザーの基本情報：
 - 最近のタスク完了率: ${recentCompletionRate}%（最新${totalCount}個中${completedCount}個完了）
@@ -220,6 +240,7 @@ ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
 - 必ず100文字以内（絶対条件）
 - 親しみやすく優しい口調
 - ${userName ? `「${userName}さん」という呼びかけを自然に含める` : ''}
+- 時間帯（${timeGreeting}）と曜日（${dayOfWeek}）を考慮した内容
 - 基本的な進捗状況を反映した励まし
 - 今日の天気や季節感を含める
 - タスク管理へのモチベーションを上げる内容
@@ -231,6 +252,8 @@ ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
 - 順調な場合: 「${userGreeting}今日は爽やかな朝ですね！最近とても頑張っていらっしゃいますね。この調子で今日も一歩ずつ進んでいきましょう。」
 - 始めたばかりの場合: 「${userGreeting}新しい一週間の始まりですね！タスク管理を始められて素晴らしいです。小さな一歩から始めていきましょう。」
 - 今日タスクがある場合: 「${userGreeting}今日は${todayTotal}個のタスクがありますね。焦らずに一つずつ取り組んでいけば大丈夫です。」
+
+${promptTrends}
 `;
 
   debugLog('Generating free message with prompt:', { userName, recentCompletionRate, todayTotal, todayCompleted });
@@ -238,7 +261,7 @@ ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
 }
 
 // 既存のプレミアムユーザー向けメッセージ生成（プロンプト活用）
-async function generatePremiumMessage(genAI: GoogleGenerativeAI, userName?: string, tasks?: Task[], statistics?: any): Promise<string> {
+async function generatePremiumMessage(genAI: GoogleGenerativeAI, userName?: string, tasks?: Task[], statistics?: any, promptTrends: string = ''): Promise<string> {
   const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
   
   const today = new Date().toLocaleDateString('ja-JP', {
@@ -273,6 +296,23 @@ async function generatePremiumMessage(genAI: GoogleGenerativeAI, userName?: stri
     todayCompleted: statistics?.selectedDateCompletedTasks || 0
   });
 
+  // 時間帯と曜日の取得
+  const getTimeBasedGreeting = (): string => {
+    const hour = new Date().getHours();
+    if (hour >= 6 && hour < 10) return 'morning';
+    if (hour >= 11 && hour < 15) return 'afternoon';
+    if (hour >= 16 && hour < 20) return 'evening';
+    return 'night';
+  };
+
+  const getDayOfWeek = (): string => {
+    const days = ['日', '月', '火', '水', '木', '金', '土'];
+    return days[new Date().getDay()];
+  };
+
+  const timeGreeting = getTimeBasedGreeting();
+  const dayOfWeek = getDayOfWeek();
+  
   const userGreeting = userName ? `${userName}さん、` : '';
   
   // 既存のプレミアムプロンプトを活用
@@ -280,6 +320,9 @@ async function generatePremiumMessage(genAI: GoogleGenerativeAI, userName?: stri
 あなたは優しく寄り添うタスク管理アプリのキャラクターです。
 今日は${today}です。
 ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
+
+時間帯: ${timeGreeting}
+曜日: ${dayOfWeek}
 
 ユーザーの状況：
 - 今日の達成率: ${statistics?.selectedDatePercentage || 0}%
@@ -301,6 +344,7 @@ ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
 【重要】以下の条件でパーソナライズされたメッセージを生成してください：
 - 必ず200文字以内（絶対条件）
 - ${userName ? `「${userName}さん」という呼びかけを自然に含める` : ''}
+- 時間帯（${timeGreeting}）と曜日（${dayOfWeek}）を考慮した内容
 - 今日の達成率を主な判断基準とし、感情分析結果に基づいた詳細な心理的サポート
 - ユーザーの心境に寄り添う共感的なメッセージ
 - 優しく寄り添う口調
@@ -313,6 +357,8 @@ ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
 - 高達成率時: 「${userGreeting}今日は${statistics?.selectedDatePercentage || 0}%の達成率、素晴らしい調子ですね！この勢いを大切にしつつ、適度な休憩も取ってくださいね。」
 - 低達成率時: 「${userGreeting}今日はまだ${statistics?.selectedDatePercentage || 0}%の達成率ですが、焦らずに小さなタスクから始めて、達成感を味わいながら進んでみませんか？」
 - 高ストレス時: 「${userGreeting}期限切れタスクでプレッシャーを感じているかもしれませんね。まずは重要なタスクから取り組みましょう。」
+
+${promptTrends}
 `;
 
   return await generateWithRetry(model, prompt, MESSAGE_LIMITS.premium.target, MESSAGE_LIMITS.premium.max);
@@ -391,6 +437,62 @@ serve(async (_req: any) => {
         let message = '';
         let statistics = null;
 
+        // 感情記録データ取得（直近7日分）
+        const { data: emotions } = await supabase
+          .from('emotions')
+          .select('*')
+          .eq('user_id', user.id)
+          .gte('date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+
+        // 感情集計（直近3日間のポジティブ/ネガティブ頻度・連続日数）
+        let positiveCount = 0, negativeCount = 0, lastEmotion = null, positiveStreak = 0, negativeStreak = 0, currentStreak = 0;
+        let streakType = null;
+        if (emotions && emotions.length > 0) {
+          // 日付降順で並べ替え
+          const sorted = [...emotions].sort((a, b) => b.date.localeCompare(a.date));
+          for (const e of sorted.slice(0, 3)) {
+            if (['happy', 'satisfied', 'relaxed'].includes(e.emotion_type)) positiveCount++;
+            if (['sad', 'angry', 'tired', 'anxious'].includes(e.emotion_type)) negativeCount++;
+          }
+          // 連続日数計算
+          for (const e of sorted) {
+            const isPositive = ['happy', 'satisfied', 'relaxed'].includes(e.emotion_type);
+            if (lastEmotion === null) {
+              streakType = isPositive ? 'positive' : 'negative';
+              currentStreak = 1;
+            } else if ((isPositive && streakType === 'positive') || (!isPositive && streakType === 'negative')) {
+              currentStreak++;
+            } else {
+              break;
+            }
+            lastEmotion = e.emotion_type;
+          }
+          if (streakType === 'positive') positiveStreak = currentStreak;
+          if (streakType === 'negative') negativeStreak = currentStreak;
+        }
+
+        // 傾向・変化・成長・弱点の要約
+        let trendSummary = '';
+        if (positiveStreak >= 3) trendSummary += `ポジティブな感情が${positiveStreak}日連続で記録されています。`;
+        if (negativeStreak >= 3) trendSummary += `ネガティブな感情が${negativeStreak}日連続で記録されています。`;
+        if (positiveCount > negativeCount) trendSummary += '最近はポジティブな感情が多い傾向です。';
+        if (negativeCount > positiveCount) trendSummary += '最近はネガティブな感情が多い傾向です。';
+        if (!trendSummary) trendSummary = '感情の傾向に大きな変化はありません。';
+
+        // 既存のstatisticsやタスク傾向も要約
+        let taskTrend = '';
+        if (statistics) {
+          const stats = statistics as any;
+          if (stats.selectedDatePercentage > stats.overallPercentage) taskTrend += '今日は全体平均より高い達成率です。';
+          if (stats.selectedDatePercentage < stats.overallPercentage) taskTrend += '今日は全体平均より低い達成率です。';
+          if (stats.selectedDateCompletedTasks >= 5) taskTrend += '今日だけで5件以上のタスクを完了しています。';
+        } else {
+          taskTrend = 'タスク達成率は安定しています。';
+        }
+
+        // プロンプトに傾向・変化・成長・弱点を追加
+        const promptTrends = `\n【最近の傾向・変化】\n${trendSummary}\n${taskTrend}\n`;
+
         if (userType === 'premium') {
           // プレミアムユーザー：詳細統計付きメッセージ（日本時間で比較）
           const todayTasks = tasks?.filter((t: Task) => 
@@ -413,10 +515,10 @@ serve(async (_req: any) => {
             overallPercentage
           };
 
-          message = await generatePremiumMessage(genAI, userName, tasks || [], statistics);
+          message = await generatePremiumMessage(genAI, userName, tasks || [], statistics, promptTrends);
         } else {
           // フリーユーザー：シンプルメッセージ
-          message = await generateFreeMessage(genAI, userName, tasks || []);
+          message = await generateFreeMessage(genAI, userName, tasks || [], promptTrends);
         }
 
         // メッセージ文字数の最終チェック（データベース制約に合わせる）

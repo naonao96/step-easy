@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import './wood-frame.css';
 import ClientLayout from './ClientLayout';
+import { CloudLayer } from '@/components/CloudLayer';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -44,7 +46,12 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/favicon.png" />
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className={inter.className}>
+      <body className={`${inter.className} min-h-screen overflow-x-hidden`}> 
+        {/* 背景レイヤー（最背面） */}
+        <div className="absolute inset-0 w-full h-full z-[-10] pointer-events-none select-none bg-gradient-to-b from-sky-200 to-sky-50">
+          <CloudLayer />
+        </div>
+        {/* 既存のApp全体レイアウト */}
         <ClientLayout>
           {children}
         </ClientLayout>

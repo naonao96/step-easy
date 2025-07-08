@@ -107,16 +107,16 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   const getHeaderStyles = () => {
     switch (variant) {
       case 'minimal':
-        return 'bg-white border-b border-gray-200';
+        return 'wood-frame wood-frame-header';
       case 'transparent':
         return 'bg-transparent';
       default:
-        return 'bg-white border-b border-gray-200';
+        return 'wood-frame wood-frame-header';
     }
   };
 
   return (
-    <header className={`h-20 flex justify-between items-center px-4 sm:px-6 flex-shrink-0 shadow-sm ${getHeaderStyles()} ${className}`}>
+    <header className={`h-16 md:h-20 flex justify-between items-center px-4 sm:px-6 flex-shrink-0 woodgrain-header-bg ${getHeaderStyles()} ${className} md:relative md:top-auto md:left-auto md:right-auto fixed top-0 left-0 right-0 z-40 md:relative md:z-auto pt-safe md:pt-0`}>
       {/* 左側：モバイルハンバーガー + 戻るボタン + タイトル/ロゴ */}
       <div className="flex items-center gap-3">
         {/* ハンバーガーボタンを削除 - ボトムナビゲーションを使用 */}
@@ -152,13 +152,15 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
       <div className="flex items-center gap-2 sm:gap-3">
         {/* 通知ドロップダウン */}
         {showNotifications && (
-          <NotificationDropdown tasks={tasks} />
+          <div className="text-[#7c5a2a] hover:text-yellow-900">
+            <NotificationDropdown tasks={tasks} />
+          </div>
         )}
 
         {/* ヘルプボタン */}
         <button
           onClick={() => setShowHelpPanel(true)}
-          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          className="p-2 text-[#7c5a2a] hover:text-yellow-900 hover:bg-yellow-50 rounded-lg transition-colors"
           title="ヘルプ"
         >
           {FaQuestionCircle({ className: "w-5 h-5" })}
@@ -175,9 +177,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         <div className="relative hidden lg:flex" ref={accountMenuRef}>
           <button
             onClick={() => setShowAccountMenu(!showAccountMenu)}
-            className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="flex items-center gap-2 p-2 rounded-lg text-[#7c5a2a] hover:text-yellow-900 hover:bg-yellow-50 transition-colors"
           >
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-[#7c5a2a] to-[#4b2e0e] rounded-full flex items-center justify-center">
               <span className="text-white text-sm font-medium">
                 {user?.isGuest ? 'G' : (user?.email?.[0]?.toUpperCase() || 'U')}
               </span>
@@ -232,7 +234,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         {/* ユーザーアバター（モバイル用） */}
         <button
           onClick={() => setShowAccountMenu(!showAccountMenu)}
-          className="lg:hidden p-1 w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center hover:shadow-md transition-all"
+          className="lg:hidden p-1 w-10 h-10 bg-gradient-to-br from-[#7c5a2a] to-[#4b2e0e] rounded-full flex items-center justify-center hover:shadow-md transition-all"
           title="アカウントメニュー"
         >
           <span className="text-white text-sm font-medium">
@@ -280,13 +282,12 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             )}
           </div>
         )}
-      </div>
-
       {/* ヘルプパネル */}
       <HelpPanel 
         isOpen={showHelpPanel} 
         onClose={() => setShowHelpPanel(false)} 
       />
+      </div>
     </header>
   );
 }; 

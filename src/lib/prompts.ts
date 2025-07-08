@@ -76,8 +76,8 @@ export function generateFreePrompt(data: {
     .replace(/{{taskManagementTendency}}/g, data.taskManagementTendency)
     .replace(/{{maxLength}}/g, FREE_PROMPT_CONFIG.maxLength.toString())
     .replace(/{{tone}}/g, FREE_PROMPT_CONFIG.tone)
-    .replace(/{{#if includeWeather}}.*?{{/if}}/gs, FREE_PROMPT_CONFIG.includeWeather ? '$&' : '')
-    .replace(/{{#if executionData}}.*?{{/if}}/gs, '');
+    .replace(/{{#if includeWeather}}[\s\S]*?{{\/if}}/g, FREE_PROMPT_CONFIG.includeWeather ? '$&' : '')
+    .replace(/{{#if executionData}}[\s\S]*?{{\/if}}/g, '');
 }
 
 // プレミアム版プロンプト生成
@@ -103,14 +103,14 @@ export function generatePremiumPrompt(data: {
     .replace(/{{taskManagementTendency}}/g, data.taskManagementTendency)
     .replace(/{{maxLength}}/g, PREMIUM_PROMPT_CONFIG.maxLength.toString())
     .replace(/{{tone}}/g, PREMIUM_PROMPT_CONFIG.tone)
-    .replace(/{{#if includeWeather}}.*?{{/if}}/gs, PREMIUM_PROMPT_CONFIG.includeWeather ? '$&' : '');
+    .replace(/{{#if includeWeather}}[\s\S]*?{{\/if}}/g, PREMIUM_PROMPT_CONFIG.includeWeather ? '$&' : '');
 
   // 実行データの処理
   if (data.executionData) {
-    prompt = prompt.replace(/{{#if executionData}}(.*?){{/if}}/gs, '$1')
+    prompt = prompt.replace(/{{#if executionData}}([\s\S]*?){{\/if}}/g, '$1')
                    .replace(/{{executionData}}/g, data.executionData);
   } else {
-    prompt = prompt.replace(/{{#if executionData}}.*?{{/if}}/gs, '');
+    prompt = prompt.replace(/{{#if executionData}}[\s\S]*?{{\/if}}/g, '');
   }
 
   return prompt;

@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Task } from '@/stores/taskStore';
 import { CategoryBadge } from '@/components/atoms/CategoryBadge';
 import { Character } from './Character';
+import { MobileEmotionRecorder } from './MobileEmotionRecorder';
 import { StreakBadge } from '@/components/atoms/StreakBadge';
 import { useAuth } from '@/contexts/AuthContext';
 import { MobileTaskTimer } from './MobileTaskTimer';
@@ -10,7 +11,9 @@ import { MobileTaskHistory } from './MobileTaskHistory';
 import { PremiumComingSoonBanner } from './PremiumComingSoonBanner';
 import { PremiumPreviewModal } from './PremiumPreviewModal';
 import { NotificationSignupForm } from './NotificationSignupForm';
+import { useEmotionLog } from '@/hooks/useEmotionLog';
 import ReactMarkdown from 'react-markdown';
+import { MobileTaskCarousel } from './MobileTaskCarousel';
 import { 
   FaPlus, 
   FaCalendarAlt, 
@@ -28,6 +31,7 @@ import {
   FaChartBar,
   FaCrown
 } from 'react-icons/fa';
+import { EmotionHoverMenu } from '@/components/molecules/EmotionHoverMenu';
 
 interface ModernMobileHomeProps {
   selectedDate: Date;
@@ -45,6 +49,7 @@ interface ModernMobileHomeProps {
   characterMessage: string;
   onCompleteTask: (id: string) => void;
   onDeleteTask: (id: string) => void;
+  onEditTask?: (task: Task) => void;
   onDateSelect: (date: Date) => void;
   onTabChange?: (tab: 'tasks' | 'habits') => void;
   onTaskUpdate?: () => Promise<void>; // データ更新関数を追加
@@ -61,18 +66,31 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   characterMessage,
   onCompleteTask,
   onDeleteTask,
+  onEditTask,
   onDateSelect,
   onTabChange,
   onTaskUpdate
 }) => {
   const router = useRouter();
-  const { isGuest, isPremium, planType, canAddTaskOnDate } = useAuth();
-  const [activeTab, setActiveTab] = useState<TabType>('tasks');
+  const { isGuest, isPremium, planType, canAddTaskOnDate, user } = useAuth();
+  const [activeTab, setActiveTab] = useState<TabType>('habits');
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  
+  // 感情記録の状態を取得
+  const { recordStatus, currentTimePeriod } = useEmotionLog();
   
   // プレミアム機能モーダル関連の状態
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showNotificationForm, setShowNotificationForm] = useState(false);
+
+  // 感情記録関連の状態
+  const [showEmotionMenu, setShowEmotionMenu] = useState(false);
+  const characterRef = useRef<HTMLImageElement>(null);
+  
+  // メッセージ表示関連の状態（デスクトップ版と同じ仕様）
+  const [showMessage, setShowMessage] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [displayedMessage, setDisplayedMessage] = useState('');
 
   // 今日かどうかの判定
   const today = new Date();
@@ -119,7 +137,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
 
   // 現在のタブに応じたタスクリストを取得
   const getCurrentTasks = () => {
-    return activeTab === 'tasks' ? regularTasks : habitTasks;
+    return activeTab === 'habits' ? habitTasks : regularTasks;
   };
 
   // 日付フォーマット
@@ -144,11 +162,11 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   // 選択日に応じたタイトルを生成
   const getTitle = () => {
     if (isToday) {
-      return activeTab === 'tasks' ? '今日のタスク' : '今日の習慣';
+      return activeTab === 'habits' ? '今日の習慣' : '今日のタスク';
     }
     
     const formattedDate = formatDate(selectedDate);
-    return activeTab === 'tasks' ? `${formattedDate}のタスク` : `${formattedDate}の習慣`;
+    return activeTab === 'habits' ? `${formattedDate}の習慣` : `${formattedDate}のタスク`;
   };
 
   // 日付操作関数
@@ -178,91 +196,224 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
     router.push('/progress');
   };
 
+  // キャラクタークリック処理（デスクトップ版と同じ）
+  const handleCharacterClick = () => {
+    if (characterMessage && !isTyping) {
+      setShowMessage(true);
+      setIsTyping(true);
+      // タイプライター開始
+      let i = 0;
+      const type = () => {
+        setDisplayedMessage(characterMessage.slice(0, i));
+        if (i < characterMessage.length) {
+          i++;
+          setTimeout(type, 30);
+        } else {
+          setIsTyping(false);
+          // タイプライター完了後、5秒で自動消去
+          setTimeout(() => {
+            setShowMessage(false);
+            setDisplayedMessage('');
+          }, 5000);
+        }
+      };
+      type();
+    }
+  };
+
+  // 感情記録メニューを閉じる
+  const handleCloseEmotionMenu = () => {
+    setShowEmotionMenu(false);
+  };
+
+  // 外部クリックでメッセージと感情メニューを消す機能（デスクトップ版と同じ）
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      const isCharacterContainer = target.closest('.character-container');
+      
+      // メッセージが表示中で、キャラクター以外の場所をクリックした場合
+      if (showMessage && !isTyping && !isCharacterContainer) {
+        setShowMessage(false);
+        setDisplayedMessage('');
+      }
+      
+      // 感情メニューが表示中で、キャラクター以外の場所をクリックした場合
+      if (showEmotionMenu && !isCharacterContainer) {
+        setShowEmotionMenu(false);
+      }
+    };
+
+    if (showMessage || showEmotionMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showMessage, showEmotionMenu, isTyping]);
+
+  // 初回表示（リロード・ログイン時は毎回実行）
+  useEffect(() => {
+    // ユーザー情報が確実に取得できてからメッセージ表示（ゲストユーザーは除く）
+    if (characterMessage && !showMessage && (isGuest || user?.displayName || user?.email)) {
+      setShowMessage(true);
+      setIsTyping(true);
+      // タイプライター開始
+      let i = 0;
+      const type = () => {
+        setDisplayedMessage(characterMessage.slice(0, i));
+        if (i < characterMessage.length) {
+          i++;
+          setTimeout(type, 30);
+        } else {
+          setIsTyping(false);
+          // タイプライター完了後、5秒で自動消去
+          setTimeout(() => {
+            setShowMessage(false);
+            setDisplayedMessage('');
+          }, 5000);
+        }
+      };
+      type();
+    }
+  }, [characterMessage, isGuest, user]); // showMessageを依存配列から削除
+
+  // タスクカードのレンダリング関数
+  const renderTaskCard = (task: Task, isHabit: boolean) => (
+    <div
+      key={task.id}
+      className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden"
+    >
+      {/* Row 1: Checkbox, Title, and Edit Button */}
+      <div className="flex items-start space-x-3 p-4 pb-2">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onCompleteTask(task.id);
+          }}
+          className={`mt-1 flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+            task.status === 'done'
+              ? 'bg-green-500 border-green-500 text-white'
+              : 'border-gray-300 hover:border-blue-400'
+          }`}
+        >
+          {task.status === 'done' && React.createElement(FaCheck as React.ComponentType<any>, { className: "w-2.5 h-2.5" })}
+        </button>
+        
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center space-x-2 mb-1">
+            <h3 className={`font-medium text-gray-900 truncate ${
+              task.status === 'done' ? 'line-through text-gray-500' : ''
+            }`}>
+              {task.title}
+            </h3>
+            {isHabit && (
+              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                {getFrequencyLabel(task.habit_frequency)}
+              </span>
+            )}
+          </div>
+          
+          {task.description && (
+            <p className={`text-sm text-gray-600 line-clamp-2 ${
+              task.status === 'done' ? 'line-through text-gray-400' : ''
+            }`}>
+              {task.description}
+            </p>
+          )}
+          
+          <div className="flex items-center space-x-2 mt-2">
+            {task.category && (
+              <CategoryBadge category={task.category} />
+            )}
+            {task.priority && (
+              <span className={`text-xs px-2 py-1 rounded-full ${
+                task.priority === 'high' ? 'bg-red-100 text-red-800' :
+                task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                'bg-gray-100 text-gray-800'
+              }`}>
+                {task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}
+              </span>
+            )}
+          </div>
+        </div>
+        
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDeleteTask(task.id);
+          }}
+          className="mt-1 p-1 text-gray-400 hover:text-red-500 transition-colors"
+        >
+          {FaTrash ({className:"w-4 h-4"})}
+        </button>
+      </div>
+
+      {/* Row 2: Task Timer and History */}
+      <div className="px-4 pb-4">
+        <MobileTaskTimer
+          task={task as any}
+          onExecutionComplete={onTaskUpdate}
+        />
+        
+        {expandedTaskId === task.id && (
+          <MobileTaskHistory task={task as any} />
+        )}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="md:hidden min-h-screen bg-gray-50">
-      {/* Header with Date Navigation */}
-      <div className="bg-white px-4 pt-6 pb-4 shadow-sm">
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-2">
+    <div className="min-h-screen">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-center">
             <button
               onClick={goToPreviousDay}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              title="前日"
+              className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
             >
-              {React.createElement(FaChevronLeft as React.ComponentType<any>, { className: "w-4 h-4 text-gray-600" })}
+              {FaChevronLeft ({className:"w-4 h-4"})}
             </button>
             
-            <div className="text-center flex-1">
-              <h1 className="text-xl font-bold text-gray-800">
-                {formatDate(selectedDate)}
+            <div className="text-center mx-4">
+              <h1 className="text-lg font-semibold text-gray-900">
+                {getTitle()}
               </h1>
-              <p className="text-sm text-gray-600 mt-1">
-                {isToday ? '今日の予定' : 'スケジュール'}
-              </p>
+              {!isToday && (
+                <button
+                  onClick={goToToday}
+                  className="text-sm text-blue-600 hover:text-blue-800 transition-colors mt-1"
+                >
+                  今日に戻る
+                </button>
+              )}
             </div>
             
             <button
               onClick={goToNextDay}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              title="翌日"
+              className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
             >
-              {React.createElement(FaChevronRight as React.ComponentType<any>, { className: "w-4 h-4 text-gray-600" })}
+              {FaChevronRight ({className:"w-4 h-4"})}
             </button>
           </div>
-          
-          {/* 今日に戻るボタン（今日以外の日付の場合のみ表示） */}
-          {!isToday && (
-            <div className="flex justify-center">
-              <button
-                onClick={goToToday}
-                className="flex items-center space-x-1 px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm hover:bg-blue-100 transition-colors"
-              >
-                {React.createElement(FaHome as React.ComponentType<any>, { className: "w-3 h-3" })}
-                <span>今日に戻る</span>
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
       {/* Tab Navigation */}
-      <div className="bg-white shadow-sm">
+      <div className="bg-white border-b border-gray-200">
         <div className="flex">
           <button
-            onClick={() => {
-              setActiveTab('tasks');
-              onTabChange?.('tasks');
-            }}
-            className={`flex-1 py-3 px-4 text-sm font-medium text-center border-b-2 transition-colors ${
-              activeTab === 'tasks'
-                ? 'border-blue-500 text-blue-600 bg-blue-50'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <div className="flex items-center justify-center space-x-2">
-              {React.createElement(FaTasks as React.ComponentType<any>, { className: "w-4 h-4" })}
-              <span>タスク</span>
-              {regularIncompleteCount > 0 && (
-                <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {regularIncompleteCount}
-                </span>
-              )}
-            </div>
-          </button>
-          
-          <button
-            onClick={() => {
-              setActiveTab('habits');
-              onTabChange?.('habits');
-            }}
-            className={`flex-1 py-3 px-4 text-sm font-medium text-center border-b-2 transition-colors ${
+            onClick={() => setActiveTab('habits')}
+            className={`flex-1 py-3 px-4 text-center font-medium transition-colors ${
               activeTab === 'habits'
-                ? 'border-blue-500 text-blue-600 bg-blue-50'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-700'
             }`}
           >
             <div className="flex items-center justify-center space-x-2">
-              {React.createElement(FaFire as React.ComponentType<any>, { className: "w-4 h-4" })}
+              {FaFire ({className:"w-4 h-4"})}
               <span>習慣</span>
               {habitIncompleteCount > 0 && (
                 <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -271,355 +422,178 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
               )}
             </div>
           </button>
+          
+          <button
+            onClick={() => setActiveTab('tasks')}
+            className={`flex-1 py-3 px-4 text-center font-medium transition-colors ${
+              activeTab === 'tasks'
+                ? 'text-[#7c5a2a] border-b-2 border-[#7c5a2a]'
+                : 'text-gray-700 hover:text-[#7c5a2a]'
+            }`}
+          >
+            <div className="flex items-center justify-center space-x-2">
+              {FaTasks ({className:"w-4 h-4"})}
+              <span>タスク</span>
+              {regularIncompleteCount > 0 && (
+                <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {regularIncompleteCount}
+                </span>
+              )}
+            </div>
+          </button>
         </div>
       </div>
 
       {/* Task List */}
-      <div className="px-4 py-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-800">
-            {getTitle()}
-          </h2>
-          <span className="text-sm text-gray-500">
-            {getCurrentTasks().length}件
-          </span>
-        </div>
+      <div className="flex-1 p-4">
+        {getCurrentTasks().length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-gray-400 mb-4">
+              {activeTab === 'habits' ? (
+                FaFire ({className:"w-12 h-12 mx-auto"})
+              ) : (
+                FaTasks ({className:"w-12 h-12 mx-auto"})
+              )}
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {activeTab === 'habits' ? '習慣がありません' : 'タスクがありません'}
+            </h3>
+            <p className="text-gray-500 mb-6">
+              {activeTab === 'habits' 
+                ? '新しい習慣を追加して、継続的な目標を設定しましょう。'
+                : '新しいタスクを追加して、今日の目標を設定しましょう。'
+              }
+            </p>
+          </div>
 
-                 {/* Plan Restriction Notice for Habits */}
-         {activeTab === 'habits' && planType === 'guest' && (
-           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-             <div className="flex items-start space-x-2">
-               {React.createElement(FaFire as React.ComponentType<any>, { className: "text-yellow-500 mt-0.5 flex-shrink-0" })}
-               <div>
-                 <h3 className="text-sm font-medium text-yellow-800">習慣機能について</h3>
-                 <p className="text-xs text-yellow-700 mt-1">
-                   {planType === 'guest' 
-                     ? '習慣機能を使用するには会員登録が必要です。'
-                     : `現在のプランでは習慣を${maxHabits}個まで作成できます。`
-                   }
-                 </p>
-               </div>
-             </div>
-           </div>
-         )}
+        ) : (
+          <div className="h-56">
+            <MobileTaskCarousel
+              tasks={getCurrentTasks()}
+              onCompleteTask={onCompleteTask}
+              onDeleteTask={onDeleteTask}
+              onEditTask={onEditTask}
+              isHabit={activeTab === 'habits'}
+            />
+          </div>
+        )}
+      </div>
 
-         {/* 無料ユーザー向けプレミアム誘導 */}
-         {activeTab === 'habits' && planType === 'free' && habitTasks.length > 0 && (
-           <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
-             <div className="flex items-center gap-2 mb-1">
-               {React.createElement(FaCrown as React.ComponentType<any>, { className: "w-3 h-3 text-purple-600" })}
-               <span className="text-xs font-medium text-purple-900">
-                 プレミアムで習慣を無制限に ({habitTasks.length}/{maxHabits}個)
-               </span>
-             </div>
-             <p className="text-xs text-purple-700">
-               ストリークも永続保存！高度な分析機能も利用可能
-             </p>
-           </div>
-         )}
-
-        {/* Mobile Optimized Task Cards */}
-        <div className="space-y-3">
-          {getCurrentTasks().map((task: Task) => (
-            <div
-              key={task.id}
-              className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden"
+      {/* Character and Message UI - デスクトップ版と同じ配置 */}
+      <div className="px-4 pb-10">
+        <div className="character-container relative flex justify-center">
+          {/* メッセージバブル（キャラクターの上に配置） */}
+          {showMessage && (
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-4 w-80 max-w-sm">
+              <div className="bg-gradient-to-br from-blue-50/95 to-indigo-100/95 backdrop-blur-md rounded-2xl border border-blue-200/50 shadow-2xl transition-all duration-300 p-4 w-80">
+                <div className="text-gray-800 font-medium leading-relaxed text-xs">
+                  <span>{displayedMessage}</span>
+                  {isTyping && <span className="animate-blink ml-1">|</span>}
+                </div>
+                {/* 尻尾部分（下向き） */}
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gradient-to-br from-blue-50/95 to-indigo-100/95 border-r border-b border-blue-200/50 transform rotate-45 -translate-y-1/2"></div>
+              </div>
+            </div>
+          )}
+          
+          {/* キャラクター（感情メニュー付き）- モバイル版専用デザイン */}
+          <div className="relative">
+            <div 
+              className="cursor-pointer flex-shrink-0 relative" 
+              style={{ height: '3cm', width: 'auto', display: 'flex', alignItems: 'center', zIndex: 40 }} 
+              onClick={handleCharacterClick}
             >
-              {/* Row 1: Checkbox, Title, and Edit Button */}
-              <div className="flex items-start space-x-3 p-4 pb-2">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onCompleteTask(task.id);
-                  }}
-                  className={`mt-1 flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                    task.status === 'done'
-                      ? 'bg-green-500 border-green-500 text-white'
-                      : 'border-gray-300 hover:border-blue-400'
-                  }`}
-                >
-                  {task.status === 'done' && React.createElement(FaCheck as React.ComponentType<any>, { className: "w-2.5 h-2.5" })}
-                </button>
-                
-                <div 
-                  className="flex-1 cursor-pointer"
-                  onClick={() => toggleTaskExpansion(task.id)}
-                >
-                  <h3 className={`font-medium text-sm leading-tight ${
-                  task.status === 'done' ? 'text-gray-500 line-through' : 'text-gray-800'
-                }`}>
-                  {task.title}
-                </h3>
-              </div>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    router.push(`/tasks?id=${task.id}&edit=true`);
-                  }}
-                  className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                  title="編集"
-                >
-                  {React.createElement(FaEdit as React.ComponentType<any>, { className: "w-3 h-3" })}
-                </button>
+              {/* 半透明の円（半径2cm）- 背面に配置 */}
+              <div className={`
+                absolute inset-0 w-32 h-32 rounded-full border-2 transform -translate-x-1/2 -translate-y-1/2
+                ${recordStatus && currentTimePeriod && recordStatus[currentTimePeriod] === null ? 'background-circle-unrecorded' : 'bg-blue-200/20 border-blue-300/30'}
+              `} style={{ left: '50%', top: '50%', zIndex: -1 }}></div>
+              
+              <img
+                ref={characterRef}
+                src={characterMood === 'happy' ? '/TalkToTheBird.png' : characterMood === 'sad' ? '/SilentBird.png' : '/TalkToTheBird.png'}
+                alt="StepEasy Bird Character"
+                style={{ height: '3cm', width: 'auto', objectFit: 'contain', display: 'block' }}
+                className={`
+                  transition-transform transition-shadow duration-200 active:scale-110
+                  ${recordStatus && currentTimePeriod && recordStatus[currentTimePeriod] === null ? 'character-unrecorded' : ''}
+                `}
+              />
+              
+              {/* 朝昼晩（統合型ヘッダー）をキャラクターの足元にabsolute配置：感情メニュー表示時のみ表示 */}
+              {showEmotionMenu && (
+                <div className="absolute left-1/2 -translate-x-1/2 -bottom-8 z-50 w-auto min-w-fit max-w-md flex justify-center pointer-events-none">
+                  <span className={`
+                    bg-white/90 border border-gray-200 rounded-full px-4 py-1 text-sm font-bold text-gray-800 shadow-md pointer-events-auto
+                    ${recordStatus && currentTimePeriod && recordStatus[currentTimePeriod] === null ? 'border-blue-400 bg-blue-50' : ''}
+                  `}>
+                    {(() => {
+                      const now = new Date();
+                      const hour = now.getHours();
+                      if (hour >= 6 && hour < 12) return '朝';
+                      if (hour >= 12 && hour < 18) return '昼';
+                      return '晩';
+                    })()}
+                  </span>
                 </div>
-
-              {/* Row 2: Category and Priority */}
-              <div className="px-4 pb-2">
-                <div className="flex items-center space-x-2 pl-8">
-                  {task.category && (
-                    <CategoryBadge category={task.category} size="sm" />
-                  )}
-                  
-                  {task.priority && task.priority !== 'medium' && (
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      task.priority === 'high' ? 'bg-red-100 text-red-600' :
-                      task.priority === 'low' ? 'bg-gray-100 text-gray-600' :
-                      'bg-yellow-100 text-yellow-600'
-                    }`}>
-                      {task.priority === 'high' ? '高' : 
-                       task.priority === 'low' ? '低' : '中'}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Row 3: Time/Frequency and Streak (for habits) */}
-               <div className="px-4 pb-4">
-                 <div className="flex items-center justify-between pl-8">
-                   <div className="flex items-center space-x-2">
-                     {(task as any).estimated_duration && (
-                       <span className="text-xs text-gray-500">
-                         {(task as any).estimated_duration}分
-                       </span>
-                     )}
-                     
-                     {task.is_habit && (
-                       <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-                         {getFrequencyLabel((task as any).habit_frequency)}
-                       </span>
-                     )}
-                   </div>
-
-                   {task.is_habit && (task as any).current_streak !== undefined && (task as any).current_streak > 0 && (
-                     <StreakBadge task={task as any} size="sm" showText={false} />
-                   )}
-                 </div>
-               </div>
-
-              {/* インライン展開エリア */}
-              {expandedTaskId === task.id && (
-                <div className="border-t border-gray-100 bg-gray-50 animate-in slide-in-from-top duration-300">
-                  <div className="p-4 space-y-4">
-                    {/* タスクステータスとバッジ */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        task.priority === 'high' ? 'bg-red-100 text-red-700' :
-                        task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-green-100 text-green-700'
-                      }`}>
-                        優先度: {task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}
-                      </span>
-                      {task.is_habit && (
-                        <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">
-                          習慣タスク
-                        </span>
-                      )}
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        task.status === 'done' ? 'bg-green-100 text-green-700' :
-                        task.status === 'doing' ? 'bg-blue-100 text-blue-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                        {task.status === 'done' ? '完了' : task.status === 'doing' ? '進行中' : '未着手'}
-                      </span>
-                    </div>
-
-                    {/* メモ */}
-                    {task.description && (
-                      <div>
-                        <h4 className="text-xs font-medium text-gray-700 mb-1">メモ</h4>
-                        <div className="bg-white rounded p-2 text-xs text-gray-600 prose prose-xs max-w-none">
-                          <ReactMarkdown>
-                            {task.description}
-                          </ReactMarkdown>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 日程情報 */}
-                    {(task.start_date || (task.due_date && planType !== 'guest')) && (
-                      <div>
-                        <h4 className="text-xs font-medium text-gray-700 mb-1">📅 日程情報</h4>
-                        <div className="bg-purple-50 rounded p-2 space-y-1">
-                          {task.start_date && (
-                            <div className="flex items-center gap-2 text-xs text-purple-700">
-                              <span>🚀</span>
-                              <span>開始日: {new Date(task.start_date).toLocaleDateString('ja-JP')}</span>
-                            </div>
-                          )}
-                          {task.due_date && planType !== 'guest' && (
-                            <div className="flex items-center gap-2 text-xs text-purple-700">
-                              <span>🎯</span>
-                              <span>期限日: {new Date(task.due_date).toLocaleDateString('ja-JP')}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 習慣情報 */}
-                    {task.is_habit && (
-                      <div>
-                        <h4 className="text-xs font-medium text-gray-700 mb-1">習慣情報</h4>
-                        <div className="space-y-1 text-xs text-gray-600">
-                          <div>頻度: {getFrequencyLabel((task as any).habit_frequency)}</div>
-                          {(task as any).current_streak !== undefined && (task as any).current_streak > 0 && (
-                            <div className="flex items-center gap-1">
-                              <span>継続:</span>
-                              <StreakBadge task={task as any} size="sm" showText={true} />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* タイマー・実行情報 */}
-                    <div className="space-y-3">
-                      <h4 className="text-xs font-medium text-gray-700">タイマー・実行情報</h4>
-                      <MobileTaskTimer 
-                        task={task as any} 
-                        onExecutionComplete={async () => {
-                          // データのみを再取得（ページリロードを避ける）
-                          try {
-                            console.log('タスク実行完了 - データ更新中...');
-                            
-                            // 親コンポーネントのデータ更新を呼び出す
-                            if (onTaskUpdate) {
-                              await onTaskUpdate();
-                            }
-                            
-                            console.log('データ更新完了');
-                          } catch (error) {
-                            console.error('データ更新エラー:', error);
-                          }
-                        }}
-                      />
-                      <MobileTaskHistory task={task as any} />
-                    </div>
-
+              )}
+              
+              {/* テキストヒント（未記録時のみ表示） */}
+              {recordStatus && currentTimePeriod && recordStatus[currentTimePeriod] === null && (
+                <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 z-50">
+                  <div className="hint-text bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs px-3 py-2 rounded-full whitespace-nowrap shadow-lg">
+                    💭 今の気持ちを記録してみて！
                   </div>
                 </div>
               )}
-            </div>
-          ))}
-
-                     {getCurrentTasks().length === 0 && (
-             <div className="text-center py-12">
-               {activeTab === 'tasks' ? (
-                 <>
-                   {React.createElement(FaCalendarAlt as React.ComponentType<any>, { className: "mx-auto text-gray-300 text-3xl mb-3" })}
-                   <p className="text-gray-500 text-sm">
-                     {isToday ? '今日のタスクはありません' : 'この日のタスクはありません'}
-                   </p>
-                 </>
-               ) : (
-                 <>
-                   {React.createElement(FaFire as React.ComponentType<any>, { className: "mx-auto text-gray-300 text-3xl mb-3" })}
-                   <p className="text-gray-500 text-sm">
-                     {isToday ? '今日の習慣はありません' : 'この日の習慣はありません'}
-                   </p>
-                 </>
-               )}
-             </div>
-           )}
-        </div>
-      </div>
-
-            {/* Enhanced Character Insights Card */}
-      <div className="px-4 pb-6">
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          {/* Main Content */}
-          <div className="p-5">
-            <div className="flex flex-col items-center text-center space-y-4">
-              {/* Character Section */}
-              <div className="flex-shrink-0">
-                <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 border-2 border-blue-200 flex items-center justify-center overflow-hidden">
-                  <img
-                    src={characterMood === 'happy' ? '/TalkToTheBird.png' : characterMood === 'sad' ? '/SilentBird.png' : '/TalkToTheBird.png'}
-                    alt="StepEasy Bird Character"
-                    className="w-16 h-16 object-contain"
+              
+              {/* 感情記録メニュー - キャラクター画像の中心に配置 */}
+              {showEmotionMenu && (
+                <div className="absolute inset-0 z-50">
+                  <EmotionHoverMenu
+                    isVisible={showEmotionMenu}
+                    onClose={handleCloseEmotionMenu}
+                    characterRef={characterRef}
+                    isMessageDisplaying={showMessage}
+                    isTyping={isTyping}
+                    isMobile={true}
                   />
-                  {/* Mood indicator */}
-                  <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
-                    characterMood === 'happy' ? 'bg-green-400' :
-                    characterMood === 'normal' ? 'bg-yellow-400' :
-                    'bg-gray-400'
-                  }`} />
                 </div>
-              </div>
-
-              {/* Character Message */}
-              <div className="w-full">
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    {characterMessage || '読み込み中...'}
-                  </p>
-                </div>
-                
-                {/* 詳細分析ボタン */}
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <button
-                    onClick={() => handleNavigateToProgress()}
-                    className="w-full bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg p-3 transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                       <div className="flex items-center gap-2">
-                         {React.createElement(FaChartBar as React.ComponentType<any>, { className: "w-4 h-4 text-blue-600" })}
-                         <span className="text-sm font-medium text-blue-900">詳細統計</span>
-                       </div>
-                       <div className="text-xs text-blue-600">
-                         進捗ページで確認
-                       </div>
-                     </div>
-                  </button>
-                </div>
-              </div>
+              )}
             </div>
+            
+            {/* 感情記録ボタン（モバイル版専用） */}
+            <button
+              onClick={() => setShowEmotionMenu(!showEmotionMenu)}
+              className="absolute -bottom-3 -right-3 w-14 h-14 bg-pink-400/30 backdrop-blur-sm rounded-full shadow-lg border-2 border-white flex items-center justify-center text-white hover:bg-pink-500/30 active:scale-95 transition-all duration-200 z-50"
+              title="感情を記録"
+            >
+              <svg className="w-6 h-6" fill="#be185d" viewBox="0 0 24 24">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* プレミアム Coming Soon バナー */}
-      {!isPremium && (
-        <div className="mb-6">
-          <PremiumComingSoonBanner
-            onPreviewClick={() => setShowPreviewModal(true)}
-            onNotificationSignup={() => setShowNotificationForm(true)}
-          />
-        </div>
-      )}
-
-      {/* プレミアムプレビューモーダル */}
+      {/* Premium Features */}
+      <PremiumComingSoonBanner
+        onPreviewClick={() => setShowPreviewModal(true)}
+        onNotificationSignup={() => setShowNotificationForm(true)}
+      />
+      
       <PremiumPreviewModal
         isOpen={showPreviewModal}
         onClose={() => setShowPreviewModal(false)}
-        onNotificationSignup={() => {
-          setShowPreviewModal(false);
-          setShowNotificationForm(true);
-        }}
+        onNotificationSignup={() => setShowNotificationForm(true)}
       />
-
-      {/* 通知登録フォーム */}
-      <NotificationSignupForm
-        isOpen={showNotificationForm}
-        onClose={() => setShowNotificationForm(false)}
-        onSuccess={() => {
-          // 成功時の処理（必要に応じて）
-          console.log('Premium notification signup successful');
-        }}
-      />
-
-      <div className="pb-20"></div>
+      
+      {showNotificationForm && (
+        <NotificationSignupForm
+          isOpen={showNotificationForm}
+          onClose={() => setShowNotificationForm(false)}
+        />
+      )}
     </div>
   );
 }; 

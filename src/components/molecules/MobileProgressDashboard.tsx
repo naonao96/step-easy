@@ -2,11 +2,11 @@ import React from 'react';
 import { MobileStatsCard } from './MobileStatsCard';
 import { Task } from '@/stores/taskStore';
 import { DEFAULT_CATEGORIES } from '@/types/task';
-import { FaCalendarCheck, FaFolderOpen, FaFire, FaChartLine } from 'react-icons/fa';
+import { FaCalendarCheck, FaFolderOpen, FaFire, FaChartLine, FaTrophy } from 'react-icons/fa';
 
 interface MobileProgressDashboardProps {
   tasks: Task[];
-  onNavigateToTab: (tab: 'today' | 'category' | 'heatmap' | 'overall') => void;
+  onNavigateToTab: (tab: 'today' | 'category' | 'heatmap' | 'overall' | 'badges') => void;
 }
 
 export const MobileProgressDashboard: React.FC<MobileProgressDashboardProps> = ({
@@ -168,8 +168,8 @@ export const MobileProgressDashboard: React.FC<MobileProgressDashboardProps> = (
   return (
     <div className="md:hidden px-4 py-6 space-y-4">
       <div className="mb-6">
-        <h1 className="text-xl font-bold text-gray-900 mb-2">進捗ダッシュボード</h1>
-        <p className="text-sm text-gray-600">カードをタップして詳細を確認</p>
+        <h1 className="text-xl font-bold text-[#8b4513] mb-2">進捗ダッシュボード</h1>
+        <p className="text-sm text-[#7c5a2a]">カードをタップして詳細を確認</p>
       </div>
 
       <div className="grid grid-cols-1 gap-3">
@@ -213,6 +213,15 @@ export const MobileProgressDashboard: React.FC<MobileProgressDashboardProps> = (
           subtitle={`総合達成率 ${overallStats.percentage}%`}
           progress={overallStats.percentage}
           onClick={() => onNavigateToTab('overall')}
+        />
+
+        {/* バッジギャラリーカード */}
+        <MobileStatsCard
+          title="バッジギャラリー"
+          icon={React.createElement(FaTrophy as React.ComponentType<any>, { className: "w-5 h-5" })}
+          value="0"
+          subtitle="獲得したバッジを確認"
+          onClick={() => onNavigateToTab('badges')}
         />
       </div>
     </div>

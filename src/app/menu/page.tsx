@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTaskStore, Task } from '@/stores/taskStore';
@@ -10,44 +10,45 @@ import { Character } from '@/components/molecules/Character';
 import { ActivityStats } from '@/components/molecules/ActivityStats';
 import { CategoryStats } from '@/components/molecules/CategoryStats';
 import { HeatmapChart } from '@/components/molecules/HeatmapChart';
-import { AlertBox } from '@/components/molecules/AlertBox';
 import { TaskListHome } from '@/components/molecules/TaskListHome';
 import { GuestMigrationModal } from '@/components/molecules/GuestMigrationModal';
-import { MobileHomeHeader } from '@/components/molecules/MobileHomeHeader';
-import { MobileHomeContent } from '@/components/molecules/MobileHomeContent';
-import { MobileCollapsibleFooter } from '@/components/molecules/MobileCollapsibleFooter';
 import { ModernMobileHome } from '@/components/molecules/ModernMobileHome';
 import { PremiumComingSoonBanner } from '@/components/molecules/PremiumComingSoonBanner';
 import { PremiumPreviewModal } from '@/components/molecules/PremiumPreviewModal';
 import { NotificationSignupForm } from '@/components/molecules/NotificationSignupForm';
-
-import { Button } from '@/components/atoms/Button';
-
 import { getGuestTasks, migrateGuestTasks, clearGuestTasks } from '@/lib/guestMigration';
 import { useCharacterMessage } from '@/hooks/useCharacterMessage';
-import { FaArchive } from 'react-icons/fa';
+import { useEmotionLog } from '@/hooks/useEmotionLog';
+// react-responsiveが未インストールの場合は `npm install react-responsive` を実行してください
+const { useMediaQuery } = require('react-responsive');
 
 export default function MenuPage() {
   const router = useRouter();
   const { user, signOut, shouldShowMigrationModal, setShouldShowMigrationModal, isGuest, planType } = useAuth();
   const { tasks, fetchTasks, updateTask, deleteTask, resetExpiredStreaks, cleanupExpiredData } = useTaskStore();
+  
+  // 感情記録の状態を取得
+  const { recordStatus, currentTimePeriod } = useEmotionLog();
+  
+  // 状態管理
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [characterMood, setCharacterMood] = React.useState<'happy' | 'normal' | 'sad'>('normal');
+  const [showMessage, setShowMessage] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [displayedMessage, setDisplayedMessage] = useState('');
+  const [mounted, setMounted] = useState(false);
+  const [greeting, setGreeting] = useState('');
+  const [currentMobileTab, setCurrentMobileTab] = useState<'tasks' | 'habits'>('habits');
   const [guestTasks, setGuestTasks] = React.useState<Task[]>([]);
   const [migrationError, setMigrationError] = React.useState<string | null>(null);
-  const [greeting, setGreeting] = useState('');
-  const [contentHeight, setContentHeight] = useState(28); // rem単位
-  const [currentMobileTab, setCurrentMobileTab] = useState<'tasks' | 'habits'>('tasks');
-  
-  // プレミアム関連のstate（デスクトップ版用）
+  const [contentHeight, setContentHeight] = useState(46); // rem単位（カレンダーと統一）
+  const [speechBubbleVisible, setSpeechBubbleVisible] = useState(false);
+  const [autoHideTimer, setAutoHideTimer] = useState<NodeJS.Timeout | null>(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showNotificationForm, setShowNotificationForm] = useState(false);
 
-  // 選択された日付を管理（初期値は今日）
-  const [selectedDate, setSelectedDate] = useState<Date>(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return today;
-  });
+  const isDesktop = useMediaQuery({ minWidth: 1024 });
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     if (!user) {
@@ -269,14 +270,94 @@ export default function MenuPage() {
     };
   }, [tasks, selectedDateTasks]);
 
-  // AIキャラクターメッセージ
-  const { message: characterMessage, isLoading: isMessageLoading } = useCharacterMessage({
-    userType: user?.isGuest ? 'guest' : planType,
-    userName: user?.displayName,
+  // AIキャラクターメッセージ（ユーザー情報が確実に取得できてから実行）
+  const { message: characterMessage } = useCharacterMessage({
+    userType: user?.planType || 'guest',
+    userName: user?.displayName || user?.email?.split('@')[0] || 'ユーザー',
     tasks,
-    statistics,
+    statistics: {
+      selectedDateCompletedTasks: 0,
+      selectedDateTotalTasks: 0,
+      selectedDatePercentage: 0,
+      todayPercentage: 0,
+      overallPercentage: 0,
+    },
     selectedDate,
   });
+
+  // 外部クリックでメッセージを消す機能
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // メッセージが表示中で、キャラクター以外の場所をクリックした場合
+      if (showMessage && !isTyping) {
+        const target = event.target as HTMLElement;
+        // キャラクター要素またはその子要素でない場合
+        if (!target.closest('.character-container')) {
+          setShowMessage(false);
+    setDisplayedMessage('');
+        }
+      }
+    };
+
+    if (showMessage) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showMessage, isTyping]);
+
+  // 初回表示（リロード・ログイン時は毎回実行）
+  useEffect(() => {
+    // ユーザー情報が確実に取得できてからメッセージ表示（ゲストユーザーは除く）
+    if (mounted && isDesktop && characterMessage && !showMessage && (user?.isGuest || user?.displayName || user?.email)) {
+      setShowMessage(true);
+    setIsTyping(true);
+      // タイプライター開始
+    let i = 0;
+    const type = () => {
+      setDisplayedMessage(characterMessage.slice(0, i));
+      if (i < characterMessage.length) {
+        i++;
+        setTimeout(type, 30);
+      } else {
+        setIsTyping(false);
+          // タイプライター完了後、5秒で自動消去
+          setTimeout(() => {
+            setShowMessage(false);
+            setDisplayedMessage('');
+          }, 5000);
+      }
+    };
+    type();
+    }
+  }, [mounted, isDesktop, characterMessage, user]);
+
+  // クリック処理
+  const handleClick = () => {
+    if (characterMessage && !isTyping) {
+      setShowMessage(true);
+    setIsTyping(true);
+      // タイプライター開始
+    let i = 0;
+    const type = () => {
+      setDisplayedMessage(characterMessage.slice(0, i));
+      if (i < characterMessage.length) {
+        i++;
+        setTimeout(type, 30);
+      } else {
+        setIsTyping(false);
+          // タイプライター完了後、5秒で自動消去
+          setTimeout(() => {
+            setShowMessage(false);
+            setDisplayedMessage('');
+          }, 5000);
+      }
+    };
+    type();
+    }
+  };
 
   useEffect(() => {
     // タスクの状態に応じてキャラクターの表情を更新
@@ -314,6 +395,10 @@ export default function MenuPage() {
     if (window.confirm('このタスクを削除してもよろしいですか？')) {
       await deleteTask(id);
     }
+  };
+
+  const handleEditTask = (task: Task) => {
+    router.push(`/tasks?id=${task.id}&edit=true`);
   };
 
   const handleMigrationConfirm = async () => {
@@ -373,7 +458,7 @@ export default function MenuPage() {
   return (
     <AppLayout variant="home" tasks={tasks as any} showNotifications={true} onFABClick={handleFABClick}>
       {/* モダンなモバイル専用レイアウト */}
-      <div className="md:hidden">
+      <div className="lg:hidden">
         <ModernMobileHome
           selectedDate={selectedDate}
           selectedDateTasks={selectedDateTasks}
@@ -383,28 +468,47 @@ export default function MenuPage() {
           characterMessage={characterMessage}
           onCompleteTask={handleCompleteTask}
           onDeleteTask={handleDeleteTask}
+          onEditTask={handleEditTask}
           onDateSelect={setSelectedDate}
           onTabChange={setCurrentMobileTab}
           onTaskUpdate={fetchTasks} // データ更新関数を追加
         />
       </div>
 
-      {/* デスクトップ版レイアウト（変更なし） */}
-      <div className="hidden md:block px-4 sm:px-6 py-4 sm:py-6 max-w-7xl mx-auto w-full">
+      {/* デスクトップ版レイアウト（背景透明で共通背景を使用） */}
+      <div className="hidden lg:block px-4 sm:px-6 py-4 sm:py-6 max-w-7xl mx-auto w-full min-h-screen">
+        {/* 右下固定のキャラクター＋吹き出し（デスクトップ版のみ） */}
+        {mounted && isDesktop && (
+          <div className="fixed bottom-6 right-24 z-10 character-container">
+            <Character
+              mood={characterMood}
+              message={displayedMessage}
+              showMessage={showMessage}
+              isTyping={isTyping}
+              bubblePosition="left"
+              size="3cm"
+              onClick={handleClick}
+              isDesktop={isDesktop}
+              recordStatus={recordStatus}
+              currentTimePeriod={currentTimePeriod}
+            />
+          </div>
+        )}
+        {/* 既存のメインコンテンツ */}
+        <div>
         {/* メインコンテンツエリア（サイドバーは左固定で分離） */}
         <div>
           <div>
             {/* 上段：タスク & カレンダー */}
             <div 
               className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8"
-              style={{ minHeight: `${contentHeight}rem` }}
             >
               <TaskListHome
                 tasks={selectedDateTasks as any}
                 selectedDate={selectedDate}
                 onAddTask={() => router.push('/tasks')}
                 onCompleteTask={handleCompleteTask}
-                height={contentHeight}
+                height={46}
               />
               <Calendar 
                 tasks={tasks}
@@ -414,15 +518,7 @@ export default function MenuPage() {
                   newDate.setHours(0, 0, 0, 0);
                   setSelectedDate(newDate);
                 }}
-                onHeightChange={setContentHeight}
               />
-            </div>
-
-            {/* 中段：キャラクター吹き出し */}
-            <div className="mb-6">
-              <div className="hidden md:block">
-                <Character mood={characterMood} message={characterMessage} layout="horizontal" />
-              </div>
             </div>
 
             {/* 中段：統計・傾向（アラートはサイドバーに移動） */}
@@ -441,6 +537,7 @@ export default function MenuPage() {
                 />
               </div>
             )}
+            </div>
           </div>
         </div>
       </div>

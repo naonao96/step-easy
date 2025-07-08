@@ -117,7 +117,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ task
         className="relative p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
         title="通知"
       >
-        {FaBell({ className: "w-5 h-5" })}
+        {FaBell ({className:"w-5 h-5 text-[#7c5a2a] hover:text-yellow-900"})}
         
         {/* 通知数バッジ */}
         {notificationCount > 0 && (

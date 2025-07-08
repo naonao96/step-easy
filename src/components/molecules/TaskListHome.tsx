@@ -26,12 +26,12 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
   onAddTask,
   onCompleteTask,
   onViewAll,
-  height = 28
+  height = 46
 }) => {
   const router = useRouter();
   const { isGuest, isPremium, planType, canAddTaskOnDate, togglePremiumForDev } = useAuth();
   const [sortOption, setSortOption] = useState<SortOption>('default');
-  const [activeTab, setActiveTab] = useState<TabType>('tasks');
+  const [activeTab, setActiveTab] = useState<TabType>('habits');
 
   // ソート設定の読み込み
   useEffect(() => {
@@ -90,7 +90,7 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
 
   // 選択日に応じたタイトルを生成
   const getTitle = () => {
-    if (!selectedDate) return '今日のタスク';
+    if (!selectedDate) return '今日の習慣';
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -98,7 +98,7 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
     selected.setHours(0, 0, 0, 0);
     
     if (selected.toDateString() === today.toDateString()) {
-      return '今日のタスク';
+      return '今日の習慣';
     }
     
     const tomorrow = new Date(today);
@@ -108,11 +108,11 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
     yesterday.setDate(yesterday.getDate() - 1);
     
     if (selected.toDateString() === tomorrow.toDateString()) {
-      return '明日のタスク';
+      return '明日の習慣';
     }
     
     if (selected.toDateString() === yesterday.toDateString()) {
-      return '昨日のタスク';
+      return '昨日の習慣';
     }
     
     // その他の日付
@@ -122,9 +122,9 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
     const currentYear = today.getFullYear();
     
     if (year === currentYear) {
-      return `${month}月${day}日のタスク`;
+      return `${month}月${day}日の習慣`;
     } else {
-      return `${year}年${month}月${day}日のタスク`;
+      return `${year}年${month}月${day}日の習慣`;
     }
   };
 
@@ -348,12 +348,15 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
 
   // 現在のタブに応じたタスクリストを取得
   const getCurrentTasks = () => {
-    return activeTab === 'tasks' ? regularTasks : habitTasks;
+    return activeTab === 'habits' ? habitTasks : regularTasks;
   };
 
   // 現在のタブに応じた追加ボタンのラベルを取得
   const getTabAddButtonLabel = () => {
-    if (activeTab === 'habits') {
+    if (activeTab === 'tasks') {
+      const { label } = getAddTaskButtonInfo();
+      return label;
+    }
       if (planType === 'guest') return 'ログインが必要';
       if (habitTasks.length >= maxHabits && maxHabits !== Infinity) return 'プレミアム版が必要';
       // 過去日付制限をチェック
@@ -364,14 +367,14 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
         }
       }
       return '習慣追加';
-    }
-    const { label } = getAddTaskButtonInfo();
-    return label;
   };
 
   // 現在のタブに応じた追加ボタンの有効性を取得
   const getTabAddButtonEnabled = () => {
-    if (activeTab === 'habits') {
+    if (activeTab === 'tasks') {
+      const { canAdd } = getAddTaskButtonInfo();
+      return canAdd;
+    }
       if (planType === 'guest') return false;
       if (habitTasks.length >= maxHabits && maxHabits !== Infinity) return false;
       // 過去日付制限をチェック
@@ -380,9 +383,6 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
         if (!checkResult.canAdd) return false;
       }
       return true;
-    }
-    const { canAdd } = getAddTaskButtonInfo();
-    return canAdd;
   };
 
   return (
@@ -430,14 +430,6 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
       {/* タブナビゲーション */}
       <div className="flex gap-2 mb-4">
         <TabButton
-          tabKey="tasks"
-          label="タスク"
-          icon={FaTasks({ className: "w-4 h-4" })}
-          count={regularIncompleteCount}
-          isActive={activeTab === 'tasks'}
-          onClick={() => setActiveTab('tasks')}
-        />
-        <TabButton
           tabKey="habits"
           label="習慣"
           icon={FaFire({ className: "w-4 h-4" })}
@@ -445,6 +437,14 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
           isActive={activeTab === 'habits'}
           onClick={() => setActiveTab('habits')}
           disabled={planType === 'guest'}
+        />
+        <TabButton
+          tabKey="tasks"
+          label="タスク"
+          icon={FaTasks({ className: "w-4 h-4" })}
+          count={regularIncompleteCount}
+          isActive={activeTab === 'tasks'}
+          onClick={() => setActiveTab('tasks')}
         />
       </div>
 
@@ -477,30 +477,7 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
       </div>
 
       {/* タブコンテンツ */}
-      <div className="flex-1 overflow-y-auto min-h-0">
-        {activeTab === 'tasks' && (
-          <div className="space-y-2 h-full">
-            {regularTasks.length > 0 ? (
-              regularTasks.map((task) => renderTaskCard(task))
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <p className="text-sm">
-                  {selectedDate && new Date().toDateString() === selectedDate.toDateString() 
-                    ? '今日のタスクがありません' 
-                    : 'この日のタスクがありません'
-                  }
-                </p>
-                <button
-                  onClick={handleAddTask}
-                  className="mt-2 text-blue-600 hover:text-blue-700 text-sm"
-                >
-                  最初のタスクを作成する
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
+      <div className="flex-1 overflow-y-auto">
         {activeTab === 'habits' && (
           <div className="space-y-4 h-full">
             {/* ゲストユーザー向け習慣機能案内 */}
@@ -554,6 +531,25 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
                     </button>
                   </div>
                 )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'tasks' && (
+          <div className="space-y-2">
+            {regularTasks.length > 0 ? (
+              regularTasks.map((task) => renderTaskCard(task, false))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                {FaTasks({ className: "w-8 h-8 mx-auto text-gray-400 mb-2" })}
+                <p className="text-sm mb-2">タスクがありません</p>
+                <button
+                  onClick={() => router.push('/tasks')}
+                  className="text-blue-600 hover:text-blue-700 text-sm"
+                >
+                  最初のタスクを作成する
+                </button>
               </div>
             )}
           </div>

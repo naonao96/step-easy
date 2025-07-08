@@ -188,4 +188,49 @@ export const formatDateTimeJP = (date: Date | string, options?: Intl.DateTimeFor
     console.warn('DateTime formatting error:', error);
     return '日時エラー';
   }
-}; 
+};
+
+export function getTimeBasedGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour >= 6 && hour < 10) return 'morning';
+  if (hour >= 11 && hour < 15) return 'afternoon';
+  if (hour >= 16 && hour < 20) return 'evening';
+  return 'night';
+}
+
+export function getDayOfWeek(): string {
+  const days = ['日', '月', '火', '水', '木', '金', '土'];
+  return days[new Date().getDay()];
+}
+
+export function getTimeBasedMessage(userName?: string): string {
+  const timeGreeting = getTimeBasedGreeting();
+  const userGreeting = userName ? `${userName}さん、` : '';
+  
+  switch (timeGreeting) {
+    case 'morning':
+      return `${userGreeting}おはようございます！今日も習慣を継続するのにぴったりの日ですね。`;
+    case 'afternoon':
+      return `${userGreeting}お疲れ様です！午前中の頑張りを活かして、午後も習慣を続けていきましょう。`;
+    case 'evening':
+      return `${userGreeting}今日もお疲れ様でした。明日も素晴らしい一日になるよう、今日の習慣を大切にしてくださいね。`;
+    default:
+      return `${userGreeting}お疲れ様でした。明日も習慣を頑張りましょう！`;
+  }
+}
+
+export function getDayBasedMessage(userName?: string): string {
+  const dayOfWeek = getDayOfWeek();
+  const userGreeting = userName ? `${userName}さん、` : '';
+  
+  switch (dayOfWeek) {
+    case '月':
+      return `${userGreeting}新しい一週間の始まりですね！今週も習慣を頑張りましょう`;
+    case '水':
+      return `${userGreeting}週の真ん中です。ここまで習慣をよく継続されましたね`;
+    case '金':
+      return `${userGreeting}金曜日ですね！今週の習慣継続を振り返ってみませんか`;
+    default:
+      return `${userGreeting}今日も習慣を頑張りましょう！`;
+  }
+} 

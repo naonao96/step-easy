@@ -12,9 +12,10 @@ export const HelpPanel: React.FC<HelpPanelProps> = ({
   onClose,
   defaultTab = 'streak'
 }) => {
-  const [activeTab, setActiveTab] = useState(defaultTab);
+  const [activeTab, setActiveTab] = useState('habits');
   const [searchQuery, setSearchQuery] = useState('');
   const panelRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   // ESCキーで閉じる
   useEffect(() => {
@@ -43,6 +44,14 @@ export const HelpPanel: React.FC<HelpPanelProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, onClose]);
 
+  // 画面幅でドロップダウンかスライドインかを切り替え
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   // 検索機能
   const filterContent = (content: any[], query: string) => {
     if (!query) return content;
@@ -67,8 +76,8 @@ export const HelpPanel: React.FC<HelpPanelProps> = ({
   // タブ定義
   const tabs = [
     {
-      id: 'streak',
-      label: 'ストリーク',
+      id: 'habits',
+      label: '習慣',
       icon: FaFire,
       color: 'text-orange-500',
       bgColor: 'bg-orange-50',
@@ -102,78 +111,32 @@ export const HelpPanel: React.FC<HelpPanelProps> = ({
 
   // コンテンツ定義
   const content = {
-    streak: [
+    habits: [
       {
-        title: '🏆 ストリークレベルシステム',
-        description: '継続日数に応じてバッジが進化します',
-        searchText: 'ストリークレベルシステム 継続日数 バッジ 進化 スタート 軌道に乗る 1週間達成 ベテラン マスター級 習慣 継続 1-2日 3-6日 7-13日 14-29日 30日以上',
-        content: (
-          <div className="space-y-4">
-            <div className="grid gap-3">
-              <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
-                <span className="text-lg">✨</span>
-                <div>
-                  <div className="font-medium text-green-900">スタート (1-2日)</div>
-                  <div className="text-sm text-green-700">習慣を始めたばかり。継続が大切です！</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                <span className="text-lg">⚡</span>
-                <div>
-                  <div className="font-medium text-yellow-900">軌道に乗る (3-6日)</div>
-                  <div className="text-sm text-yellow-700">習慣が定着し始めています。この調子！</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
-                <span className="text-lg">🔥</span>
-                <div>
-                  <div className="font-medium text-orange-900">1週間達成 (7-13日)</div>
-                  <div className="text-sm text-orange-700">素晴らしい！習慣が身についてきました。</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg border border-red-200">
-                <span className="text-lg">🔥</span>
-                <div>
-                  <div className="font-medium text-red-900">ベテラン (14-29日)</div>
-                  <div className="text-sm text-red-700">驚異的な継続力！習慣が完全に定着しています。</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
-                <span className="text-lg">👑</span>
-                <div>
-                  <div className="font-medium text-purple-900">マスター級 (30日以上)</div>
-                  <div className="text-sm text-purple-700">あなたは習慣のマスターです！完璧な継続力！</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )
-      },
-      {
-        title: '🎯 ステータス表示',
-        description: '継続の緊急度を色で表示します',
-        searchText: 'ステータス表示 継続 緊急度 色 正常 注意 期限切れ 期限 80% 途切れた',
+        title: '🔥 習慣機能について',
+        description: '継続的な習慣形成をサポートする機能',
+        searchText: '習慣 継続 ストリーク 毎日 週1回 月1回 頻度 運動 読書 学習 日記 瞑想',
         content: (
           <div className="space-y-3">
             <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-              <span className="text-lg">🟢</span>
+              <span className="text-lg">🔥</span>
               <div>
-                <div className="font-medium text-gray-900">正常</div>
-                <div className="text-sm text-gray-600">期限まで余裕があります</div>
+                <div className="font-medium text-gray-900">習慣タスク</div>
+                <div className="text-sm text-gray-600">継続的に繰り返したいタスクを設定</div>
               </div>
             </div>
             <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-              <span className="text-lg">🟡</span>
+              <span className="text-lg">📊</span>
               <div>
-                <div className="font-medium text-gray-900">注意</div>
-                <div className="text-sm text-gray-600">期限の80%が経過。そろそろ取り組みましょう</div>
+                <div className="font-medium text-gray-900">ストリーク記録</div>
+                <div className="text-sm text-gray-600">継続日数を自動カウント</div>
               </div>
             </div>
             <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-              <span className="text-lg">🔴</span>
+              <span className="text-lg">🎯</span>
               <div>
-                <div className="font-medium text-gray-900">期限切れ</div>
-                <div className="text-sm text-gray-600">継続が途切れました。再度取り組むと新しいストリークが開始</div>
+                <div className="font-medium text-gray-900">目標達成</div>
+                <div className="text-sm text-gray-600">継続することで目標を達成</div>
               </div>
             </div>
           </div>
@@ -294,19 +257,11 @@ export const HelpPanel: React.FC<HelpPanelProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  // モバイルは従来通りfixed、PCはabsoluteドロップダウン
+  return isMobile ? (
     <>
-      {/* オーバーレイ */}
-      <div className="fixed inset-0 bg-black bg-opacity-20 z-40" />
-      
-      {/* パネル */}
-      <div
-        ref={panelRef}
-        className={`fixed right-0 top-0 h-screen w-full max-w-md bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-out flex flex-col ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
-        style={{ height: 'calc(100vh - 40px)' }}
-      >
+      <div className="fixed inset-0 bg-black bg-opacity-20 z-40" onClick={onClose} />
+      <div ref={panelRef} className="fixed right-0 top-0 h-screen w-full max-w-md bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-out flex flex-col">
         {/* ヘッダー */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-white">
           <div className="flex items-center gap-3">
@@ -390,5 +345,89 @@ export const HelpPanel: React.FC<HelpPanelProps> = ({
         </div>
       </div>
     </>
+  ) : (
+    <div className="absolute right-0 top-full mt-2 w-96 max-w-[90vw] bg-white rounded-lg shadow-lg border border-gray-200 z-50" ref={panelRef} style={{minWidth: 320}}>
+      {/* ヘッダー */}
+      <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-white">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+            {FaQuestionCircle({ className: "w-4 h-4 text-blue-600" })}
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">ヘルプガイド</h2>
+            <p className="text-sm text-gray-500">StepEasyの使い方</p>
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          {FaTimes({ className: "w-4 h-4 text-gray-500" })}
+        </button>
+      </div>
+
+      {/* 検索バー */}
+      <div className="p-4 border-b border-gray-200">
+        <div className="relative">
+          {FaSearch({ className: "absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" })}
+          <input
+            type="text"
+            placeholder="検索..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+          />
+        </div>
+      </div>
+
+      {/* タブナビゲーション */}
+      <div className="flex border-b border-gray-200 bg-gray-50">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 px-2 text-sm font-medium transition-colors ${
+                isActive
+                  ? `${tab.color} bg-white border-b-2 border-current`
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {Icon({ className: "w-4 h-4" })}
+              <span className="hidden sm:inline">{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* コンテンツエリア */}
+      <div className="flex-1 overflow-y-auto p-6 pb-20 space-y-6">
+        {filteredContent.length > 0 ? (
+          filteredContent.map((item, index) => (
+            <div key={index} className="space-y-3">
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-1">{item.title}</h3>
+                <p className="text-sm text-gray-600">{item.description}</p>
+              </div>
+              <div>{item.content}</div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-8">
+            <div className="text-gray-400 mb-2">🔍</div>
+            <p className="text-gray-500 text-sm">検索結果が見つかりませんでした</p>
+          </div>
+        )}
+      </div>
+
+      {/* フッター */}
+      <div className="flex-shrink-0 p-4 border-t border-gray-200 bg-gray-50">
+        <div className="text-xs text-gray-500 text-center">
+          💡 他にご不明な点がございましたら、設定画面からお問い合わせください
+        </div>
+      </div>
+    </div>
   );
 }; 

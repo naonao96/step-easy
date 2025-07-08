@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase';
+import { getTimeBasedGreeting, getDayOfWeek, getTimeBasedMessage, getDayBasedMessage } from '@/lib/timeUtils';
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,13 +29,22 @@ export async function POST(req: NextRequest) {
 
     const userGreeting = userName ? `${userName}さん、` : '';
     
+    // 時間帯と曜日に基づいたメッセージ生成
+    const timeBasedMessage = getTimeBasedMessage(userName);
+    const dayBasedMessage = getDayBasedMessage(userName);
+    
     const prompt = userType === 'premium' ? 
       `あなたは優しいタスク管理アプリのキャラクターです。
 今日は${today}です。
 ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
 
+時間帯: ${getTimeBasedGreeting()}
+曜日: ${getDayOfWeek()}
+
 プレミアムユーザー向けの特別なメッセージを200文字以内で生成してください：
 - ${userName ? `「${userName}さん」という呼びかけを含める` : ''}
+- 時間帯（${timeBasedMessage}）を参考にする
+- 曜日（${dayBasedMessage}）を参考にする
 - 今日の天気や季節感を含める
 - プレミアム特典への感謝も込める
 - タスク管理へのモチベーションを上げる内容
@@ -48,8 +58,13 @@ ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
 今日は${today}です。
 ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
 
+時間帯: ${getTimeBasedGreeting()}
+曜日: ${getDayOfWeek()}
+
 フリーユーザー向けのメッセージを100文字以内で生成してください：
 - ${userName ? `「${userName}さん」という呼びかけを含める` : ''}
+- 時間帯（${timeBasedMessage}）を参考にする
+- 曜日（${dayBasedMessage}）を参考にする
 - 今日の天気や季節感を含める
 - タスク管理へのモチベーションを上げる内容
 - 絵文字は使わない

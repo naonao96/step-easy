@@ -76,6 +76,53 @@ export default function TestDailyMessagesPage() {
     }
   };
 
+  // 新しいEdgeFunction直接実行機能
+  const [edgeFunctionLoading, setEdgeFunctionLoading] = useState(false);
+  const [edgeFunctionResult, setEdgeFunctionResult] = useState<any>(null);
+  const [edgeFunctionError, setEdgeFunctionError] = useState<string | null>(null);
+
+  const triggerEdgeFunction = async () => {
+    setEdgeFunctionLoading(true);
+    setEdgeFunctionError(null);
+    setEdgeFunctionResult(null);
+    setDebug([]);
+
+    addDebug('🚀 EdgeFunction直接実行を開始...');
+
+    try {
+      // クライアントサイドでは環境変数にアクセスできないため、
+      // サーバーサイドのAPIを経由してEdgeFunctionを呼び出す
+      addDebug('サーバーサイドAPI経由でEdgeFunctionを呼び出し中...');
+      
+      const response = await fetch('/api/trigger-daily-messages/edge-function', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      addDebug(`EdgeFunctionレスポンス: ${response.status} ${response.statusText}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        addDebug(`EdgeFunctionエラーレスポンス: ${errorText}`);
+        throw new Error(`EdgeFunction HTTP ${response.status}: ${response.statusText}\n${errorText}`);
+      }
+
+      const data = await response.json();
+      addDebug('EdgeFunction JSONパース成功');
+      setEdgeFunctionResult(data);
+      addDebug(`処理完了: ${data.successCount || 0}件成功, ${data.errorCount || 0}件エラー`);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      addDebug(`EdgeFunctionエラー発生: ${errorMessage}`);
+      setEdgeFunctionError(errorMessage);
+    } finally {
+      setEdgeFunctionLoading(false);
+      addDebug('EdgeFunction処理完了');
+    }
+  };
+
   // 生成されたメッセージを確認する関数
   const [generatedMessages, setGeneratedMessages] = useState<any[]>([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
@@ -196,10 +243,11 @@ export default function TestDailyMessagesPage() {
               )}
             </div>
             
+            {/* 既存のAPI経由実行ボタン */}
             <button
               onClick={triggerDailyMessages}
               disabled={loading}
-              className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
+              className={`w-full py-3 px-4 rounded-lg font-medium transition-colors mb-3 ${
                 loading
                   ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
                   : 'bg-blue-600 text-white hover:bg-blue-700'
@@ -214,10 +262,51 @@ export default function TestDailyMessagesPage() {
                   生成中...
                 </span>
               ) : (
-                '🚀 Daily Message生成を実行'
+                '🚀 Daily Message生成を実行（API経由）'
+              )}
+            </button>
+
+            {/* 新しいEdgeFunction直接実行ボタン */}
+            <button
+              onClick={triggerEdgeFunction}
+              disabled={edgeFunctionLoading}
+              className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
+                edgeFunctionLoading
+                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                  : 'bg-orange-600 text-white hover:bg-orange-700'
+              }`}
+            >
+              {edgeFunctionLoading ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  EdgeFunction実行中...
+                </span>
+              ) : (
+                '🚀 EdgeFunction直接実行（DB保存まで）'
               )}
             </button>
           </div>
+
+          {/* EdgeFunction実行結果表示 */}
+          {edgeFunctionResult && (
+            <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+              <h3 className="text-lg font-semibold text-orange-800 mb-2">✅ EdgeFunction実行成功</h3>
+              <pre className="text-sm text-orange-700 whitespace-pre-wrap">
+                {JSON.stringify(edgeFunctionResult, null, 2)}
+              </pre>
+            </div>
+          )}
+
+          {/* EdgeFunctionエラー表示 */}
+          {edgeFunctionError && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <h3 className="text-lg font-semibold text-red-800 mb-2">❌ EdgeFunction実行エラー</h3>
+              <pre className="text-red-700 whitespace-pre-wrap text-sm">{edgeFunctionError}</pre>
+            </div>
+          )}
 
           {/* 結果表示 */}
           {result && (
@@ -366,7 +455,8 @@ export default function TestDailyMessagesPage() {
             <ul className="list-disc list-inside space-y-1">
               <li>開発環境でのみ動作します</li>
               <li>認証が必要です（ログイン状態で実行）</li>
-              <li>Edge Functionが未デプロイでも、既存のAPI経由でテスト可能</li>
+              <li>「API経由」: Next.js API Routes経由で実行</li>
+              <li>「EdgeFunction直接実行」: Supabase EdgeFunctionを直接呼び出し（DB保存まで）</li>
               <li>成功すると全ユーザーのメッセージが生成されます（最大5人まで）</li>
               <li>各ユーザーに個別のパーソナライズされたメッセージが生成されます</li>
             </ul>

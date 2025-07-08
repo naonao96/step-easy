@@ -4,13 +4,13 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { RunningTaskWidget } from '@/components/molecules/RunningTaskWidget'
-import { ExecutionHistoryWidget } from '@/components/molecules/ExecutionHistoryWidget'
 import { 
   FaClock, 
   FaPlus, 
   FaChartBar, 
   FaArchive, 
-  FaCog 
+  FaCog,
+  FaTrophy
 } from 'react-icons/fa'
 import { useExecutionStore } from '@/stores/executionStore'
 import { useTaskStore } from '@/stores/taskStore'
@@ -32,8 +32,8 @@ export function LeftSidebar({ className = '' }: LeftSidebarProps) {
   // タイマーアイコンの色を決定
   const getTimerIconColor = () => {
     if (!activeExecution) return 'text-gray-400 hover:text-gray-500'
-    if (isRunning) return 'text-blue-500 hover:text-blue-600 animate-pulse'
-    return 'text-yellow-500 hover:text-yellow-600' // 一時停止中
+    if (isRunning) return 'text-[#7c5a2a] animate-pulse'
+    return 'text-[#7c5a2a]' // 一時停止中
   }
 
   // タイマーアイコンクリック時の動作
@@ -47,27 +47,27 @@ export function LeftSidebar({ className = '' }: LeftSidebarProps) {
   const getAvailableActionItems = () => {
     const baseItems = [
       {
-        icon: () => FaPlus({ className: 'w-6 h-6 shrink-0 text-green-500 hover:text-green-600' }),
+        icon: () => FaPlus({ className: 'w-6 h-6 shrink-0 text-[#7c5a2a] hover:text-yellow-900' }),
         label: '新しいタスク',
         href: '/tasks'
       },
       {
-        icon: () => FaChartBar({ className: 'w-6 h-6 shrink-0 text-blue-500 hover:text-blue-600' }),
+        icon: () => FaChartBar({ className: 'w-6 h-6 shrink-0 text-[#7c5a2a] hover:text-yellow-900' }),
         label: '進捗確認',
         href: '/progress'
       }
     ];
 
-    // ゲストユーザー以外はアーカイブと設定を追加
+    // ゲストユーザー以外はアーカイブ、設定を追加
     if (!isGuest) {
       baseItems.push(
         {
-          icon: () => FaArchive({ className: 'w-6 h-6 shrink-0 text-purple-500 hover:text-purple-600' }),
+          icon: () => FaArchive({ className: 'w-6 h-6 shrink-0 text-[#7c5a2a] hover:text-yellow-900' }),
           label: 'アーカイブ',
           href: '/archive'
         },
         {
-          icon: () => FaCog({ className: 'w-6 h-6 shrink-0 text-gray-500 hover:text-gray-600' }),
+          icon: () => FaCog({ className: 'w-6 h-6 shrink-0 text-[#7c5a2a] hover:text-yellow-900' }),
           label: '設定',
           href: '/settings'
         }
@@ -85,13 +85,14 @@ export function LeftSidebar({ className = '' }: LeftSidebarProps) {
 
   return (
     <div 
-      className={`fixed left-0 top-20 h-[calc(100vh-5rem)] bg-white border-r border-gray-200 z-40 transition-all duration-200 ease-out ${
-        isExpanded ? 'w-80' : 'w-16'
+      className={`absolute left-0 top-0 h-screen wood-frame wood-frame-sidebar transition-all duration-200 ease-out ${
+        isExpanded ? 'w-60' : 'w-16'
       } ${className}`}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
+      style={{height: '100vh'}}
     >
-      <div className="p-4 h-full flex flex-col">
+      <div className="wood-content p-2  h-full flex flex-col">
         {/* タスク実行エリア（境界線で区別） */}
         <div className="mb-6 pb-4 border-b border-gray-100">
           <button
@@ -117,12 +118,7 @@ export function LeftSidebar({ className = '' }: LeftSidebarProps) {
           </div>
         )}
 
-        {/* 展開時：実行履歴（直近5件） */}
-        {isExpanded && !isGuest && (
-          <div className="mb-6">
-            <ExecutionHistoryWidget />
-          </div>
-        )}
+
 
         {/* アクションアイテム */}
         <div className="flex flex-col space-y-4">

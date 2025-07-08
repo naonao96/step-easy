@@ -10,7 +10,8 @@ import {
   FaChartBar, 
   FaCog,
   FaPlus,
-  FaArchive
+  FaArchive,
+  FaTrophy
 } from 'react-icons/fa';
 
 interface BottomNavItem {
@@ -99,7 +100,7 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
       {/* ボトムナビゲーション - モバイルのみ表示 */}
       <div className={`md:hidden fixed bottom-0 left-0 right-0 z-50 ${className}`}>
         {/* セーフエリア対応の背景 */}
-        <div className="bg-white border-t border-gray-200 shadow-lg">
+        <div className="wood-frame-sidebar border-t border-[#deb887] shadow-lg">
           <div className="flex items-center justify-around py-2 pb-safe">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -111,8 +112,8 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
                   onClick={() => handleNavigate(item.href)}
                   className={`flex flex-col items-center gap-1 px-3 py-2 min-h-[52px] transition-colors ${
                     isActive 
-                      ? 'text-blue-600' 
-                      : 'text-gray-500 hover:text-gray-700'
+                      ? 'text-[#7c5a2a]' 
+                      : 'text-gray-700 hover:text-[#7c5a2a]'
                   }`}
                 >
                   <div className="relative">
@@ -124,7 +125,7 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
                     )}
                   </div>
                   <span className={`text-xs font-medium ${
-                    isActive ? 'text-blue-600' : 'text-gray-500'
+                    isActive ? 'text-[#7c5a2a]' : 'text-gray-700'
                   }`}>
                     {item.label}
                   </span>

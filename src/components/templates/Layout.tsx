@@ -9,7 +9,7 @@ interface LayoutProps {
 export const Layout: React.FC<LayoutProps> = ({ children, className }) => {
   return (
     <div className={twMerge(
-      "min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100",
+      "min-h-screen bg-transparent",
       className
     )}>
       <main className="container mx-auto px-4 py-8">
