@@ -4,6 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTaskStore } from '@/stores/taskStore';
 import { useAuth } from '@/contexts/AuthContext';
+import OnboardingFlow from '@/components/onboarding/OnboardingFlow';
+import { FeedbackModal } from '@/components/feedback/FeedbackModal';
+import { useOnboarding } from '@/hooks/useOnboarding';
 
 export default function HomePage() {
   const router = useRouter();
@@ -11,6 +14,18 @@ export default function HomePage() {
   const [characterMood, setCharacterMood] = useState<'happy' | 'normal' | 'sad'>('normal');
   const [characterMessage, setCharacterMessage] = useState<string>('');
   const { user } = useAuth();
+
+  const {
+    isOnboardingOpen,
+    setIsOnboardingOpen,
+    isFeedbackOpen,
+    feedbackType,
+    completeOnboarding,
+    skipOnboarding,
+    submitFeedback,
+    shouldShowOnboarding,
+    setIsFeedbackOpen
+  } = useOnboarding(user?.id || '');
 
   useEffect(() => {
     fetchTasks();
@@ -47,5 +62,26 @@ export default function HomePage() {
     }
   }, [user, router]);
 
-  return null;
+  // オンボーディングはuseOnboardingフック内で自動制御される
+
+  return (
+    <div>
+      {/* 既存のコンテンツ */}
+      {/* オンボーディングフロー */}
+      <OnboardingFlow
+        isOpen={isOnboardingOpen}
+        onClose={() => setIsOnboardingOpen(false)}
+        onComplete={completeOnboarding}
+        onSkip={skipOnboarding}
+      />
+
+      {/* フィードバックモーダル */}
+      <FeedbackModal
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
+        onSubmit={(data) => submitFeedback({ ...data, type: feedbackType })}
+        type={feedbackType}
+      />
+    </div>
+  );
 }

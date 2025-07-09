@@ -6,7 +6,7 @@ import { FaCalendarCheck, FaFolderOpen, FaFire, FaChartLine, FaTrophy } from 're
 
 interface MobileProgressDashboardProps {
   tasks: Task[];
-  onNavigateToTab: (tab: 'today' | 'category' | 'heatmap' | 'overall' | 'badges') => void;
+  onNavigateToTab: (tab: 'today' | 'category' | 'heatmap' | 'overall') => void;
 }
 
 export const MobileProgressDashboard: React.FC<MobileProgressDashboardProps> = ({
@@ -215,14 +215,7 @@ export const MobileProgressDashboard: React.FC<MobileProgressDashboardProps> = (
           onClick={() => onNavigateToTab('overall')}
         />
 
-        {/* バッジギャラリーカード */}
-        <MobileStatsCard
-          title="バッジギャラリー"
-          icon={React.createElement(FaTrophy as React.ComponentType<any>, { className: "w-5 h-5" })}
-          value="0"
-          subtitle="獲得したバッジを確認"
-          onClick={() => onNavigateToTab('badges')}
-        />
+
       </div>
     </div>
   );

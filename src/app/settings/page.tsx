@@ -822,6 +822,51 @@ export default function SettingsPage() {
 
                     <hr className="my-8" />
 
+                    {/* 利用規約同意セクション */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                      <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                        利用規約への同意
+                      </h3>
+                      <p className="text-slate-700 mb-4 text-sm">
+                        StepEasyをご利用いただくには、利用規約への同意が必要です。
+                      </p>
+                      <div className="space-y-3">
+                        <label className="flex items-start gap-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={false}
+                            disabled
+                            className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                          />
+                          <div className="text-sm">
+                            <span className="text-slate-700">
+                              <a 
+                                href="/terms" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-700 underline"
+                              >
+                                利用規約
+                              </a>
+                              と
+                              <a 
+                                href="/privacy" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-700 underline"
+                              >
+                                プライバシーポリシー
+                              </a>
+                              に同意します
+                            </span>
+                            <p className="text-xs text-slate-500 mt-1">
+                              オンボーディング完了後に設定可能になります
+                            </p>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+
                     {/* 法的情報セクション */}
                     <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
                       <h3 className="text-lg font-semibold text-slate-900 mb-2">

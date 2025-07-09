@@ -7,15 +7,13 @@ import { ProgressCard } from '@/components/molecules/ProgressCard';
 import { CategoryBadge } from '@/components/atoms/CategoryBadge';
 import { DetailedHeatmap } from '@/components/molecules/DetailedHeatmap';
 import { MobileProgressDashboard } from '@/components/molecules/MobileProgressDashboard';
-import { AchievementBadge } from '@/components/atoms/AchievementBadge';
-import { BadgeCollection } from '@/components/atoms/AchievementBadge';
-import { DEFAULT_BADGES } from '@/types/badge';
+
 import { FaChartBar, FaChartPie, FaFire, FaChartLine, FaTrophy } from 'react-icons/fa';
 import { DEFAULT_CATEGORIES } from '@/types/task';
 import { Task } from '@/stores/taskStore';
 import { useSearchParams } from 'next/navigation';
 
-type TabType = 'today' | 'category' | 'heatmap' | 'overall' | 'badges';
+type TabType = 'today' | 'category' | 'heatmap' | 'overall';
 
 export default function ProgressPage() {
   const { tasks: storeTasks, fetchTasks } = useTaskStore();
@@ -31,7 +29,7 @@ export default function ProgressPage() {
   // クエリパラメータからデフォルトタブを設定
   useEffect(() => {
     const tab = searchParams.get('tab') as TabType;
-    if (tab && ['today', 'category', 'heatmap', 'overall', 'badges'].includes(tab)) {
+    if (tab && ['today', 'category', 'heatmap', 'overall'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -214,8 +212,7 @@ export default function ProgressPage() {
     { id: 'today', label: '今日の詳細', icon: FaChartBar },
     { id: 'category', label: 'カテゴリ別分析', icon: FaChartPie },
     { id: 'heatmap', label: 'ヒートマップ', icon: FaFire },
-    { id: 'overall', label: '全体統計', icon: FaChartLine },
-    { id: 'badges', label: 'バッジギャラリー', icon: FaTrophy }
+    { id: 'overall', label: '全体統計', icon: FaChartLine }
   ];
 
   // モバイルでタブを選択した時のハンドラー
@@ -408,57 +405,7 @@ export default function ProgressPage() {
                 </div>
               )}
 
-              {activeTab === 'badges' && (
-                <div className="space-y-6">
-                  <h2 className="text-xl font-semibold text-[#8b4513]">バッジギャラリー</h2>
-                  
-                  {/* バッジ統計 */}
-                  <div className="wood-frame rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-[#8b4513] mb-4">獲得状況</h3>
-                    <div className="grid grid-cols-1 gap-4 mb-6">
-                      <div className="p-4 bg-[#f5f5dc] rounded-lg border border-[#deb887]">
-                        <h4 className="font-medium text-[#8b4513] mb-2">獲得バッジ</h4>
-                        <p className="text-2xl font-bold text-[#7c5a2a]">
-                          {DEFAULT_BADGES.filter(b => b.isUnlocked).length}
-                        </p>
-                        <p className="text-sm text-[#7c5a2a]">
-                          / {DEFAULT_BADGES.length} 個
-                        </p>
-                      </div>
-                      <div className="p-4 bg-[#f5f5dc] rounded-lg border border-[#deb887]">
-                        <h4 className="font-medium text-[#8b4513] mb-2">コンプリート率</h4>
-                        <p className="text-2xl font-bold text-[#7c5a2a]">
-                          {Math.round((DEFAULT_BADGES.filter(b => b.isUnlocked).length / DEFAULT_BADGES.length) * 100)}%
-                        </p>
-                      </div>
-                      <div className="p-4 bg-[#f5f5dc] rounded-lg border border-[#deb887]">
-                        <h4 className="font-medium text-[#8b4513] mb-2">最新獲得</h4>
-                        <p className="text-sm text-[#7c5a2a]">
-                          {DEFAULT_BADGES.filter(b => b.isUnlocked).length > 0 ? '最近獲得したバッジ' : 'まだ獲得していません'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* バッジコレクション */}
-                  <div className="wood-frame rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-[#8b4513] mb-4">バッジコレクション</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      {DEFAULT_BADGES.map((badge) => (
-                        <div key={badge.id} className="flex justify-center">
-                          <AchievementBadge
-                            badge={badge}
-                            size="md"
-                            showName={true}
-                            showProgress={true}
-                            className="cursor-pointer active:scale-95 transition-transform"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -712,57 +659,7 @@ export default function ProgressPage() {
             </div>
           )}
 
-          {activeTab === 'badges' && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-[#8b4513]">バッジギャラリー</h2>
-              
-              {/* バッジ統計 */}
-              <div className="wood-frame rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-[#8b4513] mb-4">獲得状況</h3>
-                <div className="grid grid-cols-1 gap-4 mb-6">
-                  <div className="p-4 bg-[#f5f5dc] rounded-lg border border-[#deb887]">
-                    <h4 className="font-medium text-[#8b4513] mb-2">獲得バッジ</h4>
-                    <p className="text-2xl font-bold text-[#7c5a2a]">
-                      {DEFAULT_BADGES.filter(b => b.isUnlocked).length}
-                    </p>
-                    <p className="text-sm text-[#7c5a2a]">
-                      / {DEFAULT_BADGES.length} 個
-                    </p>
-                  </div>
-                  <div className="p-4 bg-[#f5f5dc] rounded-lg border border-[#deb887]">
-                    <h4 className="font-medium text-[#8b4513] mb-2">コンプリート率</h4>
-                    <p className="text-2xl font-bold text-[#7c5a2a]">
-                      {Math.round((DEFAULT_BADGES.filter(b => b.isUnlocked).length / DEFAULT_BADGES.length) * 100)}%
-                    </p>
-                  </div>
-                  <div className="p-4 bg-[#f5f5dc] rounded-lg border border-[#deb887]">
-                    <h4 className="font-medium text-[#8b4513] mb-2">最新獲得</h4>
-                    <p className="text-sm text-[#7c5a2a]">
-                      {DEFAULT_BADGES.filter(b => b.isUnlocked).length > 0 ? '最近獲得したバッジ' : 'まだ獲得していません'}
-                    </p>
-                  </div>
-                </div>
-              </div>
 
-              {/* バッジコレクション */}
-              <div className="wood-frame rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-[#8b4513] mb-4">バッジコレクション</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  {DEFAULT_BADGES.map((badge) => (
-                    <div key={badge.id} className="flex justify-center">
-                      <AchievementBadge
-                        badge={badge}
-                        size="md"
-                        showName={true}
-                        showProgress={true}
-                        className="cursor-pointer active:scale-95 transition-transform"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </AppLayout>

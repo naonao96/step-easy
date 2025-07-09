@@ -251,19 +251,22 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showMessage, showEmotionMenu, isTyping]);
+  }, [showEmotionMenu, isTyping]); // showMessageを依存配列から削除
 
   // 初回表示（リロード・ログイン時は毎回実行）
   useEffect(() => {
     // ユーザー情報が確実に取得できてからメッセージ表示（ゲストユーザーは除く）
-    if (characterMessage && !showMessage && (isGuest || user?.displayName || user?.email)) {
+    if (characterMessage && !showMessage && !isTyping && (isGuest || user?.displayName || user?.email)) {
       setShowMessage(true);
       setIsTyping(true);
-      // タイプライター開始
+      // タイプライター開始（メッセージを固定）
+      const messageToDisplay = characterMessage;
       let i = 0;
       const type = () => {
-        setDisplayedMessage(characterMessage.slice(0, i));
-        if (i < characterMessage.length) {
+        // タイプライター中は他の処理をブロック
+        if (!isTyping) return;
+        setDisplayedMessage(messageToDisplay.slice(0, i));
+        if (i < messageToDisplay.length) {
           i++;
           setTimeout(type, 30);
         } else {
@@ -277,7 +280,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
       };
       type();
     }
-  }, [characterMessage, isGuest, user]); // showMessageを依存配列から削除
+  }, [isGuest, user, isTyping]); // isTypingを追加して保護
 
   // タスクカードのレンダリング関数
   const renderTaskCard = (task: Task, isHabit: boolean) => (
