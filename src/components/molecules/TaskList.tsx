@@ -7,6 +7,7 @@ interface TaskListProps {
   onEdit: (task: Task) => void;
   onDelete: (id: string) => void;
   onComplete: (id: string) => void;
+  onTaskClick?: (task: Task) => void;
 }
 
 export const TaskList: React.FC<TaskListProps> = ({
@@ -14,6 +15,7 @@ export const TaskList: React.FC<TaskListProps> = ({
   onEdit,
   onDelete,
   onComplete,
+  onTaskClick,
 }) => {
   if (tasks.length === 0) {
     return (
@@ -32,6 +34,7 @@ export const TaskList: React.FC<TaskListProps> = ({
           onEdit={onEdit as any}
           onDelete={onDelete}
           onComplete={onComplete}
+          onTaskClick={onTaskClick as any}
         />
       ))}
     </div>

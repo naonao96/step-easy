@@ -12,6 +12,7 @@ interface TaskCardProps {
   onEdit: (task: Task) => void;
   onDelete: (id: string) => void;
   onComplete: (id: string) => void;
+  onTaskClick?: (task: Task) => void;
 }
 
 export const TaskCard: React.FC<TaskCardProps> = ({
@@ -19,6 +20,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onEdit,
   onDelete,
   onComplete,
+  onTaskClick,
 }) => {
   const statusColors = {
     todo: 'bg-gray-100 text-gray-800',
@@ -46,20 +48,29 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
+    <div 
+      className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow cursor-pointer"
+      onClick={onTaskClick ? () => onTaskClick(task) : undefined}
+    >
       <div className="flex justify-between items-start mb-2">
         <h3 className="text-lg font-semibold text-gray-900">{task.title}</h3>
         <div className="flex space-x-2">
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => onEdit(task)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(task);
+            }}
             leftIcon={FaEdit}
           />
           <Button
             variant="danger"
             size="sm"
-            onClick={() => onDelete(task.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(task.id);
+            }}
             leftIcon={FaTrash}
           />
         </div>
@@ -106,7 +117,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         <Button
           variant="primary"
           size="sm"
-          onClick={() => onComplete(task.id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onComplete(task.id);
+          }}
           leftIcon={FaCheck}
           fullWidth
         >

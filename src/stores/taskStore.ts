@@ -36,6 +36,13 @@ export interface Task {
   // 互換性のために残す（後で削除予定）
   streak_count?: number;
   completed_at?: string;
+  
+  // 新しい時間管理フィールド（types/task.tsとの互換性のため）
+  session_time?: number;
+  today_total?: number;
+  all_time_total?: number;
+  last_execution_date?: string;
+  execution_count?: number;
 }
 
 interface TaskStore {

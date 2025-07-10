@@ -18,27 +18,27 @@ export const HomeContent: React.FC<HomeContentProps> = ({ onLogin, onRegister, o
           {/* 左側: メインコンテンツ */}
           <div className="space-y-8">
             <div className="space-y-6">
-              <h1 className="text-5xl font-bold text-slate-900 leading-tight">
+              <h1 className="text-5xl font-bold text-[#8b4513] leading-tight">
                 小鳥の一声が、<br />
                 あなたの習慣を<br />
                 運んでいく
               </h1>
               
-              <p className="text-xl text-slate-700 leading-relaxed">
+              <p className="text-xl text-[#7c5a2a] leading-relaxed">
                 感情を理解し、あなたのペースで習慣を育てる
               </p>
               
-              <div className="flex items-center gap-4 text-sm text-slate-600">
+              <div className="flex items-center gap-4 text-sm text-[#7c5a2a]">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <div className="w-2 h-2 bg-[#8b4513] rounded-full"></div>
                   <span>Google Gemini AI搭載</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <div className="w-2 h-2 bg-[#7c5a2a] rounded-full"></div>
                   <span>感情分析機能</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <div className="w-2 h-2 bg-[#deb887] rounded-full"></div>
                   <span>習慣継続サポート</span>
                 </div>
               </div>
@@ -48,14 +48,14 @@ export const HomeContent: React.FC<HomeContentProps> = ({ onLogin, onRegister, o
               <button
                 onClick={onRegister}
                 disabled={isLoading}
-                className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-lg transition-colors disabled:opacity-50"
+                className="px-8 py-4 bg-[#8b4513] hover:bg-[#7c5a2a] text-white rounded-xl font-bold text-lg transition-colors disabled:opacity-50"
               >
                 無料で始める
               </button>
               <button
                 onClick={onGuest}
                 disabled={isLoading}
-                className="px-8 py-4 border-2 border-slate-300 hover:border-slate-400 text-slate-700 rounded-xl font-bold text-lg transition-colors disabled:opacity-50"
+                className="px-8 py-4 bg-[#deb887] hover:bg-[#8b4513] text-[#8b4513] hover:text-white border-2 border-[#8b4513] rounded-xl font-bold text-lg transition-colors disabled:opacity-50"
               >
                 まずは体験
               </button>
@@ -76,37 +76,37 @@ export const HomeContent: React.FC<HomeContentProps> = ({ onLogin, onRegister, o
 
         {/* 特別体験セクション */}
         <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="bg-white/70 backdrop-blur rounded-2xl p-8 shadow-xl border border-slate-200">
+          <div className="bg-[#f5f5dc]/70 backdrop-blur rounded-2xl p-8 shadow-xl border border-[#deb887]">
             <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                {(FaBrain as any)({ className: "w-8 h-8 text-blue-600" })}
+              <div className="w-16 h-16 bg-[#deb887] rounded-full flex items-center justify-center mx-auto mb-4">
+                {(FaBrain as any)({ className: "w-8 h-8 text-[#8b4513]" })}
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">感情を理解するAI</h3>
-              <p className="text-slate-600">
+              <h3 className="text-xl font-bold text-[#8b4513] mb-3">感情を理解するAI</h3>
+              <p className="text-[#7c5a2a]">
                 "今日は疲れてるね、無理しなくていいよ"
               </p>
             </div>
           </div>
 
-          <div className="bg-white/70 backdrop-blur rounded-2xl p-8 shadow-xl border border-slate-200">
+          <div className="bg-[#f5f5dc]/70 backdrop-blur rounded-2xl p-8 shadow-xl border border-[#deb887]">
             <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                {(FaChartLine as any)({ className: "w-8 h-8 text-green-600" })}
+              <div className="w-16 h-16 bg-[#deb887] rounded-full flex items-center justify-center mx-auto mb-4">
+                {(FaChartLine as any)({ className: "w-8 h-8 text-[#8b4513]" })}
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">行動パターンの可視化</h3>
-              <p className="text-slate-600">
+              <h3 className="text-xl font-bold text-[#8b4513] mb-3">行動パターンの可視化</h3>
+              <p className="text-[#7c5a2a]">
                 "あなたは水曜日が一番集中できるタイプですね"
               </p>
             </div>
           </div>
 
-          <div className="bg-white/70 backdrop-blur rounded-2xl p-8 shadow-xl border border-slate-200">
+          <div className="bg-[#f5f5dc]/70 backdrop-blur rounded-2xl p-8 shadow-xl border border-[#deb887]">
             <div className="text-center">
-              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                {(FaHeart as any)({ className: "w-8 h-8 text-purple-600" })}
+              <div className="w-16 h-16 bg-[#deb887] rounded-full flex items-center justify-center mx-auto mb-4">
+                {(FaHeart as any)({ className: "w-8 h-8 text-[#8b4513]" })}
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">いつも寄り添うパートナー</h3>
-              <p className="text-slate-600">
+              <h3 className="text-xl font-bold text-[#8b4513] mb-3">いつも寄り添うパートナー</h3>
+              <p className="text-[#7c5a2a]">
                 "小さな一歩も、確実に前進です"
               </p>
             </div>

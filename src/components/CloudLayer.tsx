@@ -1,7 +1,7 @@
 import React from 'react';
 
 export const CloudLayer: React.FC = () => (
-  <div className="pointer-events-none absolute inset-0 w-full h-full overflow-hidden z-0">
+  <div className="pointer-events-none absolute inset-0 w-full h-full z-0">
     {/* 奥の雲（ゆっくり・小さめ・淡い） */}
     <svg
       className="absolute top-10 left-[-15vw] w-[40vw] opacity-60 blur-sm animate-cloud-move-slow"

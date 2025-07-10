@@ -1,20 +1,22 @@
 export interface Task {
   id: string;
   title: string;
-  description?: string;
+  description: string;
   status: 'todo' | 'doing' | 'done';
-  priority?: 'low' | 'medium' | 'high'; // 既存のTEXT型に合わせる
-  due_date?: string;
-  start_date?: string;
+  priority: 'low' | 'medium' | 'high'; // 既存のTEXT型に合わせる
+  due_date: string | null;
+  start_date: string | null;
   completed_at?: string;
   created_at: string;
   updated_at: string;
   user_id: string;
-  is_habit?: boolean;
+  is_habit: boolean;
   habit_frequency?: 'daily' | 'weekly' | 'monthly';
-  current_streak?: number;
+  current_streak: number;
   max_streak?: number;
-  last_completed_date?: string;
+  longest_streak?: number;
+  last_completed_date?: string | null;
+  streak_start_date?: string | null;
   category?: string; // カテゴリ（work, health, study, personal, hobby, other）
   estimated_duration?: number; // 予想所要時間（分）
   actual_duration?: number; // 実際の所要時間（分） - 後方互換性のため保持

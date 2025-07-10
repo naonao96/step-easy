@@ -9,6 +9,7 @@ interface MobileTaskCarouselProps {
   onCompleteTask: (id: string) => void;
   onDeleteTask: (id: string) => void;
   onEditTask?: (task: Task) => void;
+  onTaskClick?: (task: Task) => void;
   isHabit?: boolean;
 }
 
@@ -26,6 +27,7 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
   onCompleteTask,
   onDeleteTask,
   onEditTask,
+  onTaskClick,
   isHabit = false
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -394,14 +396,18 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
                 style={style}
               >
                 {/* Instagram Stories風のタスクカード */}
-                <div className={`
+                <div 
+                  className={`
                   w-full h-full bg-white rounded-3xl shadow-xl overflow-hidden
                   ${isCenter ? 'border-2 border-blue-400 mobile-carousel-shadow-center' : 'border border-gray-200 mobile-carousel-shadow'}
                   ${task.status === 'done' ? 'opacity-75' : ''}
                   ${isDragging ? '' : 'transition-all duration-300'}
                   ${isCenter ? 'ring-2 ring-blue-200 ring-opacity-30' : ''}
                   backdrop-blur-sm
-                `}>
+                    ${isCenter && onTaskClick ? 'cursor-pointer' : ''}
+                  `}
+                  onClick={isCenter && onTaskClick ? () => onTaskClick(task) : undefined}
+                >
                   {/* カードヘッダー + タイトル（横並び） */}
                   <div className="p-3 pb-2">
                     <div className="flex items-start justify-between">

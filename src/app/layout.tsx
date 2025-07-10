@@ -48,7 +48,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} min-h-screen overflow-x-hidden`}> 
         {/* 背景レイヤー（最背面） */}
-        <div className="absolute inset-0 w-full h-full z-[-10] pointer-events-none select-none bg-gradient-to-b from-sky-200 to-sky-50">
+        <div className="fixed inset-0 w-full h-full z-[-10] pointer-events-none select-none bg-gradient-to-b from-sky-200 to-sky-50">
           <CloudLayer />
         </div>
         {/* 既存のApp全体レイアウト */}

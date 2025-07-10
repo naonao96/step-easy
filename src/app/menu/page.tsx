@@ -7,15 +7,18 @@ import { useTaskStore, Task } from '@/stores/taskStore';
 import { AppLayout } from '@/components/templates/AppLayout';
 import { Calendar } from '@/components/molecules/Calendar';
 import { Character } from '@/components/molecules/Character';
-import { ActivityStats } from '@/components/molecules/ActivityStats';
-import { CategoryStats } from '@/components/molecules/CategoryStats';
-import { HeatmapChart } from '@/components/molecules/HeatmapChart';
+
 import { TaskListHome } from '@/components/molecules/TaskListHome';
 import { GuestMigrationModal } from '@/components/molecules/GuestMigrationModal';
 import { ModernMobileHome } from '@/components/molecules/ModernMobileHome';
 import { PremiumComingSoonBanner } from '@/components/molecules/PremiumComingSoonBanner';
 import { PremiumPreviewModal } from '@/components/molecules/PremiumPreviewModal';
 import { NotificationSignupForm } from '@/components/molecules/NotificationSignupForm';
+import { TaskModal } from '@/components/molecules/TaskModal';
+import { HabitModal } from '@/components/molecules/HabitModal';
+import { TaskPreviewModal } from '@/components/molecules/TaskPreviewModal';
+import { TaskEditModal } from '@/components/molecules/TaskEditModal';
+import { MobileTaskModal } from '@/components/molecules/MobileTaskModal';
 import { getGuestTasks, migrateGuestTasks, clearGuestTasks } from '@/lib/guestMigration';
 import { useCharacterMessage } from '@/hooks/useCharacterMessage';
 import { useEmotionLog } from '@/hooks/useEmotionLog';
@@ -44,8 +47,13 @@ export default function MenuPage() {
   const [contentHeight, setContentHeight] = useState(46); // rem単位（カレンダーと統一）
   const [speechBubbleVisible, setSpeechBubbleVisible] = useState(false);
   const [autoHideTimer, setAutoHideTimer] = useState<NodeJS.Timeout | null>(null);
-  const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showNotificationForm, setShowNotificationForm] = useState(false);
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [showHabitModal, setShowHabitModal] = useState(false);
+  const [showPremiumPreviewModal, setShowPremiumPreviewModal] = useState(false);
+  const [showTaskPreviewModal, setShowTaskPreviewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const isDesktop = useMediaQuery({ minWidth: 1024 });
   useEffect(() => { setMounted(true); }, []);
@@ -397,8 +405,14 @@ export default function MenuPage() {
     }
   };
 
-  const handleEditTask = (task: Task) => {
-    router.push(`/tasks?id=${task.id}&edit=true`);
+  const handleEditTask = (task: any) => {
+    setSelectedTask(task as any);
+    setShowEditModal(true);
+  };
+
+  const handleTaskClick = (task: any) => {
+    setSelectedTask(task as any);
+    setShowTaskPreviewModal(true);
   };
 
   const handleMigrationConfirm = async () => {
@@ -444,15 +458,43 @@ export default function MenuPage() {
     }
   }, []);
 
-  // FABクリック時の処理（現在のタブに応じてタスク追加画面に遷移）
+  // FABクリック時の処理（現在のタブに応じて直接モーダル表示）
   const handleFABClick = () => {
     if (currentMobileTab === 'habits') {
-      // 習慣追加画面に遷移（習慣モードでタスクページを開く）
-      router.push('/tasks?type=habit');
+      setShowHabitModal(true);
     } else {
-      // 通常のタスク追加画面に遷移
-      router.push('/tasks?type=task');
+      setShowTaskModal(true);
     }
+  };
+
+  // モーダル表示のイベントリスナー
+  useEffect(() => {
+    const handleShowTaskModal = (event: CustomEvent) => {
+      setShowTaskModal(true);
+    };
+
+    const handleShowHabitModal = (event: CustomEvent) => {
+      setShowHabitModal(true);
+    };
+
+    window.addEventListener('showTaskModal', handleShowTaskModal as EventListener);
+    window.addEventListener('showHabitModal', handleShowHabitModal as EventListener);
+    
+    return () => {
+      window.removeEventListener('showTaskModal', handleShowTaskModal as EventListener);
+      window.removeEventListener('showHabitModal', handleShowHabitModal as EventListener);
+    };
+  }, []);
+
+  // タブ変更時の処理
+  const handleTabChange = (tab: 'tasks' | 'habits') => {
+    setCurrentMobileTab(tab);
+  };
+
+  // モバイル版のタブ変更時のモーダル表示処理
+  const handleMobileTabChange = (tab: 'tasks' | 'habits') => {
+    setCurrentMobileTab(tab);
+    // モバイル版ではタブ変更時にモーダルを表示しない（FABクリック時のみ）
   };
 
   return (
@@ -468,9 +510,9 @@ export default function MenuPage() {
           characterMessage={characterMessage}
           onCompleteTask={handleCompleteTask}
           onDeleteTask={handleDeleteTask}
-          onEditTask={handleEditTask}
+          onEditTask={(task) => handleEditTask(task as any)}
           onDateSelect={setSelectedDate}
-          onTabChange={setCurrentMobileTab}
+          onTabChange={handleMobileTabChange}
           onTaskUpdate={fetchTasks} // データ更新関数を追加
         />
       </div>
@@ -506,8 +548,9 @@ export default function MenuPage() {
               <TaskListHome
                 tasks={selectedDateTasks as any}
                 selectedDate={selectedDate}
-                onAddTask={() => router.push('/tasks')}
                 onCompleteTask={handleCompleteTask}
+                onTaskClick={handleTaskClick}
+                onEditTask={handleEditTask}
                 height={46}
               />
               <Calendar 
@@ -523,16 +566,13 @@ export default function MenuPage() {
 
             {/* 中段：統計・傾向（アラートはサイドバーに移動） */}
             <div className="grid grid-cols-1 lg:grid-cols-3 md:grid-cols-2 gap-4 mb-6">
-              <ActivityStats tasks={tasks} selectedDateTasks={selectedDateTasks} selectedDate={selectedDate} />
-              <CategoryStats tasks={tasks} />
-              <HeatmapChart tasks={tasks} />
             </div>
 
             {/* プレミアム導線（デスクトップ版）- 一番下に移動 */}
             {(isGuest || (!isGuest && planType === 'free')) && (
               <div className="mb-6">
                 <PremiumComingSoonBanner
-                  onPreviewClick={() => setShowPreviewModal(true)}
+                  onPreviewClick={() => setShowPremiumPreviewModal(true)}
                   onNotificationSignup={() => setShowNotificationForm(true)}
                 />
               </div>
@@ -554,10 +594,10 @@ export default function MenuPage() {
 
       {/* プレミアム関連モーダル（デスクトップ版） */}
       <PremiumPreviewModal
-        isOpen={showPreviewModal}
-        onClose={() => setShowPreviewModal(false)}
+        isOpen={showPremiumPreviewModal}
+        onClose={() => setShowPremiumPreviewModal(false)}
         onNotificationSignup={() => {
-          setShowPreviewModal(false);
+          setShowPremiumPreviewModal(false);
           setShowNotificationForm(true);
         }}
       />
@@ -569,6 +609,90 @@ export default function MenuPage() {
           console.log('Premium notification signup successful (desktop)');
         }}
       />
+
+
+
+      {/* タスク作成モーダル */}
+      <TaskModal
+        isOpen={showTaskModal}
+        onClose={() => setShowTaskModal(false)}
+      />
+
+      {/* 習慣作成モーダル */}
+      <HabitModal
+        isOpen={showHabitModal}
+        onClose={() => setShowHabitModal(false)}
+      />
+
+      {/* タスクプレビュー・編集モーダル */}
+      {selectedTask && (
+        <>
+          <TaskPreviewModal
+            task={selectedTask}
+            isOpen={showTaskPreviewModal}
+            onClose={() => setShowTaskPreviewModal(false)}
+            onEdit={(task) => {
+              setSelectedTask(task as any);
+              setShowTaskPreviewModal(false);
+              setShowEditModal(true);
+            }}
+            onDelete={handleDeleteTask}
+            onComplete={handleCompleteTask}
+            onRefresh={fetchTasks}
+          />
+
+          <TaskEditModal
+            task={selectedTask}
+            isOpen={showEditModal}
+            onClose={() => setShowEditModal(false)}
+            onSave={async (taskData) => {
+              if (selectedTask) {
+                await updateTask(selectedTask.id, taskData);
+              }
+            }}
+            onDelete={handleDeleteTask}
+            onPreview={(task) => {
+              setSelectedTask(task as any);
+              setShowEditModal(false);
+              setShowTaskPreviewModal(true);
+            }}
+            onRefresh={fetchTasks}
+          />
+        </>
+      )}
+
+      {/* モバイル版専用モーダル */}
+      {selectedTask && (
+        <>
+          <MobileTaskModal
+            isOpen={showTaskPreviewModal && !isDesktop}
+            onClose={() => setShowTaskPreviewModal(false)}
+            mode="preview"
+            task={selectedTask as any}
+            onSave={async (taskData) => {
+              if (selectedTask) {
+                await updateTask(selectedTask.id, taskData);
+              }
+            }}
+            onDelete={handleDeleteTask}
+            onComplete={handleCompleteTask}
+          />
+
+          <MobileTaskModal
+            isOpen={showEditModal && !isDesktop}
+            onClose={() => setShowEditModal(false)}
+            mode="edit"
+            task={selectedTask as any}
+            onSave={async (taskData) => {
+              if (selectedTask) {
+                await updateTask(selectedTask.id, taskData);
+              }
+            }}
+            onDelete={handleDeleteTask}
+            onComplete={handleCompleteTask}
+          />
+        </>
+      )}
     </AppLayout>
   );
 }

@@ -64,47 +64,46 @@ export default function LoginPage() {
 
   return (
     <Layout>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="max-w-md w-full space-y-8">
           {/* ロゴ・ブランディングセクション */}
           <div className="text-center">
             <div className="flex justify-center mb-6">
               <div className="relative">
-                {/* 小鳥キャラクター */}
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center shadow-lg border-4 border-white">
+                {/* 小鳥キャラクター - 1.5倍拡大 */}
+                <div className="relative" style={{ height: '3cm', width: 'auto', display: 'flex', alignItems: 'center', zIndex: 40 }}>
+                  {/* 半透明の円（半径2cm）- 背面に配置 */}
+                  <div className="absolute inset-0 w-32 h-32 rounded-full border-2 transform -translate-x-1/2 -translate-y-1/2 bg-blue-200/20 border-blue-300/30" style={{ left: '50%', top: '50%', zIndex: -1 }}></div>
+                  
                   <Image 
                     src="/TalkToTheBird.png" 
                     alt="StepEasy小鳥" 
-                    width={48} 
-                    height={48}
+                    width={72} 
+                    height={72}
                     className="rounded-full"
+                    style={{ transform: 'scale(1.5)' }}
                   />
-                </div>
-                {/* 吹き出し */}
-                <div className="absolute -top-2 -right-16 bg-white border border-slate-200 rounded-lg px-3 py-1 shadow-sm">
-                  <div className="text-xs text-slate-600 whitespace-nowrap">おかえり！</div>
-                  <div className="absolute left-2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
                 </div>
               </div>
             </div>
-            <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
+            <h2 className="text-3xl font-bold text-amber-900 tracking-tight">
               おかえりなさい
             </h2>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-2 text-sm text-amber-700">
               小鳥と一緒にタスク管理を続けましょう
             </p>
           </div>
 
           {/* メインフォーム */}
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+          <div className="bg-amber-50 p-8 rounded-2xl shadow-sm border border-amber-200">
             {/* Googleログインボタン */}
             <button
               onClick={handleGoogleSignIn}
               disabled={isGoogleLoading || isLoading}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-slate-300 rounded-xl text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-amber-300 rounded-xl text-amber-700 bg-white hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isGoogleLoading ? (
-                <div className="w-5 h-5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></div>
+                <div className="w-5 h-5 border-2 border-amber-300 border-t-amber-600 rounded-full animate-spin"></div>
               ) : (
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -118,9 +117,9 @@ export default function LoginPage() {
 
             {/* 区切り線 */}
             <div className="my-6 flex items-center">
-              <div className="flex-1 border-t border-slate-200"></div>
-              <div className="mx-4 text-sm text-slate-500 bg-white px-2">または</div>
-              <div className="flex-1 border-t border-slate-200"></div>
+              <div className="flex-1 border-t border-amber-200"></div>
+              <div className="mx-4 text-sm text-amber-600 bg-amber-50 px-2">または</div>
+              <div className="flex-1 border-t border-amber-200"></div>
             </div>
 
             {/* メールログインフォーム */}
@@ -171,7 +170,7 @@ export default function LoginPage() {
               type="submit"
               variant="primary"
               size="lg"
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-3 rounded-xl shadow-sm"
+                className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-medium py-3 rounded-xl shadow-sm"
               isLoading={isLoading}
                 disabled={isGoogleLoading}
             >
@@ -179,13 +178,13 @@ export default function LoginPage() {
             </Button>
           </form>
 
-            {/* 新規登録リンク */}
+            {/* 新規登録リンク - 視認性改善 */}
             <div className="mt-6 text-center">
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-amber-800">
                 アカウントをお持ちでないですか？{' '}
                 <button
                   onClick={() => router.push('/register')}
-                  className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+                  className="font-semibold text-amber-900 hover:text-amber-700 transition-colors underline"
                 >
                   新規登録
                 </button>

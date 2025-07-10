@@ -74,6 +74,15 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   const router = useRouter();
   const { isGuest, isPremium, planType, canAddTaskOnDate, user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('habits');
+
+  // タブ変更時の処理
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    // 親コンポーネントにタブ変更を通知
+    if (onTabChange) {
+      onTabChange(tab);
+    }
+  };
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   
   // 感情記録の状態を取得
@@ -405,7 +414,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
       <div className="bg-white border-b border-gray-200">
         <div className="flex">
           <button
-            onClick={() => setActiveTab('habits')}
+            onClick={() => handleTabChange('habits')}
             className={`flex-1 py-3 px-4 text-center font-medium transition-colors ${
               activeTab === 'habits'
                 ? 'text-blue-600 border-b-2 border-blue-600'
@@ -424,7 +433,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
           </button>
           
           <button
-            onClick={() => setActiveTab('tasks')}
+            onClick={() => handleTabChange('tasks')}
             className={`flex-1 py-3 px-4 text-center font-medium transition-colors ${
               activeTab === 'tasks'
                 ? 'text-[#7c5a2a] border-b-2 border-[#7c5a2a]'

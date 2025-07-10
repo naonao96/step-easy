@@ -26,6 +26,9 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, on
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
 
+  // 選択中の日付を管理
+  const [clickedDate, setClickedDate] = useState<Date | null>(null);
+
   // 月の情報を計算
   const monthData = useMemo(() => {
     const firstDay = new Date(currentYear, currentMonth, 1);
@@ -179,20 +182,16 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, on
     // カレンダーモードに応じた色とアイコン
     if (calendarMode === 'tasks') {
       return {
-        dotColor: 'bg-red-500', // タスクは赤色
+        dotColor: 'bg-[#8B4513]', // タスクは濃い茶色
         count: dayTasks.length,
         icon: '📋'
       };
     } else {
       // 習慣モード
-      const overdueHabits = dayTasks.filter(task => isHabitOverdue(task));
-      const normalHabits = dayTasks.filter(task => !isHabitOverdue(task));
-    
     return {
-        dotColor: overdueHabits.length > 0 ? 'bg-orange-500' : 'bg-blue-500', // 期限切れはオレンジ、通常は青
+        dotColor: 'bg-[#D2691E]', // 習慣はチョコレート色
         count: dayTasks.length,
-        icon: '🔥',
-        overdueCount: overdueHabits.length
+        icon: '🔥'
       };
     }
   };
@@ -217,6 +216,17 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, on
   }, [onHeightChange, activeHabits.length, calendarMode, displayMode]);
 
   const handleDateClick = (date: Date) => {
+    // 今日の日付をクリックした場合、選択状態をクリア
+    const isToday = date.getDate() === today.getDate() && 
+                   date.getMonth() === today.getMonth() && 
+                   date.getFullYear() === today.getFullYear();
+    
+    if (isToday) {
+      setClickedDate(null);
+    } else {
+      setClickedDate(date);
+    }
+    
     if (onDateSelect) {
       onDateSelect(date);
     }
@@ -283,18 +293,6 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, on
     }
   };
 
-  // 習慣の期限切れチェック
-  const isHabitOverdue = (task: Task) => {
-    if (!task.is_habit || !task.due_date) return false;
-    
-    const dueDate = new Date(task.due_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    dueDate.setHours(0, 0, 0, 0);
-    
-    return dueDate.getTime() < today.getTime() && task.status !== 'done';
-  };
-
   // タスクアイコンを取得
   const getTaskIcon = (task: Task) => {
     if (task.is_habit) {
@@ -332,7 +330,7 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, on
     >
       {/* カレンダーのタイトルを最上部に移動 */}
       <div className="mb-2">
-        <h2 className="text-lg font-semibold text-gray-900">カレンダー</h2>
+        <h2 className="text-lg font-semibold text-[#8b4513]">カレンダー</h2>
       </div>
       {/* ヘッダー部分（凡例・切り替え・ナビゲーション） */}
       <div className="flex justify-between items-center mb-4">
@@ -342,64 +340,60 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, on
             <button
               onMouseEnter={() => setShowLegendTooltip(true)}
               onMouseLeave={() => setShowLegendTooltip(false)}
-              className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+              className="p-1 text-[#7c5a2a] hover:text-[#8b4513] transition-colors"
               title="凡例を表示"
             >
               {FaInfoCircle({ className: "w-4 h-4" })}
             </button>
             {/* ツールチップ */}
             {showLegendTooltip && (
-              <div className="absolute top-full left-0 mt-2 z-10 bg-white border border-gray-200 rounded-lg shadow-lg p-3 whitespace-nowrap">
-                <div className="text-sm font-medium text-gray-900 mb-2">凡例</div>
+              <div className="absolute top-full left-0 mt-2 z-10 bg-white border border-[#deb887] rounded-lg shadow-lg p-3 whitespace-nowrap">
+                <div className="text-sm font-medium text-[#8b4513] mb-2">凡例</div>
                 <div className="space-y-2">
                   {/* 習慣モードの凡例 */}
                   {calendarMode === 'habits' && (
                     <>
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0"></div>
-                        <span className="text-sm text-gray-700">習慣あり</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-orange-500 rounded-full flex-shrink-0"></div>
-                        <span className="text-sm text-gray-700">期限切れ習慣</span>
+                        <div className="w-3 h-3 bg-[#D2691E] rounded-full flex-shrink-0"></div>
+                        <span className="text-sm text-[#7c5a2a]">習慣あり</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="text-sm text-gray-500">📅 毎日</span>
-                        <span className="text-sm text-gray-500">📊 毎週</span>
-                        <span className="text-sm text-gray-500">🗓️ 毎月</span>
+                        <span className="text-sm text-[#7c5a2a]">📅 毎日</span>
+                        <span className="text-sm text-[#7c5a2a]">📊 毎週</span>
+                        <span className="text-sm text-[#7c5a2a]">🗓️ 毎月</span>
                       </div>
                     </>
                   )}
                   {/* タスクモードの凡例 */}
                   {calendarMode === 'tasks' && (
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-red-500 rounded-full flex-shrink-0"></div>
-                      <span className="text-sm text-gray-700">タスクあり</span>
+                      <div className="w-3 h-3 bg-[#8B4513] rounded-full flex-shrink-0"></div>
+                      <span className="text-sm text-[#7c5a2a]">タスクあり</span>
                     </div>
                   )}
                   {/* 共通の凡例 */}
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0"></div>
-                    <span className="text-sm text-gray-700">今日</span>
+                    <div className="w-3 h-3 bg-green-300 rounded-full flex-shrink-0"></div>
+                    <span className="text-sm text-[#7c5a2a]">今日</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-blue-600 rounded-full ring-2 ring-blue-300 flex-shrink-0"></div>
-                    <span className="text-sm text-gray-700">選択中</span>
+                    <div className="w-3 h-3 bg-[#f5f5dc] rounded-full ring-2 ring-[#deb887] flex-shrink-0"></div>
+                    <span className="text-sm text-[#7c5a2a]">選択中</span>
                   </div>
                 </div>
                 {/* ツールチップの矢印 */}
-                <div className="absolute -top-1 left-4 w-2 h-2 bg-white border-l border-t border-gray-200 transform rotate-45"></div>
+                <div className="absolute -top-1 left-4 w-2 h-2 bg-white border-l border-t border-[#deb887] transform rotate-45"></div>
               </div>
             )}
           </div>
           {/* 表示モード切り替え */}
-          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-[#f5f5dc] rounded-lg p-1">
             <button
               onClick={() => setDisplayMode('month')}
               className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${
                 displayMode === 'month' 
-                  ? 'bg-white text-blue-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-800'
+                  ? 'bg-white text-[#7c5a2a] shadow-sm' 
+                  : 'text-[#7c5a2a] hover:text-[#8b4513]'
               }`}
             >
               {FaCalendarAlt({ className: "w-3 h-3" })}
@@ -409,21 +403,21 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, on
               onClick={() => setDisplayMode('week')}
               className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${
                 displayMode === 'week' 
-                  ? 'bg-white text-blue-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-800'
+                  ? 'bg-white text-[#7c5a2a] shadow-sm' 
+                  : 'text-[#7c5a2a] hover:text-[#8b4513]'
               }`}
             >
               <span>週</span>
             </button>
           </div>
           {/* カレンダーモード切り替え */}
-          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-[#f5f5dc] rounded-lg p-1">
             <button
               onClick={() => setCalendarMode('habits')}
               className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${
                 calendarMode === 'habits' 
-                  ? 'bg-white text-orange-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-800'
+                  ? 'bg-white text-[#7c5a2a] shadow-sm' 
+                  : 'text-[#7c5a2a] hover:text-[#8b4513]'
               }`}
             >
               {FaFire({ className: "w-3 h-3" })}
@@ -433,8 +427,8 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, on
               onClick={() => setCalendarMode('tasks')}
               className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${
                 calendarMode === 'tasks' 
-                  ? 'bg-white text-red-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-800'
+                  ? 'bg-white text-[#7c5a2a] shadow-sm' 
+                  : 'text-[#7c5a2a] hover:text-[#8b4513]'
               }`}
             >
               {FaTasks({ className: "w-3 h-3" })}
@@ -446,21 +440,21 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, on
         <div className="flex items-center gap-2">
           <button
             onClick={displayMode === 'month' ? goToPreviousMonth : goToPreviousWeek}
-            className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+            className="p-1 text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded transition-colors"
             title={displayMode === 'month' ? '前月' : '前週'}
           >
             {FaChevronLeft({ size: 16 })}
           </button>
           <button
             onClick={displayMode === 'month' ? goToToday : goToThisWeek}
-            className="text-sm text-gray-500 hover:text-gray-700 px-2 py-1 hover:bg-gray-100 rounded transition-colors"
+            className="text-sm text-[#7c5a2a] hover:text-[#8b4513] px-2 py-1 hover:bg-[#f5f5dc] rounded transition-colors"
             title={displayMode === 'month' ? '今日の月に戻る' : '今週に戻る'}
           >
             {displayMode === 'month' ? monthData.monthName : weekData.weekName}
           </button>
           <button
             onClick={displayMode === 'month' ? goToNextMonth : goToNextWeek}
-            className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+            className="p-1 text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded transition-colors"
             title={displayMode === 'month' ? '次月' : '次週'}
           >
             {FaChevronRight({ size: 16 })}
@@ -472,7 +466,7 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, on
       {displayMode === 'month' && (
         <div className="grid grid-cols-7 gap-3 w-full mb-4">
           {['日', '月', '火', '水', '木', '金', '土'].map((day, i) => (
-            <div key={day} className="p-3 text-center text-sm font-semibold text-gray-700 bg-gray-50 rounded-lg">
+            <div key={day} className="p-3 text-center text-sm font-semibold text-[#7c5a2a] bg-[#f5f5dc] rounded-lg">
               {day}
             </div>
           ))}
@@ -487,6 +481,10 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, on
                                date.getMonth() === today.getMonth() && 
                                date.getFullYear() === today.getFullYear();
             const isCurrentMonthDate = date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+            const isClickedDate = clickedDate && 
+                                 date.getDate() === clickedDate.getDate() && 
+                                 date.getMonth() === clickedDate.getMonth() && 
+                                 date.getFullYear() === clickedDate.getFullYear();
             const dayTasks = getTasksForDate(date);
             const taskInfo = getTaskDisplayInfo(dayTasks);
             
@@ -495,20 +493,22 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, on
                 key={i}
                 className={`relative p-3 text-center cursor-pointer rounded-xl transition-all duration-200 flex flex-col items-center justify-between h-20 ${
                   isTodayDate 
-                    ? 'bg-blue-50 ring-2 ring-blue-200 shadow-sm' 
+                    ? 'bg-green-100/50 ring-2 ring-green-300 shadow-sm' 
+                    : isClickedDate
+                    ? 'bg-[#f5f5dc] ring-2 ring-[#deb887] shadow-sm'
                     : isCurrentMonthDate
-                    ? 'bg-white border border-gray-100 hover:bg-gray-50 hover:shadow-md'
-                    : 'bg-gray-50 border border-gray-100'
+                    ? 'bg-white border border-[#deb887] hover:bg-[#f5f5dc] hover:shadow-md'
+                    : 'bg-[#f5f5dc] border border-[#deb887]'
                 }`}
                 onClick={() => handleDateClick(date)}
               >
                 {/* 1列目: 日付 */}
                 <div className={`text-sm font-bold ${
                   isTodayDate 
-                    ? 'text-blue-700' 
+                    ? 'text-[#8b4513]' 
                     : isCurrentMonthDate 
-                    ? 'text-gray-900' 
-                    : 'text-gray-400'
+                    ? 'text-[#8b4513]' 
+                    : 'text-[#7c5a2a]'
                 }`}>
                   {date.getDate()}
                 </div>
@@ -525,11 +525,9 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, on
                 {/* 3列目: 習慣数・タスク数 */}
                 <div className="flex justify-center">
                   {taskInfo && taskInfo.count >= 1 ? (
-                    <div className="bg-gray-100 rounded-full px-1.5 py-0.5">
-                      <span className="text-xs font-semibold text-gray-700">
+                    <span className="text-xs font-semibold text-[#7c5a2a]">
                         {taskInfo.count}
                       </span>
-                    </div>
                   ) : (
                     <div className="h-5"></div>
                   )}
@@ -546,7 +544,7 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, on
           {Array.from({ length: 7 }).map((_, i) => (
             <div key={i} className="flex flex-row items-start gap-2 w-full min-h-[4.5rem]">
               {/* 曜日ラベル */}
-              <div className="w-10 flex-shrink-0 p-3 text-left text-sm font-semibold text-gray-700 bg-gray-50 rounded-lg flex items-center justify-center">
+              <div className="w-10 flex-shrink-0 p-3 text-left text-sm font-semibold text-[#7c5a2a] bg-[#f5f5dc] rounded-lg flex items-center justify-center">
                 {['日', '月', '火', '水', '木', '金', '土'][i]}
               </div>
               {/* 日付セル */}
@@ -555,21 +553,27 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, on
                 const isTodayDate = date.getDate() === today.getDate() && 
                                    date.getMonth() === today.getMonth() && 
                                    date.getFullYear() === today.getFullYear();
+                const isClickedDate = clickedDate && 
+                                     date.getDate() === clickedDate.getDate() && 
+                                     date.getMonth() === clickedDate.getMonth() && 
+                                     date.getFullYear() === clickedDate.getFullYear();
                 const dayTasks = getTasksForDate(date);
                 const taskInfo = getTaskDisplayInfo(dayTasks);
                 return (
                   <div
                     className={`relative p-3 text-left cursor-pointer rounded-xl transition-all duration-200 flex flex-col items-start justify-start w-full ${
                       isTodayDate 
-                        ? 'bg-blue-50 ring-2 ring-blue-200 shadow-sm' 
-                        : 'bg-white border border-gray-100 hover:bg-gray-50 hover:shadow-md'
+                        ? 'bg-green-100/50 ring-2 ring-green-300 shadow-sm' 
+                        : isClickedDate
+                        ? 'bg-[#f5f5dc] ring-2 ring-[#deb887] shadow-sm'
+                        : 'bg-white border border-[#deb887] hover:bg-[#f5f5dc] hover:shadow-md'
                     }`}
                     style={{ minHeight: '5rem' }}
                     onClick={() => handleDateClick(date)}
                   >
                     {/* 日付 */}
                     <div className={`text-sm font-bold mb-1 ${
-                      isTodayDate ? 'text-blue-700' : 'text-gray-900'
+                      isTodayDate ? 'text-[#8b4513]' : 'text-[#8b4513]'
                     }`}>
                       {date.getDate()}
                     </div>
@@ -586,8 +590,8 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, on
                         {dayTasks.slice(0, 6).map((task, idx) => (
                           <div
                             key={task.id}
-                            className={`flex items-center gap-1 px-2 py-1 rounded bg-gray-50 max-w-[8rem] ${
-                              task.status === 'done' ? 'line-through text-gray-400 bg-gray-100' : task.is_habit ? 'text-orange-700 bg-orange-50' : 'text-blue-700 bg-blue-50'
+                            className={`flex items-center gap-1 px-2 py-1 rounded bg-[#f5f5dc] max-w-[8rem] ${
+                              task.status === 'done' ? 'line-through text-[#7c5a2a] bg-[#deb887]' : task.is_habit ? 'text-[#8b4513] bg-[#deb887]' : 'text-[#7c5a2a] bg-[#f5f5dc]'
                             }`}
                             title={task.title}
                             style={{ fontSize: '11px' }}
@@ -597,7 +601,7 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, on
                           </div>
                         ))}
                         {dayTasks.length > 6 && (
-                          <div className="text-[10px] text-gray-500 font-medium bg-gray-100 px-2 py-1 rounded">
+                          <div className="text-[10px] text-[#7c5a2a] font-medium bg-[#deb887] px-2 py-1 rounded">
                             +{dayTasks.length - 6}件
                           </div>
                         )}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaTasks, FaFire, FaChartLine, FaRobot, FaClock, FaGem, FaSearch, FaBars, FaTimes, FaCog } from 'react-icons/fa';
+import { FaTasks, FaFire, FaChartLine, FaRobot, FaClock, FaGem, FaSearch, FaBars, FaTimes, FaCog, FaHeart } from 'react-icons/fa';
 
 interface FeatureGuideProps {
   className?: string;
@@ -245,6 +245,38 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
       ]
     },
     {
+      id: 'emotion-recording',
+      title: '感情記録機能',
+      icon: FaHeart,
+      description: '朝・昼・晩の感情を記録し、AIメッセージに反映する心理サポート機能',
+      features: [
+        {
+          name: '朝・昼・晩の感情記録',
+          description: '1日3回（朝・昼・晩）の感情を記録し、心理状態を把握',
+          howToUse: 'キャラクターをクリックして感情メニューを開き、現在の気持ちを選択',
+          status: 'implemented'
+        },
+        {
+          name: '感情分析とAIメッセージ反映',
+          description: '記録した感情データをAIメッセージ生成に活用し、より適切なサポートを提供',
+          howToUse: '感情記録後、AIが自動的に感情状態を分析してメッセージを調整',
+          status: 'implemented'
+        },
+        {
+          name: '感情パターンの可視化',
+          description: 'ポジティブ/ネガティブ感情の傾向分析と連続日数の計算',
+          howToUse: '感情データから行動パターンと心理状態の変化を分析',
+          status: 'implemented'
+        },
+        {
+          name: '心理サポート機能',
+          description: 'ストレスレベル判定、モチベーション分析、休息提案による心理的サポート',
+          howToUse: '感情記録に基づいてAIが適切な心理的サポートを提供',
+          status: 'implemented'
+        }
+      ]
+    },
+    {
       id: 'ai-support',
       title: 'AIサポート',
       icon: FaRobot,
@@ -252,19 +284,19 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
       features: [
         {
           name: '感情分析AI',
-          description: 'タスクの進捗状況から感情状態を分析し、適切なメッセージを生成',
+          description: 'タスクの進捗状況と感情記録から感情状態を分析し、適切なメッセージを生成',
           howToUse: 'ホーム画面でキャラクターからのメッセージを確認',
           status: 'implemented'
         },
         {
           name: 'パーソナライズメッセージ',
-          description: 'ユーザーの行動パターンと感情状態に基づく個別化されたアドバイス',
+          description: 'ユーザーの行動パターン、感情状態、時間帯・曜日を考慮した個別化されたアドバイス',
           howToUse: '毎日自動更新、ユーザーの状況に応じてメッセージが変化',
           status: 'implemented'
         },
         {
           name: '心理的サポート',
-          description: 'ストレス高・モチベーション低時の配慮、休息提案',
+          description: 'ストレス高・モチベーション低時の配慮、休息提案、感情状態に寄り添ったサポート',
           howToUse: 'AIが自動判定、優しい口調でのメッセージ提供',
           status: 'implemented'
         },
@@ -427,21 +459,21 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow-md ${className} relative`}>
+    <div className={`bg-[#f5f5dc] rounded-lg shadow-md ${className} relative`}>
       {/* ヘッダー */}
-      <div className="border-b border-slate-200 p-6 sticky top-0 bg-white/95 backdrop-blur z-10">
+      <div className="border-b border-[#deb887] p-6 sticky top-0 bg-[#f5f5dc]/95 backdrop-blur z-10">
         <div className="flex items-center gap-4 mb-4">
           {isMobile && (
             <button
               onClick={() => setSidebarOpen(true)}
-              className="p-2 rounded-xl bg-blue-100 hover:bg-blue-200 text-blue-600 transition-colors"
+              className="p-2 rounded-xl bg-[#deb887] hover:bg-[#8b4513] text-[#8b4513] hover:text-white transition-colors"
             >
               {(FaBars as any)({ className: "w-5 h-5" })}
             </button>
           )}
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-slate-900 mb-2">StepEasy 機能ガイド</h1>
-            <p className="text-slate-600">
+            <h1 className="text-2xl font-bold text-[#8b4513] mb-2">StepEasy 機能ガイド</h1>
+            <p className="text-[#7c5a2a]">
               現在実装されている機能と今後追加予定の機能を詳しく説明します
             </p>
           </div>
@@ -450,14 +482,14 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
         {/* 検索バー */}
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            {(FaSearch as any)({ className: "h-4 w-4 text-slate-400" })}
+            {(FaSearch as any)({ className: "h-4 w-4 text-[#7c5a2a]" })}
           </div>
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="機能を検索..."
-            className="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-xl leading-5 bg-white placeholder-slate-500 focus:outline-none focus:placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="block w-full pl-10 pr-3 py-2 border border-[#deb887] rounded-xl leading-5 bg-white placeholder-[#7c5a2a] focus:outline-none focus:placeholder-[#8b4513] focus:ring-2 focus:ring-[#8b4513] focus:border-[#8b4513]"
           />
         </div>
       </div>
@@ -465,7 +497,7 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
       <div className="flex">
         {/* デスクトップサイドバー */}
         {!isMobile && (
-          <div className="w-64 border-r border-slate-200 p-4">
+          <div className="w-64 border-r border-[#deb887] p-4">
             <nav className="space-y-2">
               {featureSections.map((section) => {
                 const IconComponent = section.icon;
@@ -477,15 +509,15 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
                     onClick={() => selectSection(section.id)}
                     className={`w-full flex items-center gap-3 px-3 py-2 text-left rounded-xl transition-colors ${
                       isActive
-                        ? 'bg-blue-100 text-blue-900 border-2 border-blue-200 shadow-sm'
-                        : 'text-slate-700 hover:bg-slate-50 border-2 border-transparent'
+                        ? 'bg-[#deb887] text-[#8b4513] border-2 border-[#8b4513] shadow-sm'
+                        : 'text-[#7c5a2a] hover:bg-[#deb887] border-2 border-transparent'
                     }`}
                   >
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                      isActive ? 'bg-blue-600' : 'bg-slate-100'
+                      isActive ? 'bg-[#8b4513]' : 'bg-[#deb887]'
                     }`}>
                       {(IconComponent as any)({ 
-                        className: `w-4 h-4 ${isActive ? 'text-white' : 'text-slate-600'}` 
+                        className: `w-4 h-4 ${isActive ? 'text-white' : 'text-[#8b4513]'}` 
                       })}
                     </div>
                     <span className="font-medium">{section.title}</span>
@@ -506,29 +538,29 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
             return (
               <div key={section.id}>
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center">
-                    {(IconComponent as any)({ className: "w-6 h-6 text-blue-600" })}
+                  <div className="w-12 h-12 bg-[#deb887] rounded-2xl flex items-center justify-center">
+                    {(IconComponent as any)({ className: "w-6 h-6 text-[#8b4513]" })}
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-slate-900">{section.title}</h2>
-                    <p className="text-slate-600">{section.description}</p>
+                    <h2 className="text-2xl font-bold text-[#8b4513]">{section.title}</h2>
+                    <p className="text-[#7c5a2a]">{section.description}</p>
                   </div>
                 </div>
                 
                 <div className="space-y-4">
                   {section.features.map((feature, index) => (
-                    <div key={index} className="border border-slate-200 rounded-2xl p-6 hover:shadow-lg transition-shadow">
+                    <div key={index} className="border border-[#deb887] rounded-2xl p-6 hover:shadow-lg transition-shadow">
                       <div className="flex items-start justify-between mb-3">
-                        <h3 className="text-lg font-bold text-slate-900">{feature.name}</h3>
+                        <h3 className="text-lg font-bold text-[#8b4513]">{feature.name}</h3>
                         {getStatusBadge(feature.status)}
                       </div>
                       
-                      <p className="text-slate-600 mb-4 leading-relaxed">{feature.description}</p>
+                      <p className="text-[#7c5a2a] mb-4 leading-relaxed">{feature.description}</p>
                       
                       {feature.howToUse && (
-                        <div className="bg-blue-50 rounded-xl p-4">
-                          <h4 className="text-sm font-bold text-blue-900 mb-2">使い方</h4>
-                          <p className="text-sm text-blue-800 leading-relaxed">{feature.howToUse}</p>
+                        <div className="bg-[#deb887] rounded-xl p-4">
+                          <h4 className="text-sm font-bold text-[#8b4513] mb-2">使い方</h4>
+                          <p className="text-sm text-[#7c5a2a] leading-relaxed">{feature.howToUse}</p>
                         </div>
                       )}
                     </div>
@@ -550,13 +582,13 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
           />
           
           {/* サイドバー */}
-          <div className="w-80 bg-white/95 backdrop-blur border-l border-slate-200 shadow-2xl overflow-y-auto">
-            <div className="p-6 border-b border-slate-200">
+          <div className="w-80 bg-[#f5f5dc]/95 backdrop-blur border-l border-[#deb887] shadow-2xl overflow-y-auto">
+            <div className="p-6 border-b border-[#deb887]">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-slate-900">機能一覧</h3>
+                <h3 className="text-lg font-bold text-[#8b4513]">機能一覧</h3>
                 <button
                   onClick={() => setSidebarOpen(false)}
-                  className="p-2 rounded-xl hover:bg-slate-100 text-slate-600 transition-colors"
+                  className="p-2 rounded-xl hover:bg-[#deb887] text-[#7c5a2a] transition-colors"
                 >
                   {(FaTimes as any)({ className: "w-5 h-5" })}
                 </button>
@@ -574,23 +606,23 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
                     onClick={() => selectSection(section.id)}
                     className={`w-full p-4 rounded-xl text-left transition-all duration-200 ${
                       isActive 
-                        ? 'bg-blue-100 border-2 border-blue-200 shadow-sm' 
-                        : 'hover:bg-slate-50 border-2 border-transparent'
+                        ? 'bg-[#deb887] border-2 border-[#8b4513] shadow-sm' 
+                        : 'hover:bg-[#deb887] border-2 border-transparent'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                        isActive ? 'bg-blue-600' : 'bg-slate-100'
+                        isActive ? 'bg-[#8b4513]' : 'bg-[#deb887]'
                       }`}>
                         {(IconComponent as any)({ 
-                          className: `w-5 h-5 ${isActive ? 'text-white' : 'text-slate-600'}` 
+                          className: `w-5 h-5 ${isActive ? 'text-white' : 'text-[#8b4513]'}` 
                         })}
                       </div>
                       <div className="flex-1">
-                        <h4 className={`font-medium ${isActive ? 'text-blue-900' : 'text-slate-900'}`}>
+                        <h4 className={`font-medium ${isActive ? 'text-[#8b4513]' : 'text-[#8b4513]'}`}>
                           {section.title}
                         </h4>
-                        <p className={`text-sm ${isActive ? 'text-blue-700' : 'text-slate-600'}`}>
+                        <p className={`text-sm ${isActive ? 'text-[#7c5a2a]' : 'text-[#7c5a2a]'}`}>
                           {section.description}
                         </p>
                       </div>

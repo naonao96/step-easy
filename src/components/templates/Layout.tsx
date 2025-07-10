@@ -9,10 +9,10 @@ interface LayoutProps {
 export const Layout: React.FC<LayoutProps> = ({ children, className }) => {
   return (
     <div className={twMerge(
-      "min-h-screen bg-transparent",
+      "relative z-10",
       className
     )}>
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4">
         {children}
       </main>
     </div>

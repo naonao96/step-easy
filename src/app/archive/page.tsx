@@ -170,7 +170,7 @@ export default function ArchivePage() {
       title="アーカイブ"
       showBackButton={true}
       backUrl="/menu"
-      backLabel="メニュー"
+      backLabel="メニューに戻る"
       tasks={tasks as any}
     >
       <div className="px-4 sm:px-6 py-4 sm:py-6">

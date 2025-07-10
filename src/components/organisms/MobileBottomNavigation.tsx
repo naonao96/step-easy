@@ -6,7 +6,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { IconType } from 'react-icons/lib';
 import { 
   FaHome, 
-  FaTasks, 
   FaChartBar, 
   FaCog,
   FaPlus,
@@ -43,11 +42,6 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
         label: 'ホーム',
         href: '/menu',
         icon: FaHome,
-      },
-      {
-        label: 'タスク',
-        href: '/tasks',
-        icon: FaTasks,
       }
     ];
 
@@ -55,7 +49,7 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
     if (!isGuest) {
       baseItems.push(
         {
-          label: '進捗',
+          label: '統計情報',
           href: '/progress',
           icon: FaChartBar,
         },
@@ -91,7 +85,12 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
         alert(message);
         return;
       }
-      router.push('/tasks');
+      // 現在のタブに応じて直接モーダル表示
+      // メニューページではタブ状態を管理しているため、デフォルトでタスクモーダルを表示
+      const event = new CustomEvent('showTaskModal', {
+        detail: { show: true }
+      });
+      window.dispatchEvent(event);
     }
   };
 

@@ -43,12 +43,12 @@ export const FeaturesContent: React.FC = () => {
 
   const getColorClasses = (color: string) => {
     const colorMap = {
-      blue: 'bg-blue-50 border-blue-200 text-blue-900',
-      green: 'bg-green-50 border-green-200 text-green-900',
-      purple: 'bg-purple-50 border-purple-200 text-purple-900',
-      orange: 'bg-orange-50 border-orange-200 text-orange-900',
-      indigo: 'bg-indigo-50 border-indigo-200 text-indigo-900',
-      pink: 'bg-pink-50 border-pink-200 text-pink-900'
+      blue: 'bg-[#f5f5dc] border-[#deb887] text-[#8b4513]',
+      green: 'bg-[#f5f5dc] border-[#deb887] text-[#8b4513]',
+      purple: 'bg-[#f5f5dc] border-[#deb887] text-[#8b4513]',
+      orange: 'bg-[#f5f5dc] border-[#deb887] text-[#8b4513]',
+      indigo: 'bg-[#f5f5dc] border-[#deb887] text-[#8b4513]',
+      pink: 'bg-[#f5f5dc] border-[#deb887] text-[#8b4513]'
     };
     return colorMap[color as keyof typeof colorMap] || colorMap.blue;
   };
@@ -57,10 +57,10 @@ export const FeaturesContent: React.FC = () => {
     <div className="p-8">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-slate-900 mb-6">
+          <h2 className="text-4xl font-bold text-[#8b4513] mb-6">
             あなたの習慣を支える6つの力
           </h2>
-          <p className="text-xl text-slate-700">
+          <p className="text-xl text-[#7c5a2a]">
             科学的なアプローチと心理的サポートで、継続を実現します
           </p>
         </div>
@@ -75,11 +75,11 @@ export const FeaturesContent: React.FC = () => {
                 className={`rounded-2xl p-8 border-2 transition-all duration-300 hover:shadow-xl hover:scale-105 ${getColorClasses(feature.color)}`}
               >
                 <div className="text-center">
-                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                    {(IconComponent as any)({ className: "w-8 h-8 text-blue-600" })}
+                  <div className="w-16 h-16 bg-[#deb887] rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                    {(IconComponent as any)({ className: "w-8 h-8 text-[#8b4513]" })}
                   </div>
                   <h3 className="text-xl font-bold mb-4">{feature.title}</h3>
-                  <p className="text-slate-700 leading-relaxed">{feature.description}</p>
+                  <p className="text-[#7c5a2a] leading-relaxed">{feature.description}</p>
                 </div>
               </div>
             );

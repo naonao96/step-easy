@@ -36,11 +36,11 @@ export const ModernLPLayout: React.FC<ModernLPLayoutProps> = ({
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-[#f5f5dc] via-[#deb887] to-[#f5f5dc] flex">
       {/* サイドバー */}
-      <div className="w-64 bg-white shadow-xl border-r border-slate-200 flex flex-col">
+      <div className="w-64 bg-[#f5f5dc] shadow-xl border-r border-[#deb887] flex flex-col">
         {/* ロゴエリア */}
-        <div className="p-6 border-b border-slate-200">
+        <div className="p-6 border-b border-[#deb887]">
           <div className="flex items-center gap-3">
             <Image
               src="/logo.png"
@@ -50,8 +50,8 @@ export const ModernLPLayout: React.FC<ModernLPLayoutProps> = ({
               className="drop-shadow-lg"
             />
             <div>
-              <h1 className="text-xl font-bold text-slate-900">StepEasy</h1>
-              <p className="text-xs text-slate-600">習慣を育てる、成長を実感する</p>
+              <h1 className="text-xl font-bold text-[#8b4513]">StepEasy</h1>
+              <p className="text-xs text-[#7c5a2a]">習慣を育てる、成長を実感する</p>
             </div>
           </div>
         </div>
@@ -78,8 +78,8 @@ export const ModernLPLayout: React.FC<ModernLPLayoutProps> = ({
                   }}
                   className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-xl transition-all duration-200 ${
                     isActive
-                      ? 'bg-blue-600 text-white shadow-lg'
-                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                      ? 'bg-[#8b4513] text-white shadow-lg'
+                      : 'text-[#7c5a2a] hover:bg-[#deb887] hover:text-[#8b4513]'
                   }`}
                 >
                   {(IconComponent as any)({ className: "w-5 h-5" })}
@@ -91,12 +91,12 @@ export const ModernLPLayout: React.FC<ModernLPLayoutProps> = ({
         </nav>
 
         {/* アクションボタン */}
-        <div className="p-4 border-t border-slate-200">
+        <div className="p-4 border-t border-[#deb887]">
           <div className="space-y-2">
             <button
               onClick={onLogin}
               disabled={isLoading}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#8b4513] hover:bg-[#7c5a2a] text-white rounded-xl font-medium transition-colors disabled:opacity-50"
             >
               {(FaSignInAlt as any)({ className: "w-4 h-4" })}
               ログイン
@@ -104,7 +104,7 @@ export const ModernLPLayout: React.FC<ModernLPLayoutProps> = ({
             <button
               onClick={onRegister}
               disabled={isLoading}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#7c5a2a] hover:bg-[#8b4513] text-white rounded-xl font-medium transition-colors disabled:opacity-50"
             >
               {(FaUserPlus as any)({ className: "w-4 h-4" })}
               新規登録
@@ -112,7 +112,7 @@ export const ModernLPLayout: React.FC<ModernLPLayoutProps> = ({
             <button
               onClick={onGuest}
               disabled={isLoading}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-600 hover:bg-slate-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#deb887] hover:bg-[#8b4513] text-[#8b4513] hover:text-white rounded-xl font-medium transition-colors disabled:opacity-50"
             >
               {(FaEye as any)({ className: "w-4 h-4" })}
               ゲストで試す

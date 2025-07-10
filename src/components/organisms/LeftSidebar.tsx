@@ -6,7 +6,6 @@ import { useAuth } from '@/contexts/AuthContext'
 import { RunningTaskWidget } from '@/components/molecules/RunningTaskWidget'
 import { 
   FaClock, 
-  FaPlus, 
   FaChartBar, 
   FaArchive, 
   FaCog,
@@ -47,13 +46,8 @@ export function LeftSidebar({ className = '' }: LeftSidebarProps) {
   const getAvailableActionItems = () => {
     const baseItems = [
       {
-        icon: () => FaPlus({ className: 'w-6 h-6 shrink-0 text-[#7c5a2a] hover:text-yellow-900' }),
-        label: '新しいタスク',
-        href: '/tasks'
-      },
-      {
         icon: () => FaChartBar({ className: 'w-6 h-6 shrink-0 text-[#7c5a2a] hover:text-yellow-900' }),
-        label: '進捗確認',
+        label: '統計情報',
         href: '/progress'
       }
     ];

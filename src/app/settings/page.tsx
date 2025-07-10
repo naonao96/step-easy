@@ -3,7 +3,7 @@
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { Input } from '@/components/atoms/Input';
-import { FaUser, FaBell, FaLock, FaSignOutAlt, FaInfoCircle, FaGem, FaFileContract, FaShieldAlt, FaPalette } from 'react-icons/fa';
+import { FaUser, FaBell, FaLock, FaSignOutAlt, FaInfoCircle, FaGem, FaFileContract, FaShieldAlt, FaTrash, FaSave, FaKey, FaTools } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,7 +18,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const { user, signOut, isPremium, isGuest } = useAuth();
   const { tasks, fetchTasks } = useTaskStore();
-  const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'appearance' | 'security'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'security'>('profile');
   const [isLoading, setIsLoading] = useState(false);
 
   const [profileData, setProfileData] = useState({
@@ -356,16 +356,16 @@ export default function SettingsPage() {
     >
       <div className="px-4 sm:px-6 py-4 sm:py-6">
         <div className="max-w-7xl mx-auto">
-          {/* モバイル用タブナビゲーション（上部固定） */}
+                    {/* モバイル用タブナビゲーション（上部固定） */}
           <div className="md:hidden mb-6">
-            <div className="bg-white rounded-lg shadow-md p-2 sticky top-0 z-10">
+            <div className="bg-[#f5f5dc] rounded-lg shadow-md p-2 sticky top-0 z-10 border border-[#deb887]">
               <div className="flex overflow-x-auto gap-1">
                 <button
                   onClick={() => setActiveTab('profile')}
                   className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[70px] ${
                     activeTab === 'profile'
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50'
+                      ? 'bg-[#deb887] text-[#8b4513]'
+                      : 'text-[#7c5a2a] hover:bg-[#deb887]'
                   }`}
                 >
                   {FaUser({ className: "w-4 h-4" })}
@@ -375,51 +375,41 @@ export default function SettingsPage() {
                   onClick={() => setActiveTab('notifications')}
                   className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[70px] ${
                     activeTab === 'notifications'
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50'
+                      ? 'bg-[#deb887] text-[#8b4513]'
+                      : 'text-[#7c5a2a] hover:bg-[#deb887]'
                   }`}
                 >
                   {FaBell({ className: "w-4 h-4" })}
                   <span className="text-xs font-medium">通知</span>
                 </button>
-                <button
-                  onClick={() => setActiveTab('appearance')}
-                  className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[70px] ${
-                    activeTab === 'appearance'
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  {FaPalette({ className: "w-4 h-4" })}
-                  <span className="text-xs font-medium">外観</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab('security')}
-                  className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[70px] ${
-                    activeTab === 'security'
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  {FaLock({ className: "w-4 h-4" })}
-                  <span className="text-xs font-medium">セキュリティ</span>
-                </button>
+
+                  <button
+                    onClick={() => setActiveTab('security')}
+                    className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[70px] ${
+                      activeTab === 'security'
+                        ? 'bg-[#deb887] text-[#8b4513]'
+                        : 'text-[#7c5a2a] hover:bg-[#deb887]'
+                    }`}
+                  >
+                    {FaLock({ className: "w-4 h-4" })}
+                    <span className="text-xs font-medium">セキュリティ</span>
+                  </button>
 
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {/* デスクトップ用サイドバー */}
+                        {/* デスクトップ用サイドバー */}
             <div className="md:col-span-1 hidden md:block">
-              <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="bg-[#f5f5dc] rounded-lg shadow-md p-6 border border-[#deb887]">
                 <div className="space-y-4">
                   <button
                     onClick={() => setActiveTab('profile')}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                       activeTab === 'profile'
-                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                        : 'text-gray-700 hover:bg-gray-50'
+                        ? 'bg-[#deb887] text-[#8b4513] border border-[#7c5a2a]'
+                        : 'text-[#7c5a2a] hover:bg-[#deb887]'
                     }`}
                   >
                     {FaUser({ className: "w-5 h-5" })}
@@ -429,35 +419,25 @@ export default function SettingsPage() {
                     onClick={() => setActiveTab('notifications')}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                       activeTab === 'notifications'
-                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                        : 'text-gray-700 hover:bg-gray-50'
+                        ? 'bg-[#deb887] text-[#8b4513] border border-[#7c5a2a]'
+                        : 'text-[#7c5a2a] hover:bg-[#deb887]'
                     }`}
                   >
                     {FaBell({ className: "w-5 h-5" })}
                     <span>通知</span>
                   </button>
-                  <button
-                    onClick={() => setActiveTab('appearance')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                      activeTab === 'appearance'
-                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                        : 'text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    {FaPalette({ className: "w-5 h-5" })}
-                    <span>外観</span>
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('security')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                      activeTab === 'security'
-                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                        : 'text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    {FaLock({ className: "w-5 h-5" })}
-                    <span>セキュリティ</span>
-                  </button>
+
+                    <button
+                      onClick={() => setActiveTab('security')}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                        activeTab === 'security'
+                          ? 'bg-[#deb887] text-[#8b4513] border border-[#7c5a2a]'
+                          : 'text-[#7c5a2a] hover:bg-[#deb887]'
+                      }`}
+                    >
+                      {FaLock({ className: "w-5 h-5" })}
+                      <span>セキュリティ</span>
+                    </button>
 
                 </div>
                 
@@ -494,7 +474,7 @@ export default function SettingsPage() {
                   </div>
                 )}
 
-                <div className="mt-6 pt-6 border-t border-gray-200">
+                <div className="mt-6 pt-6 border-t border-[#deb887]">
                   <button
                     onClick={signOut}
                     className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-red-600 hover:bg-red-50 transition-colors"
@@ -508,15 +488,15 @@ export default function SettingsPage() {
 
             {/* メインコンテンツ */}
             <div className="md:col-span-3 col-span-1">
-              <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
+              <div className="bg-[#f5f5dc] rounded-lg shadow-md p-4 md:p-6 border border-[#deb887]">
                 {activeTab === 'profile' && (
                   <form onSubmit={handleProfileUpdate} className="space-y-6">
                     <div className="flex items-center gap-2 mb-4">
-                      <h2 className="text-xl font-semibold text-gray-900">プロフィール設定</h2>
+                      <h2 className="text-xl font-semibold text-[#8b4513]">プロフィール設定</h2>
                       <button
                         type="button"
                         onClick={() => openHelp('tasks')}
-                        className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
+                        className="p-1 text-[#7c5a2a] hover:text-[#8b4513] transition-colors"
                         title="プロフィール設定のヘルプ"
                       >
                         {FaInfoCircle({ className: "w-4 h-4" })}
@@ -535,23 +515,32 @@ export default function SettingsPage() {
                       onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
                       disabled
                     />
-                    <Button type="submit" isLoading={isLoading}>
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="flex items-center gap-2 px-4 py-2 bg-[#7c5a2a] text-white rounded-lg hover:bg-[#8b4513] transition-colors text-sm"
+                    >
+                      {isLoading ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      ) : (
+                        FaSave({ className: "w-4 h-4" })
+                      )}
                       保存
-                    </Button>
+                    </button>
                   </form>
                 )}
 
                 {activeTab === 'notifications' && (
                   <div className="space-y-6">
                     <div className="flex items-center gap-2 mb-4">
-                      <h2 className="text-xl font-semibold text-gray-900">通知設定</h2>
-                      <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-medium">
+                      <h2 className="text-xl font-semibold text-[#8b4513]">通知設定</h2>
+                      <span className="text-xs bg-[#deb887] text-[#8b4513] px-2 py-1 rounded-full font-medium">
                         開発中
                       </span>
                       <button
                         type="button"
                         onClick={() => openHelp('tasks')}
-                        className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
+                        className="p-1 text-[#7c5a2a] hover:text-[#8b4513] transition-colors"
                         title="通知設定のヘルプ"
                       >
                         {FaInfoCircle({ className: "w-4 h-4" })}
@@ -559,36 +548,36 @@ export default function SettingsPage() {
                     </div>
                     
                     {/* 開発中メッセージ */}
-                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-6 text-center">
+                    <div className="bg-[#f5f5dc] border border-[#deb887] rounded-lg p-6 text-center">
                       <div className="flex items-center justify-center gap-2 mb-3">
-                        <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+                        <div className="w-6 h-6 bg-[#7c5a2a] rounded-full flex items-center justify-center">
                           <span className="text-white text-xs font-bold">!</span>
                         </div>
-                        <h3 className="text-lg font-semibold text-orange-800">開発中</h3>
+                        <h3 className="text-lg font-semibold text-[#8b4513]">開発中</h3>
                       </div>
-                      <p className="text-orange-700 mb-4">
+                      <p className="text-[#7c5a2a] mb-4">
                         通知設定機能は現在開発中です。<br />
                         ベータ版リリース後に実装予定です。
                       </p>
-                      <div className="space-y-2 text-sm text-orange-600">
+                      <div className="space-y-2 text-sm text-[#7c5a2a]">
                         <div className="flex items-center gap-2 justify-center">
-                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                          <div className="w-2 h-2 bg-[#7c5a2a] rounded-full"></div>
                           <span>メール通知</span>
                         </div>
                         <div className="flex items-center gap-2 justify-center">
-                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                          <div className="w-2 h-2 bg-[#7c5a2a] rounded-full"></div>
                           <span>プッシュ通知</span>
                         </div>
                         <div className="flex items-center gap-2 justify-center">
-                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                          <div className="w-2 h-2 bg-[#7c5a2a] rounded-full"></div>
                           <span>タスクリマインダー</span>
                         </div>
                         <div className="flex items-center gap-2 justify-center">
-                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                          <div className="w-2 h-2 bg-[#7c5a2a] rounded-full"></div>
                           <span>習慣リマインダー</span>
                         </div>
                         <div className="flex items-center gap-2 justify-center">
-                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                          <div className="w-2 h-2 bg-[#7c5a2a] rounded-full"></div>
                           <span>AI提案通知</span>
                         </div>
                       </div>
@@ -601,176 +590,62 @@ export default function SettingsPage() {
                           type="checkbox"
                           checked={false}
                           disabled
-                          className="form-checkbox h-5 w-5 text-gray-400"
+                          className="form-checkbox h-5 w-5 text-[#7c5a2a]"
                         />
-                        <span className="text-gray-500">メール通知</span>
+                        <span className="text-[#7c5a2a]">メール通知</span>
                       </label>
                       <label className="flex items-center space-x-3">
                         <input
                           type="checkbox"
                           checked={false}
                           disabled
-                          className="form-checkbox h-5 w-5 text-gray-400"
+                          className="form-checkbox h-5 w-5 text-[#7c5a2a]"
                         />
-                        <span className="text-gray-500">プッシュ通知</span>
+                        <span className="text-[#7c5a2a]">プッシュ通知</span>
                       </label>
                       <label className="flex items-center space-x-3">
                         <input
                           type="checkbox"
                           checked={false}
                           disabled
-                          className="form-checkbox h-5 w-5 text-gray-400"
+                          className="form-checkbox h-5 w-5 text-[#7c5a2a]"
                         />
-                        <span className="text-gray-500">タスクリマインダー</span>
+                        <span className="text-[#7c5a2a]">タスクリマインダー</span>
                       </label>
                       <label className="flex items-center space-x-3">
                         <input
                           type="checkbox"
                           checked={false}
                           disabled
-                          className="form-checkbox h-5 w-5 text-gray-400"
+                          className="form-checkbox h-5 w-5 text-[#7c5a2a]"
                         />
-                        <span className="text-gray-500">習慣リマインダー</span>
+                        <span className="text-[#7c5a2a]">習慣リマインダー</span>
                       </label>
                       <label className="flex items-center space-x-3">
                         <input
                           type="checkbox"
                           checked={false}
                           disabled
-                          className="form-checkbox h-5 w-5 text-gray-400"
+                          className="form-checkbox h-5 w-5 text-[#7c5a2a]"
                         />
-                        <span className="text-gray-500">AI提案</span>
+                        <span className="text-[#7c5a2a]">AI提案</span>
                       </label>
                     </div>
                     
-                    <Button disabled className="opacity-50 cursor-not-allowed">
+                    <button disabled className="flex items-center gap-2 px-4 py-2 bg-[#deb887] text-[#7c5a2a] rounded-lg opacity-50 cursor-not-allowed transition-colors text-sm">
+                      {FaTools({ className: "w-4 h-4" })}
                       開発中
-                    </Button>
-                  </div>
-                )}
-
-                {activeTab === 'appearance' && (
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <h2 className="text-xl font-semibold text-gray-900">外観設定</h2>
-                      <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-medium">
-                        開発中
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => openHelp('tasks')}
-                        className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
-                        title="外観設定のヘルプ"
-                      >
-                        {FaInfoCircle({ className: "w-4 h-4" })}
-                      </button>
-                    </div>
-                    
-                    {/* 開発中メッセージ */}
-                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-6 text-center">
-                      <div className="flex items-center justify-center gap-2 mb-3">
-                        <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs font-bold">!</span>
-                        </div>
-                        <h3 className="text-lg font-semibold text-orange-800">開発中</h3>
-                      </div>
-                      <p className="text-orange-700 mb-4">
-                        外観設定機能は現在開発中です。<br />
-                        ベータ版リリース後に実装予定です。
-                      </p>
-                      <div className="space-y-2 text-sm text-orange-600">
-                        <div className="flex items-center gap-2 justify-center">
-                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                          <span>ダークモード</span>
-                        </div>
-                        <div className="flex items-center gap-2 justify-center">
-                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                          <span>テーマカスタマイズ</span>
-                        </div>
-                        <div className="flex items-center gap-2 justify-center">
-                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                          <span>フォントサイズ調整</span>
-                        </div>
-                        <div className="flex items-center gap-2 justify-center">
-                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                          <span>アクセントカラー変更</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* 開発中の設定項目（無効化） */}
-                    <div className="space-y-4 opacity-50 pointer-events-none">
-                      <div>
-                        <h3 className="text-lg font-medium text-gray-500 mb-3">テーマ</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-medium text-gray-400">ライト</span>
-                              <div className="w-4 h-4 rounded-full bg-gray-300"></div>
-                            </div>
-                            <div className="text-sm text-gray-400">明るいテーマ（現在選択中）</div>
-                          </div>
-                          <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-medium text-gray-400">ダーク</span>
-                              <div className="w-4 h-4 rounded-full border border-gray-300"></div>
-                            </div>
-                            <div className="text-sm text-gray-400">暗いテーマ（開発中）</div>
-                          </div>
-                          <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-medium text-gray-400">オート</span>
-                              <div className="w-4 h-4 rounded-full border border-gray-300"></div>
-                            </div>
-                            <div className="text-sm text-gray-400">システム連動（開発中）</div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h3 className="text-lg font-medium text-gray-500 mb-3">フォントサイズ</h3>
-                        <div className="space-y-2">
-                          <label className="flex items-center space-x-3">
-                            <input type="radio" name="fontSize" value="small" disabled className="form-radio h-4 w-4 text-gray-400" />
-                            <span className="text-sm text-gray-400">小</span>
-                          </label>
-                          <label className="flex items-center space-x-3">
-                            <input type="radio" name="fontSize" value="medium" disabled defaultChecked className="form-radio h-4 w-4 text-gray-400" />
-                            <span className="text-gray-400">標準</span>
-                          </label>
-                          <label className="flex items-center space-x-3">
-                            <input type="radio" name="fontSize" value="large" disabled className="form-radio h-4 w-4 text-gray-400" />
-                            <span className="text-lg text-gray-400">大</span>
-                          </label>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h3 className="text-lg font-medium text-gray-500 mb-3">アクセントカラー</h3>
-                        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-                          <div className="w-8 h-8 rounded-full bg-gray-400 border-2 border-gray-300"></div>
-                          <div className="w-8 h-8 rounded-full bg-gray-400 border-2 border-transparent"></div>
-                          <div className="w-8 h-8 rounded-full bg-gray-400 border-2 border-transparent"></div>
-                          <div className="w-8 h-8 rounded-full bg-gray-400 border-2 border-transparent"></div>
-                          <div className="w-8 h-8 rounded-full bg-gray-400 border-2 border-transparent"></div>
-                        </div>
-                      </div>
-
-                    </div>
-                    
-                    <Button disabled className="opacity-50 cursor-not-allowed">
-                      開発中
-                    </Button>
+                    </button>
                   </div>
                 )}
 
                 {activeTab === 'security' && (
                   <div className="space-y-6">
-                    <h2 className="text-xl font-semibold text-slate-900">セキュリティ</h2>
+                    <h2 className="text-xl font-semibold text-[#8b4513]">セキュリティ</h2>
                     
                     <form onSubmit={handlePasswordChange} className="space-y-4">
                       <div>
-                        <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="currentPassword" className="block text-sm font-medium text-[#7c5a2a] mb-2">
                           現在のパスワード
                         </label>
                                                   <Input
@@ -784,7 +659,7 @@ export default function SettingsPage() {
                       </div>
                       
                       <div>
-                        <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="newPassword" className="block text-sm font-medium text-[#7c5a2a] mb-2">
                           新しいパスワード
                         </label>
                                                   <Input
@@ -798,7 +673,7 @@ export default function SettingsPage() {
                       </div>
                       
                       <div>
-                        <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="confirmPassword" className="block text-sm font-medium text-[#7c5a2a] mb-2">
                           新しいパスワード（確認）
                         </label>
                                                   <Input
@@ -811,36 +686,41 @@ export default function SettingsPage() {
                           />
                       </div>
                       
-                      <Button
+                      <button
                         type="submit"
-                        isLoading={isLoading}
-                        className="w-full sm:w-auto"
+                        disabled={isLoading}
+                        className="w-full sm:w-auto flex items-center gap-2 px-4 py-2 bg-[#7c5a2a] text-white rounded-lg hover:bg-[#8b4513] transition-colors text-sm"
                       >
+                        {isLoading ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        ) : (
+                          FaKey({ className: "w-4 h-4" })
+                        )}
                         パスワードを変更
-                      </Button>
+                      </button>
                     </form>
 
-                    <hr className="my-8" />
+                    <hr className="my-8 border-[#deb887]" />
 
                     {/* 法的情報セクション */}
-                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                      <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                    <div className="bg-[#f5f5dc] border border-[#deb887] rounded-lg p-4">
+                      <h3 className="text-lg font-semibold text-[#8b4513] mb-2">
                         法的情報
                       </h3>
-                      <p className="text-slate-700 mb-4 text-sm">
+                      <p className="text-[#7c5a2a] mb-4 text-sm">
                         プライバシーポリシーと利用規約をご確認いただけます。
                       </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <button
                           onClick={() => window.open('/privacy', '_blank')}
-                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                          className="flex items-center gap-2 px-4 py-2 bg-[#7c5a2a] text-white rounded-lg hover:bg-[#8b4513] transition-colors text-sm"
                         >
                           {FaShieldAlt({ className: "w-4 h-4" })}
                           プライバシーポリシー
                         </button>
                         <button
                           onClick={() => window.open('/terms', '_blank')}
-                          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                          className="flex items-center gap-2 px-4 py-2 bg-[#7c5a2a] text-white rounded-lg hover:bg-[#8b4513] transition-colors text-sm"
                         >
                           {FaFileContract({ className: "w-4 h-4" })}
                           利用規約
@@ -848,41 +728,46 @@ export default function SettingsPage() {
                       </div>
                     </div>
 
-                    <hr className="my-8" />
+                    <hr className="my-8 border-[#deb887]" />
 
                     {/* ログアウトセクション */}
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                    <div className="bg-[#f5f5dc] border border-[#deb887] rounded-lg p-4">
+                      <h3 className="text-lg font-semibold text-[#8b4513] mb-2">
                         アカウント管理
                       </h3>
-                      <p className="text-blue-700 mb-4 text-sm">
+                      <p className="text-[#7c5a2a] mb-4 text-sm">
                         アカウントからログアウトします。
                       </p>
                       <button
                         onClick={signOut}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                        className="flex items-center gap-2 px-4 py-2 bg-[#7c5a2a] text-white rounded-lg hover:bg-[#8b4513] transition-colors text-sm"
                       >
                         {FaSignOutAlt({ className: "w-4 h-4" })}
                         ログアウト
                       </button>
                     </div>
 
-                    <hr className="my-8" />
+                    <hr className="my-8 border-[#deb887]" />
 
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                      <h3 className="text-lg font-semibold text-red-900 mb-2">
+                    <div className="bg-[#f5f5dc] border border-[#deb887] rounded-lg p-4">
+                      <h3 className="text-lg font-semibold text-[#8b4513] mb-2">
                         危険な操作
                       </h3>
-                      <p className="text-red-700 mb-4">
+                      <p className="text-[#7c5a2a] mb-4">
                         アカウントを削除すると、すべてのデータが永久に失われます。この操作は取り消すことができません。
                       </p>
-                      <Button
+                      <button
                         onClick={handleDeleteAccount}
-                        variant="danger"
-                        isLoading={isLoading}
+                        disabled={isLoading}
+                        className="flex items-center gap-2 px-4 py-2 bg-[#7c5a2a] text-white rounded-lg hover:bg-[#8b4513] transition-colors text-sm"
                       >
+                        {isLoading ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        ) : (
+                          FaTrash({ className: "w-4 h-4" })
+                        )}
                         アカウントを削除
-                      </Button>
+                      </button>
                     </div>
                   </div>
                 )}

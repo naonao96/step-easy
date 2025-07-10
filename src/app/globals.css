@@ -30,7 +30,7 @@ body {
   font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
   margin: 0;
   padding: 0;
-  overflow-y: scroll;
+  overflow-x: hidden;
 }
 
 /* アプリのルートコンテナ用のスタイル */
@@ -417,4 +417,58 @@ body {
 
 .instagram-fade-in {
   animation: instagram-fade-in 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* モバイル版モーダル専用スタイル */
+.mobile-modal {
+  /* モバイル版ではフルスクリーンモーダル */
+}
+
+.mobile-overlay {
+  /* モバイル版では背景を暗く */
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+.mobile-content {
+  /* モバイル版ではフルスクリーン表示 */
+  max-width: none !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+}
+
+/* モバイル版でのスワイプ閉じる機能 */
+.mobile-content.swipe-to-close {
+  transition: transform 0.3s ease-out;
+}
+
+.mobile-content.swipe-to-close.swiping {
+  transition: none;
+}
+
+/* モバイル版でのタッチ操作最適化 */
+.mobile-content * {
+  touch-action: manipulation;
+}
+
+/* モバイル版でのフォントサイズ調整 */
+.mobile-content .text-sm {
+  font-size: 0.875rem;
+}
+
+.mobile-content .text-xs {
+  font-size: 0.75rem;
+}
+
+/* モバイル版でのボタンサイズ調整 */
+.mobile-content button {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* モバイル版での入力フィールド調整 */
+.mobile-content input,
+.mobile-content textarea {
+  font-size: 16px; /* iOSでズームを防ぐ */
 }

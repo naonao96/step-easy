@@ -57,25 +57,25 @@ export const MobileFeaturesContent: React.FC<MobileFeaturesContentProps> = ({
 
   const getColorClasses = (color: string) => {
     const colorMap = {
-      blue: 'bg-blue-50 border-blue-200 text-blue-900',
-      green: 'bg-green-50 border-green-200 text-green-900',
-      purple: 'bg-purple-50 border-purple-200 text-purple-900',
-      orange: 'bg-orange-50 border-orange-200 text-orange-900',
-      indigo: 'bg-indigo-50 border-indigo-200 text-indigo-900',
-      pink: 'bg-pink-50 border-pink-200 text-pink-900'
+      blue: 'bg-[#f5f5dc] border-[#deb887] text-[#8b4513]',
+      green: 'bg-[#f5f5dc] border-[#deb887] text-[#8b4513]',
+      purple: 'bg-[#f5f5dc] border-[#deb887] text-[#8b4513]',
+      orange: 'bg-[#f5f5dc] border-[#deb887] text-[#8b4513]',
+      indigo: 'bg-[#f5f5dc] border-[#deb887] text-[#8b4513]',
+      pink: 'bg-[#f5f5dc] border-[#deb887] text-[#8b4513]'
     };
     return colorMap[color as keyof typeof colorMap] || colorMap.blue;
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-[#f5f5dc] to-[#deb887]">
       <div className="px-6 py-8">
         {/* ヘッダー */}
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-slate-900 mb-4">
+          <h2 className="text-3xl font-bold text-[#8b4513] mb-4">
             あなたの習慣を支える6つの力
           </h2>
-          <p className="text-lg text-slate-700">
+          <p className="text-lg text-[#7c5a2a]">
             科学的なアプローチと心理的サポートで、継続を実現します
           </p>
         </div>
@@ -91,11 +91,11 @@ export const MobileFeaturesContent: React.FC<MobileFeaturesContentProps> = ({
                 className={`rounded-2xl p-6 border-2 transition-all duration-300 hover:shadow-xl ${getColorClasses(feature.color)}`}
               >
                 <div className="text-center">
-                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                    {(IconComponent as any)({ className: "w-8 h-8 text-blue-600" })}
+                  <div className="w-16 h-16 bg-[#deb887] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                    {(IconComponent as any)({ className: "w-8 h-8 text-[#8b4513]" })}
                   </div>
                   <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                  <p className="text-slate-700 leading-relaxed">{feature.description}</p>
+                  <p className="text-[#7c5a2a] leading-relaxed">{feature.description}</p>
                 </div>
               </div>
             );
@@ -104,25 +104,25 @@ export const MobileFeaturesContent: React.FC<MobileFeaturesContentProps> = ({
 
         {/* CTA */}
         <div className="mt-8 text-center">
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
-            <h3 className="text-xl font-bold text-slate-900 mb-4">
+          <div className="bg-[#f5f5dc] rounded-2xl p-6 shadow-lg border border-[#deb887]">
+            <h3 className="text-xl font-bold text-[#8b4513] mb-4">
               今すぐ体験してみませんか？
             </h3>
-            <p className="text-slate-600 mb-6">
+            <p className="text-[#7c5a2a] mb-6">
               すべての機能を無料でお試しいただけます
             </p>
             <div className="space-y-3">
               <button
                 onClick={onRegister}
                 disabled={isLoading}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl text-lg transition-colors disabled:opacity-50"
+                className="w-full bg-[#8b4513] hover:bg-[#7c5a2a] text-white font-bold py-4 px-8 rounded-xl text-lg transition-colors disabled:opacity-50"
               >
                 無料で始める
               </button>
               <button
                 onClick={onGuest}
                 disabled={isLoading}
-                className="w-full border-2 border-slate-300 hover:border-slate-400 text-slate-700 font-bold py-3 px-8 rounded-xl transition-colors disabled:opacity-50"
+                className="w-full bg-[#deb887] hover:bg-[#8b4513] text-[#8b4513] hover:text-white border-2 border-[#8b4513] font-bold py-3 px-8 rounded-xl transition-colors disabled:opacity-50"
               >
                 まずは体験
               </button>
