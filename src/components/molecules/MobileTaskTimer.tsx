@@ -3,7 +3,6 @@ import { Task } from '@/types/task';
 import { formatDurationShort } from '@/lib/timeUtils';
 import { useExecutionStore } from '@/stores/executionStore';
 import { FaClock, FaPlay, FaPause, FaStop, FaUndo } from 'react-icons/fa';
-import { ResetBottomSheet } from './ResetBottomSheet';
 
 interface MobileTaskTimerProps {
   task: Task;
@@ -26,8 +25,9 @@ export const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
     resetExecution
   } = useExecutionStore();
 
-  // リセット関連の状態管理（簡素化）
-  const [showResetBottomSheet, setShowResetBottomSheet] = useState(false);
+  // リセット関連の状態管理
+  const [showResetPopover, setShowResetPopover] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   const isCurrentTaskActive = activeExecution?.task_id === task.id;
   const isOtherTaskRunning = Boolean(activeExecution && !isCurrentTaskActive);
@@ -146,15 +146,16 @@ export const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
     }
   };
 
-  const handleResetFromBottomSheet = async (resetType: 'session' | 'today' | 'total') => {
+  // リセット関連の処理
+  const handleResetClick = () => {
+    setShowResetPopover(true);
+  };
+
+  const handleResetConfirm = async (resetType: 'session' | 'today' | 'total' = 'session') => {
     try {
-      // ボトムシートを即座に閉じる
-      setShowResetBottomSheet(false);
-      
-      // 長押し完了 = 確認済みとして、追加確認なしで実行
+      setShowResetPopover(false);
       await resetExecution(resetType);
       
-      // 実行完了後にコールバック実行
       if (onExecutionComplete) {
         onExecutionComplete();
       }
@@ -164,10 +165,47 @@ export const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
     }
   };
 
-  // リセット関連の処理（簡素化）
-  const handleResetClick = () => {
-    setShowResetBottomSheet(true);
+  const handleResetCancel = () => {
+    setShowResetPopover(false);
   };
+
+  // 外側クリックでポップオーバーを閉じる
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
+        setShowResetPopover(false);
+      }
+    };
+
+    if (showResetPopover) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showResetPopover]);
+
+  // キーボードイベント処理
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (showResetPopover) {
+        if (event.key === 'Escape') {
+          setShowResetPopover(false);
+        } else if (event.key === 'Enter') {
+          handleResetConfirm();
+        }
+      }
+    };
+
+    if (showResetPopover) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showResetPopover]);
 
 
 
@@ -249,8 +287,8 @@ export const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
               {isHabitTask ? '今日分完了' : '完了して記録'}
             </button>
 
-            {/* リセットボタン（簡素化） */}
-            <div className="flex-1">
+            {/* リセットボタン */}
+            <div className="flex-1 relative">
               <button
                 onClick={handleResetClick}
                 className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors w-full justify-center min-h-[44px] bg-gray-500 text-white hover:bg-gray-600"
@@ -259,6 +297,70 @@ export const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
                 {FaUndo({className:"w-3 h-3"})}
                 リセット
               </button>
+
+              {/* ポップオーバー */}
+              {showResetPopover && (
+                <div 
+                  ref={popoverRef}
+                  className="absolute bottom-full mb-2 left-0 transform -translate-x-1/2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-3"
+                  style={{ 
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                  }}
+                >
+                  {/* 下向き矢印 */}
+                  <div 
+                    className="absolute top-full left-1/2 w-0 h-0"
+                    style={{ 
+                      marginLeft: '-4px',
+                      borderLeft: '4px solid transparent',
+                      borderRight: '4px solid transparent',
+                      borderTop: '4px solid white'
+                    }}
+                  ></div>
+                  <div className="mb-2">
+                    <h3 className="text-xs font-medium text-gray-900 mb-2 flex items-center gap-1">
+                      <span className="text-yellow-600 text-sm">⚠️</span>
+                      リセット種別を選択
+                    </h3>
+                    
+                    {/* リセット種別選択ボタン */}
+                    <div className="space-y-1.5 mb-2">
+                      <button
+                        onClick={() => handleResetConfirm('session')}
+                        className="w-full text-left p-2 bg-gray-50 hover:bg-gray-100 rounded transition-colors"
+                      >
+                        <div className="font-medium text-xs text-gray-900">⏱️ セッションのみ</div>
+                        <div className="text-xs text-gray-500">現在の実行時間のみ</div>
+                      </button>
+                      
+                      <button
+                        onClick={() => handleResetConfirm('today')}
+                        className="w-full text-left p-2 bg-blue-50 hover:bg-blue-100 rounded transition-colors"
+                      >
+                        <div className="font-medium text-xs text-blue-900">📅 今日累計</div>
+                        <div className="text-xs text-blue-600">今日分の累積時間</div>
+                      </button>
+                      
+                      <button
+                        onClick={() => handleResetConfirm('total')}
+                        className="w-full text-left p-2 bg-red-50 hover:bg-red-100 rounded transition-colors"
+                      >
+                        <div className="font-medium text-xs text-red-900">🗑️ 総累計</div>
+                        <div className="text-xs text-red-600">全期間の記録を削除</div>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end">
+                    <button
+                      onClick={handleResetCancel}
+                      className="px-2 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
+                    >
+                      キャンセル
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </>
         )}
@@ -273,13 +375,7 @@ export const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
 
 
 
-      {/* ボトムシート */}
-      <ResetBottomSheet
-        isOpen={showResetBottomSheet}
-        onClose={() => setShowResetBottomSheet(false)}
-        onReset={handleResetFromBottomSheet}
-        taskTitle={task.title}
-      />
+
     </div>
   );
 }; 

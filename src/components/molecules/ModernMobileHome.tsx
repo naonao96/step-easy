@@ -14,6 +14,8 @@ import { NotificationSignupForm } from './NotificationSignupForm';
 import { useEmotionLog } from '@/hooks/useEmotionLog';
 import ReactMarkdown from 'react-markdown';
 import { MobileTaskCarousel } from './MobileTaskCarousel';
+import { TaskPreviewModal } from './TaskPreviewModal';
+import { TaskEditModal } from './TaskEditModal';
 import { 
   FaPlus, 
   FaCalendarAlt, 
@@ -32,6 +34,7 @@ import {
   FaCrown
 } from 'react-icons/fa';
 import { EmotionHoverMenu } from '@/components/molecules/EmotionHoverMenu';
+
 
 interface ModernMobileHomeProps {
   selectedDate: Date;
@@ -91,6 +94,11 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   // プレミアム機能モーダル関連の状態
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showNotificationForm, setShowNotificationForm] = useState(false);
+
+  // タスクプレビュー・編集モーダル関連の状態
+  const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [showTaskPreviewModal, setShowTaskPreviewModal] = useState(false);
+  const [showTaskEditModal, setShowTaskEditModal] = useState(false);
 
   // 感情記録関連の状態
   const [showEmotionMenu, setShowEmotionMenu] = useState(false);
@@ -200,6 +208,38 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
     setExpandedTaskId(expandedTaskId === taskId ? null : taskId);
   };
 
+  // タスククリック時の処理
+  const handleTaskClick = (task: any) => {
+    setSelectedTask(task);
+    setShowTaskPreviewModal(true);
+  };
+
+  // タスク削除処理
+  const handleDeleteTask = async (id: string) => {
+    try {
+      await onDeleteTask(id);
+      setShowTaskPreviewModal(false);
+      setShowTaskEditModal(false);
+      setSelectedTask(null);
+    } catch (error) {
+      console.error('タスク削除エラー:', error);
+      alert('タスクの削除に失敗しました');
+    }
+  };
+
+  // タスク完了処理
+  const handleCompleteTask = async (id: string) => {
+    try {
+      await onCompleteTask(id);
+      if (onTaskUpdate) {
+        await onTaskUpdate();
+      }
+    } catch (error) {
+      console.error('タスク完了エラー:', error);
+      alert('タスクの完了処理に失敗しました');
+    }
+  };
+
   // 進捗ページに移動
   const handleNavigateToProgress = () => {
     router.push('/progress');
@@ -292,7 +332,9 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   const renderTaskCard = (task: Task, isHabit: boolean) => (
     <div
       key={task.id}
-      className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden"
+      className={`bg-white rounded-lg border border-[#8b4513] overflow-hidden ${
+        task.status === 'done' ? 'opacity-75' : ''
+      }`}
     >
       {/* Row 1: Checkbox, Title, and Edit Button */}
       <div className="flex items-start space-x-3 p-4 pb-2">
@@ -303,8 +345,8 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
           }}
           className={`mt-1 flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
             task.status === 'done'
-              ? 'bg-green-500 border-green-500 text-white'
-              : 'border-gray-300 hover:border-blue-400'
+              ? 'bg-[#7c5a2a] border-[#7c5a2a] text-white'
+              : 'border-[#deb887] hover:border-[#7c5a2a]'
           }`}
         >
           {task.status === 'done' && React.createElement(FaCheck as React.ComponentType<any>, { className: "w-2.5 h-2.5" })}
@@ -312,21 +354,22 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center space-x-2 mb-1">
-            <h3 className={`font-medium text-gray-900 truncate ${
-              task.status === 'done' ? 'line-through text-gray-500' : ''
+            <h3 className={`font-medium truncate ${
+              task.status === 'done' ? 'line-through text-gray-500' : 'text-gray-900'
             }`}>
               {task.title}
             </h3>
             {isHabit && (
-              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+              <span className="text-xs bg-[#deb887] text-[#7c5a2a] px-1.5 sm:px-2 py-1 rounded flex items-center gap-1">
+                {FaFire({ className: "w-2.5 h-2.5" })}
                 {getFrequencyLabel(task.habit_frequency)}
               </span>
             )}
           </div>
           
           {task.description && (
-            <p className={`text-sm text-gray-600 line-clamp-2 ${
-              task.status === 'done' ? 'line-through text-gray-400' : ''
+            <p className={`text-sm line-clamp-2 ${
+              task.status === 'done' ? 'line-through text-gray-500' : 'text-gray-600'
             }`}>
               {task.description}
             </p>
@@ -337,13 +380,13 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
               <CategoryBadge category={task.category} />
             )}
             {task.priority && (
-              <span className={`text-xs px-2 py-1 rounded-full ${
-                task.priority === 'high' ? 'bg-red-100 text-red-800' :
-                task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-gray-100 text-gray-800'
+              <div className={`text-xs px-1.5 sm:px-2 py-1 rounded flex items-center justify-center ${
+                task.priority === 'high' ? 'bg-[#deb887] text-[#8b4513]' :
+                task.priority === 'medium' ? 'bg-[#f5f5dc] text-[#7c5a2a]' :
+                'bg-[#f5f5dc] text-[#7c5a2a]'
               }`}>
                 {task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}
-              </span>
+              </div>
             )}
           </div>
         </div>
@@ -353,7 +396,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
             e.stopPropagation();
             onDeleteTask(task.id);
           }}
-          className="mt-1 p-1 text-gray-400 hover:text-red-500 transition-colors"
+          className="mt-1 p-1 text-[#7c5a2a] hover:text-[#8b4513] transition-colors"
         >
           {FaTrash ({className:"w-4 h-4"})}
         </button>
@@ -387,13 +430,13 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
             </button>
             
             <div className="text-center mx-4">
-              <h1 className="text-lg font-semibold text-gray-900">
+              <h1 className="text-lg font-semibold text-[#8b4513]">
                 {getTitle()}
               </h1>
               {!isToday && (
                 <button
                   onClick={goToToday}
-                  className="text-sm text-blue-600 hover:text-blue-800 transition-colors mt-1"
+                  className="text-sm text-[#7c5a2a] hover:text-[#8b4513] transition-colors mt-1"
                 >
                   今日に戻る
                 </button>
@@ -417,15 +460,15 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
             onClick={() => handleTabChange('habits')}
             className={`flex-1 py-3 px-4 text-center font-medium transition-colors ${
               activeTab === 'habits'
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'text-[#8b4513] border-b-2 border-[#8b4513]'
+                : 'text-[#7c5a2a] hover:text-[#8b4513]'
             }`}
           >
             <div className="flex items-center justify-center space-x-2">
               {FaFire ({className:"w-4 h-4"})}
               <span>習慣</span>
               {habitIncompleteCount > 0 && (
-                <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="bg-[#deb887] text-[#7c5a2a] text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
                   {habitIncompleteCount}
                 </span>
               )}
@@ -436,15 +479,15 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
             onClick={() => handleTabChange('tasks')}
             className={`flex-1 py-3 px-4 text-center font-medium transition-colors ${
               activeTab === 'tasks'
-                ? 'text-[#7c5a2a] border-b-2 border-[#7c5a2a]'
-                : 'text-gray-700 hover:text-[#7c5a2a]'
+                ? 'text-[#8b4513] border-b-2 border-[#8b4513]'
+                : 'text-[#7c5a2a] hover:text-[#8b4513]'
             }`}
           >
             <div className="flex items-center justify-center space-x-2">
               {FaTasks ({className:"w-4 h-4"})}
               <span>タスク</span>
               {regularIncompleteCount > 0 && (
-                <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="bg-[#deb887] text-[#7c5a2a] text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
                   {regularIncompleteCount}
                 </span>
               )}
@@ -464,10 +507,10 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
                 FaTasks ({className:"w-12 h-12 mx-auto"})
               )}
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <h3 className="text-lg font-medium text-[#8b4513] mb-2">
               {activeTab === 'habits' ? '習慣がありません' : 'タスクがありません'}
             </h3>
-            <p className="text-gray-500 mb-6">
+            <p className="text-[#7c5a2a] mb-6">
               {activeTab === 'habits' 
                 ? '新しい習慣を追加して、継続的な目標を設定しましょう。'
                 : '新しいタスクを追加して、今日の目標を設定しましょう。'
@@ -482,6 +525,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
               onCompleteTask={onCompleteTask}
               onDeleteTask={onDeleteTask}
               onEditTask={onEditTask}
+              onTaskClick={handleTaskClick}
               isHabit={activeTab === 'habits'}
             />
           </div>
@@ -602,6 +646,53 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
           isOpen={showNotificationForm}
           onClose={() => setShowNotificationForm(false)}
         />
+      )}
+
+      {/* タスクプレビュー・編集モーダル */}
+      {selectedTask && (
+        <>
+          <TaskPreviewModal
+            task={selectedTask}
+            isOpen={showTaskPreviewModal}
+            onClose={() => setShowTaskPreviewModal(false)}
+            onEdit={(task) => {
+              setSelectedTask(task);
+              setShowTaskPreviewModal(false);
+              setShowTaskEditModal(true);
+            }}
+            onDelete={handleDeleteTask}
+            onComplete={handleCompleteTask}
+            onRefresh={() => {
+              if (onTaskUpdate) {
+                onTaskUpdate();
+              }
+            }}
+            isMobile={true}
+          />
+
+          <TaskEditModal
+            task={selectedTask}
+            isOpen={showTaskEditModal}
+            onClose={() => setShowTaskEditModal(false)}
+            onSave={async (taskData) => {
+              if (selectedTask && onEditTask) {
+                await onEditTask(selectedTask);
+              }
+            }}
+            onDelete={handleDeleteTask}
+            onPreview={(task) => {
+              setSelectedTask(task);
+              setShowTaskEditModal(false);
+              setShowTaskPreviewModal(true);
+            }}
+            onRefresh={() => {
+              if (onTaskUpdate) {
+                onTaskUpdate();
+              }
+            }}
+            isMobile={true}
+          />
+        </>
       )}
     </div>
   );

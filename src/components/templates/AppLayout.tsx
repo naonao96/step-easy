@@ -50,7 +50,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   showNotifications = true,
   className = '',
   showBottomNav = true,
-  showFAB = true,
+  showFAB = false,
   onFABClick
 }) => {
   // モバイルメニュー関連のstateを削除（ボトムナビゲーションを使用）

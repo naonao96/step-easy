@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTaskStore } from '@/stores/taskStore';
 import { type Task } from '@/types/task';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,6 +23,18 @@ export const HabitModal: React.FC<HabitModalProps> = ({
   const { tasks } = useTaskStore();
   const { planType } = useAuth();
   const [habitFrequency, setHabitFrequency] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const [initialHabitFrequency, setInitialHabitFrequency] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+
+  // 初期値の設定
+  useEffect(() => {
+    if (initialData?.habit_frequency) {
+      setHabitFrequency(initialData.habit_frequency);
+      setInitialHabitFrequency(initialData.habit_frequency);
+    } else {
+      setHabitFrequency('daily');
+      setInitialHabitFrequency('daily');
+    }
+  }, [initialData, isOpen]);
 
   // 習慣制限チェック
   const checkHabitLimit = () => {
@@ -41,6 +53,11 @@ export const HabitModal: React.FC<HabitModalProps> = ({
     }
 
     return { isValid: true, message: '' };
+  };
+
+  // 習慣特有の変更検知
+  const hasHabitChanges = () => {
+    return habitFrequency !== initialHabitFrequency;
   };
 
   const createHabitFormData = (data: {

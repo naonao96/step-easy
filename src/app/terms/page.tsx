@@ -14,7 +14,7 @@ export default function TermsPage() {
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-sm">S</span>
                 </div>
-                <span className="text-xl font-bold text-gray-900">StepEasy</span>
+                <span className="text-xl font-bold text-[#8b4513]">StepEasy</span>
               </Link>
             </div>
             <nav className="flex space-x-4">

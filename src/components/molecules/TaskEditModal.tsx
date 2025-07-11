@@ -10,6 +10,7 @@ interface TaskEditModalProps {
   onDelete: (id: string) => Promise<void>;
   onPreview: (task: Task) => void;
   onRefresh: () => void;
+  isMobile?: boolean;
 }
 
 export const TaskEditModal: React.FC<TaskEditModalProps> = ({
@@ -20,6 +21,7 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
   onDelete,
   onPreview,
   onRefresh,
+  isMobile = false
 }) => {
   const createTaskFormData = (data: {
     title: string;
@@ -78,6 +80,7 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
 Markdownで自由に書けます！`}
       modalTitle="編集"
       createFormData={createTaskFormData}
+      isMobile={isMobile}
     />
   );
 }; 

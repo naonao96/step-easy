@@ -47,12 +47,6 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  // ヘルプリンク用の関数
-  const openHelp = (section: string) => {
-    // window.postMessage を使って親のヘルプパネルを開く
-    window.dispatchEvent(new CustomEvent('openHelp', { detail: { section } }));
-  };
-
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
@@ -493,14 +487,6 @@ export default function SettingsPage() {
                   <form onSubmit={handleProfileUpdate} className="space-y-6">
                     <div className="flex items-center gap-2 mb-4">
                       <h2 className="text-xl font-semibold text-[#8b4513]">プロフィール設定</h2>
-                      <button
-                        type="button"
-                        onClick={() => openHelp('tasks')}
-                        className="p-1 text-[#7c5a2a] hover:text-[#8b4513] transition-colors"
-                        title="プロフィール設定のヘルプ"
-                      >
-                        {FaInfoCircle({ className: "w-4 h-4" })}
-                      </button>
                     </div>
                     <Input
                       label="表示名"
@@ -537,14 +523,6 @@ export default function SettingsPage() {
                       <span className="text-xs bg-[#deb887] text-[#8b4513] px-2 py-1 rounded-full font-medium">
                         開発中
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => openHelp('tasks')}
-                        className="p-1 text-[#7c5a2a] hover:text-[#8b4513] transition-colors"
-                        title="通知設定のヘルプ"
-                      >
-                        {FaInfoCircle({ className: "w-4 h-4" })}
-                      </button>
                     </div>
                     
                     {/* 開発中メッセージ */}

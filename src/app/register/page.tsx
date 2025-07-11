@@ -207,10 +207,10 @@ export default function RegisterPage() {
                 </div>
               </div>
             </div>
-            <h2 className="text-3xl font-bold text-amber-900 tracking-tight">
+            <h2 className="text-3xl font-bold text-[#8b4513] tracking-tight">
               はじめまして
             </h2>
-            <p className="mt-2 text-sm text-amber-700">
+            <p className="mt-2 text-sm text-[#7c5a2a]">
               小鳥と一緒にタスク管理を始めましょう
             </p>
           </div>

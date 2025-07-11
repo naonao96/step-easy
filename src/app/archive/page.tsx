@@ -179,10 +179,10 @@ export default function ArchivePage() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                <h1 className="text-2xl font-bold text-[#8b4513] mb-2">
                   アーカイブ
                 </h1>
-                <p className="text-gray-600 text-sm">
+                <p className="text-[#7c5a2a] text-sm">
                   完了したタスクと実行履歴を確認できます
                 </p>
               </div>

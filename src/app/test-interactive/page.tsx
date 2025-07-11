@@ -58,17 +58,17 @@ export default function TestInteractivePage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+        <h1 className="text-3xl font-bold text-[#8b4513] mb-8 text-center">
           インタラクティブ機能テスト
         </h1>
 
         {/* コントロールパネル */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">テスト設定</h2>
+          <h2 className="text-xl font-semibold mb-4 text-[#8b4513]">テスト設定</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-[#7c5a2a] mb-2">
                 コンテキスト
               </label>
               <select
@@ -85,7 +85,7 @@ export default function TestInteractivePage() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-[#7c5a2a] mb-2">
                 ユーザー名
               </label>
               <input

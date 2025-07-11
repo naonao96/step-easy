@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/atoms/Button';
 import { NotificationDropdown } from '@/components/molecules/NotificationDropdown';
-import { HelpPanel } from '@/components/molecules/HelpPanel';
-import { FaArrowLeft, FaSignOutAlt, FaUser, FaQuestionCircle, FaUserPlus, FaSignInAlt } from 'react-icons/fa';
+import { FaArrowLeft, FaSignOutAlt, FaUser, FaUserPlus, FaSignInAlt } from 'react-icons/fa';
 import { Task } from '@/types/task';
 
 interface AppHeaderProps {
@@ -50,7 +49,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   const router = useRouter();
   const { user, signOut } = useAuth();
   const [showAccountMenu, setShowAccountMenu] = useState(false);
-  const [showHelpPanel, setShowHelpPanel] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const mobileAccountMenuRef = useRef<HTMLDivElement>(null);
 
@@ -90,19 +88,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
     };
   }, [showAccountMenu]);
 
-  // ヘルプパネル開く指示をリッスン
-  useEffect(() => {
-    const handleOpenHelp = (event: any) => {
-      setShowHelpPanel(true);
-      // タブの切り替えは実装後に対応
-    };
-
-    window.addEventListener('openHelp', handleOpenHelp);
-    return () => {
-      window.removeEventListener('openHelp', handleOpenHelp);
-    };
-  }, []);
-
   // バリアント別のスタイル
   const getHeaderStyles = () => {
     switch (variant) {
@@ -141,7 +126,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         >
           <img src="/logo.png" alt="StepEasy" className="h-8 sm:h-10" style={{ width: 'auto' }} />
           {title && (
-          <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
+          <h1 className="text-lg sm:text-xl font-bold text-[#8b4513] truncate">
             {title}
           </h1>
           )}
@@ -157,15 +142,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           </div>
         )}
 
-        {/* ヘルプボタン */}
-        <button
-          onClick={() => setShowHelpPanel(true)}
-          className="p-2 text-[#7c5a2a] hover:text-yellow-900 hover:bg-yellow-50 rounded-lg transition-colors"
-          title="ヘルプ"
-        >
-          {FaQuestionCircle({ className: "w-5 h-5" })}
-        </button>
-
         {/* カスタムアクション（デスクトップのみ） */}
         {rightActions && (
           <div className="hidden md:flex items-center gap-2">
@@ -174,24 +150,23 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         )}
 
         {/* アカウントドロップダウン（デスクトップのみ） */}
-        <div className="relative hidden lg:flex" ref={accountMenuRef}>
+        <div className="relative hidden lg:block" ref={accountMenuRef}>
           <button
             onClick={() => setShowAccountMenu(!showAccountMenu)}
-            className="flex items-center gap-2 p-2 rounded-lg text-[#7c5a2a] hover:text-yellow-900 hover:bg-yellow-50 transition-colors"
+            className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
             <div className="w-8 h-8 bg-gradient-to-br from-[#7c5a2a] to-[#4b2e0e] rounded-full flex items-center justify-center">
               <span className="text-white text-sm font-medium">
                 {user?.isGuest ? 'G' : (user?.email?.[0]?.toUpperCase() || 'U')}
               </span>
             </div>
-            <span className="text-sm text-gray-700 font-medium max-w-32 truncate">
-              {user?.isGuest ? 'ゲストユーザー' : (user?.displayName || user?.email?.split('@')[0] || 'ユーザー')}
+            <span className="text-sm text-gray-700 hidden xl:block">
+              {user?.isGuest ? 'ゲスト' : (user?.email?.split('@')[0] || 'ユーザー')}
             </span>
           </button>
 
-          {/* ドロップダウンメニュー */}
           {showAccountMenu && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+            <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50">
               {user?.isGuest ? (
                 <>
                   <button
@@ -201,8 +176,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                     }}
                     className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                   >
-                    {FaUserPlus({ className: "w-4 h-4" })}
-                    新規登録
+                    {FaUserPlus({ className: "w-4 h-4 flex-shrink-0" })}
+                    <span>新規登録</span>
                   </button>
                   <button
                     onClick={() => {
@@ -211,8 +186,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                     }}
                     className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                   >
-                    {FaSignInAlt({ className: "w-4 h-4" })}
-                    ログイン
+                    {FaSignInAlt({ className: "w-4 h-4 flex-shrink-0" })}
+                    <span>ログイン</span>
                   </button>
                 </>
               ) : (
@@ -223,15 +198,15 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                   }}
                   className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                 >
-                  {FaSignOutAlt({ className: "w-4 h-4" })}
-                  ログアウト
+                  {FaSignOutAlt({ className: "w-4 h-4 flex-shrink-0" })}
+                  <span>ログアウト</span>
                 </button>
               )}
             </div>
           )}
         </div>
 
-        {/* ユーザーアバター（モバイル用） */}
+        {/* モバイル用アカウントボタン */}
         <button
           onClick={() => setShowAccountMenu(!showAccountMenu)}
           className="lg:hidden p-1 w-10 h-10 bg-gradient-to-br from-[#7c5a2a] to-[#4b2e0e] rounded-full flex items-center justify-center hover:shadow-md transition-all"
@@ -282,11 +257,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             )}
           </div>
         )}
-      {/* ヘルプパネル */}
-      <HelpPanel 
-        isOpen={showHelpPanel} 
-        onClose={() => setShowHelpPanel(false)} 
-      />
       </div>
     </header>
   );

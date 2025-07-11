@@ -9,14 +9,11 @@ import { DatePicker } from '@/components/atoms/DatePicker';
 import { DurationInput } from '@/components/atoms/DurationInput';
 import { Button } from '@/components/atoms/Button';
 import { TaskTimer } from './TaskTimer';
+import { MobileTaskTimer } from './MobileTaskTimer';
 import { TaskExecutionHistory } from './TaskExecutionHistory';
-import { FaTimes, FaSave, FaEdit, FaTrash, FaCheck, FaEye, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { FaTimes, FaSave, FaEdit, FaTrash, FaCheck, FaEye, FaChevronDown, FaChevronUp, FaExclamationTriangle } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
-
-// 定数
-const DEFAULT_PRIORITY: 'low' | 'medium' | 'high' = 'medium';
-const DEFAULT_CATEGORY = 'other';
-const SAVE_DELAY_MS = 100;
+import { TASK_CONSTANTS, MODAL_CONSTANTS } from '@/lib/constants';
 
 // 型定義
 interface BaseTaskFormData {
@@ -35,6 +32,18 @@ interface BaseTaskFormData {
 interface ValidationResult {
   isValid: boolean;
   message: string;
+}
+
+// 初期値の型定義
+interface InitialFormValues {
+  title: string;
+  content: string;
+  priority: 'low' | 'medium' | 'high';
+  startDate: Date | null;
+  dueDate: Date | null;
+  estimatedDuration: number | undefined;
+  category: string;
+  habit_frequency?: 'daily' | 'weekly' | 'monthly';
 }
 
 interface BaseTaskModalProps {
@@ -69,6 +78,8 @@ interface BaseTaskModalProps {
   contentClassName?: string;
   isFullScreen?: boolean;
   enableSwipeToClose?: boolean;
+  // レスポンシブ対応用プロパティ
+  isMobile?: boolean;
 }
 
 export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
@@ -94,7 +105,9 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
   overlayClassName = '',
   contentClassName = '',
   isFullScreen = false,
-  enableSwipeToClose = false
+  enableSwipeToClose = false,
+  // レスポンシブ対応用プロパティ
+  isMobile = false
 }) => {
   const { createTask, updateTask } = useTaskStore();
   const { planType, canEditTaskOnDate } = useAuth();
@@ -102,38 +115,124 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
   // 編集中のタスクデータ
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>(DEFAULT_PRIORITY);
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>(TASK_CONSTANTS.DEFAULT_PRIORITY);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [estimatedDuration, setEstimatedDuration] = useState<number | undefined>(undefined);
-  const [category, setCategory] = useState<string>(DEFAULT_CATEGORY);
+  const [category, setCategory] = useState<string>(TASK_CONSTANTS.DEFAULT_CATEGORY);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+
+  // 変更検知用の状態
+  const [initialValues, setInitialValues] = useState<InitialFormValues>({
+    title: '',
+    content: '',
+    priority: TASK_CONSTANTS.DEFAULT_PRIORITY,
+    startDate: null,
+    dueDate: null,
+    estimatedDuration: undefined,
+    category: TASK_CONSTANTS.DEFAULT_CATEGORY,
+    habit_frequency: 'daily'
+  });
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingCloseAction, setPendingCloseAction] = useState<(() => void) | null>(null);
 
   const isExistingTask = !!initialData?.id;
   const isPreviewMode = mode === 'preview';
   const isEditMode = mode === 'edit';
 
+  // 変更検知関数
+  const hasChanges = (): boolean => {
+    return (
+      initialValues.title !== title ||
+      initialValues.content !== content ||
+      initialValues.priority !== priority ||
+      initialValues.category !== category ||
+      initialValues.estimatedDuration !== estimatedDuration ||
+      (initialValues.startDate?.getTime() !== startDate?.getTime()) ||
+      (initialValues.dueDate?.getTime() !== dueDate?.getTime()) ||
+      // 習慣タスクの場合のみ習慣頻度を比較
+      (isHabit && initialValues.habit_frequency !== initialData?.habit_frequency)
+    );
+  };
+
+  // 確認ダイアログの処理
+  const handleCloseWithConfirm = (closeAction: () => void) => {
+    // プレビューモードでは変更検知をスキップ
+    if (mode === 'preview' || !hasChanges()) {
+      closeAction();
+    } else {
+      setShowConfirmDialog(true);
+      setPendingCloseAction(() => closeAction);
+    }
+  };
+
+  const handleConfirmClose = () => {
+    setShowConfirmDialog(false);
+    if (pendingCloseAction) {
+      pendingCloseAction();
+      setPendingCloseAction(null);
+    }
+  };
+
+  const handleCancelClose = () => {
+    setShowConfirmDialog(false);
+    setPendingCloseAction(null);
+  };
+
   // 初期データの設定
   useEffect(() => {
     if (initialData) {
-      setTitle(initialData.title || '');
-      setContent(initialData.description || '');
-      setPriority(initialData.priority || DEFAULT_PRIORITY);
-      setStartDate(initialData.start_date ? new Date(initialData.start_date) : new Date());
-      setDueDate(initialData.due_date ? new Date(initialData.due_date) : null);
-      setEstimatedDuration(initialData.estimated_duration);
-      setCategory(initialData.category || DEFAULT_CATEGORY);
+      const newTitle = initialData.title || '';
+      const newContent = initialData.description || '';
+      const newPriority = initialData.priority || TASK_CONSTANTS.DEFAULT_PRIORITY;
+      const newStartDate = initialData.start_date ? new Date(initialData.start_date) : new Date();
+      const newDueDate = initialData.due_date ? new Date(initialData.due_date) : null;
+      const newEstimatedDuration = initialData.estimated_duration;
+      const newCategory = initialData.category || TASK_CONSTANTS.DEFAULT_CATEGORY;
+      const newHabitFrequency = initialData.habit_frequency || 'daily';
+
+      setTitle(newTitle);
+      setContent(newContent);
+      setPriority(newPriority);
+      setStartDate(newStartDate);
+      setDueDate(newDueDate);
+      setEstimatedDuration(newEstimatedDuration);
+      setCategory(newCategory);
+
+      // 初期値を保存
+      setInitialValues({
+        title: newTitle,
+        content: newContent,
+        priority: newPriority,
+        startDate: newStartDate,
+        dueDate: newDueDate,
+        estimatedDuration: newEstimatedDuration,
+        category: newCategory,
+        habit_frequency: newHabitFrequency
+      });
     } else {
       // 新規作成モード
-      setTitle('');
-      setContent('');
-      setPriority(DEFAULT_PRIORITY);
-      setStartDate(new Date());
-      setDueDate(null);
-      setEstimatedDuration(undefined);
-      setCategory(DEFAULT_CATEGORY);
+      const defaultValues = {
+        title: '',
+        content: '',
+        priority: TASK_CONSTANTS.DEFAULT_PRIORITY,
+        startDate: new Date(),
+        dueDate: null,
+        estimatedDuration: undefined,
+        category: TASK_CONSTANTS.DEFAULT_CATEGORY,
+        habit_frequency: 'daily' as const
+      };
+
+      setTitle(defaultValues.title);
+      setContent(defaultValues.content);
+      setPriority(defaultValues.priority);
+      setStartDate(defaultValues.startDate);
+      setDueDate(defaultValues.dueDate);
+      setEstimatedDuration(defaultValues.estimatedDuration);
+      setCategory(defaultValues.category);
+      setInitialValues(defaultValues);
     }
   }, [initialData, isOpen]);
 
@@ -223,7 +322,7 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
       // 短い遅延を入れてからモーダルを閉じる
       setTimeout(() => {
         onClose();
-      }, SAVE_DELAY_MS);
+      }, TASK_CONSTANTS.SAVE_DELAY_MS);
     } catch (error) {
       console.error('保存エラー:', error);
       alert('保存に失敗しました: ' + (error as Error).message);
@@ -268,10 +367,90 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
   // プレビューモードの表示
   if (isPreviewMode && initialData) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+      <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 ${overlayClassName}`}>
+        <div className={`bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden ${contentClassName} ${isFullScreen ? 'max-w-none max-h-none rounded-none' : ''}`}>
           {/* ヘッダー */}
-          <div className="bg-[#f5f5dc] border-b border-[#deb887] px-6 py-4">
+          <div className={`bg-[#f5f5dc] border-b border-[#deb887] px-4 sm:px-6 ${isMobile ? 'py-3 pt-safe' : 'py-4'}`}>
+            {/* モバイル版：3行レイアウト */}
+            {isMobile ? (
+              <>
+                {/* 1行目：作成日と完了日 */}
+                <div className="flex items-center gap-4 text-xs text-[#7c5a2a] font-medium mb-1 mt-1">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#7c5a2a]"></div>
+                    <span>{new Date(initialData.created_at || '').toLocaleDateString('ja-JP', { 
+                      month: 'short', 
+                      day: 'numeric'
+                    })}</span>
+                  </div>
+                  {initialData.completed_at && (
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#8b4513]"></div>
+                      <span>完了 {new Date(initialData.completed_at).toLocaleDateString('ja-JP', { 
+                        month: 'short', 
+                        day: 'numeric'
+                      })}</span>
+                    </div>
+                  )}
+                </div>
+                
+                {/* 2行目：アクションボタン */}
+                <div className="flex items-center gap-2 mb-1">
+                  {onEdit && (
+                    <>
+                      <button
+                        onClick={() => onEdit(initialData as Task)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200"
+                      >
+                        {FaEdit({ className: "w-3 h-3" })}
+                        編集
+                      </button>
+                      {onComplete && (
+                        <div className="w-px h-3 bg-[#deb887] mx-1"></div>
+                      )}
+                    </>
+                  )}
+                  {onComplete && (
+                    <button
+                      onClick={handleComplete}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg transition-all duration-200 ${
+                        initialData.status === 'done' 
+                          ? 'text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc]' 
+                          : 'text-[#8b4513] hover:text-[#7c5a2a] hover:bg-[#f5f5dc]'
+                      }`}
+                    >
+                      {FaCheck({ className: "w-3 h-3" })}
+                      {initialData.status === 'done' ? '未完了に戻す' : '完了'}
+                    </button>
+                  )}
+                  {onDelete && (
+                    <>
+                      <div className="w-px h-3 bg-[#deb887] mx-1"></div>
+                      <button
+                        onClick={handleDelete}
+                        disabled={isDeleting}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[#8b4513] hover:text-[#7c5a2a] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200 disabled:opacity-50"
+                      >
+                        {FaTrash({ className: "w-3 h-3" })}
+                        {isDeleting ? '削除中...' : '削除'}
+                      </button>
+                    </>
+                  )}
+                </div>
+                
+                              {/* 3行目：閉じるボタン（左寄せ） */}
+              <div className="flex justify-start">
+                <button
+                  onClick={() => handleCloseWithConfirm(onClose)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200"
+                >
+                  {FaTimes({ className: "w-3 h-3" })}
+                  閉じる
+                </button>
+              </div>
+              </>
+            ) : (
+              /* デスクトップ版：1行レイアウト（既存のまま） */
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
               <div className="flex items-center gap-4 text-xs text-[#7c5a2a] font-medium">
                 <div className="flex items-center gap-1.5">
@@ -330,7 +509,7 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
                 )}
                 <div className="w-px h-3 bg-[#deb887] mx-1"></div>
                 <button
-                  onClick={onClose}
+                  onClick={() => handleCloseWithConfirm(onClose)}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200"
                 >
                   {FaTimes({ className: "w-3 h-3" })}
@@ -338,16 +517,17 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
                 </button>
               </div>
             </div>
+            )}
           </div>
           
           {/* メインコンテンツ */}
-          <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
-            <div className="p-6">
+            <div className={`overflow-y-auto ${isMobile ? 'max-h-[calc(100vh-200px)]' : 'max-h-[calc(90vh-120px)]'}`}>
+              <div className={`p-4 sm:p-6 ${isMobile ? 'pb-12' : ''}`}>
               {/* タスクタイトル */}
-              <div className="mb-6">
-                <h1 className="text-3xl font-bold text-[#8b4513] mb-2">{initialData.title}</h1>
-                <div className="flex items-center gap-4">
-                  <span className={`px-3 py-1 text-sm rounded-full ${
+              <div className="mb-4 sm:mb-6">
+                <h1 className="text-xl sm:text-2xl font-bold text-[#8b4513] mb-2">{initialData.title}</h1>
+                <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+                  <span className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-full ${
                     initialData.priority === 'high' ? 'bg-[#f5f5dc] text-[#8b4513] border border-[#deb887]' :
                     initialData.priority === 'medium' ? 'bg-[#f5f5dc] text-[#7c5a2a] border border-[#deb887]' :
                     'bg-[#f5f5dc] text-[#7c5a2a] border border-[#deb887]'
@@ -355,11 +535,11 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
                     優先度: {initialData.priority === 'high' ? '高' : initialData.priority === 'medium' ? '中' : '低'}
                   </span>
                   {initialData.is_habit && (
-                    <span className="px-3 py-1 text-sm rounded-full bg-[#f5f5dc] text-[#8b4513] border border-[#deb887]">
+                    <span className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-full bg-[#f5f5dc] text-[#8b4513] border border-[#deb887]">
                       習慣タスク
                     </span>
                   )}
-                  <span className={`px-3 py-1 text-sm rounded-full ${
+                  <span className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-full ${
                     initialData.status === 'done' ? 'bg-[#f5f5dc] text-[#8b4513] border border-[#deb887]' :
                     initialData.status === 'doing' ? 'bg-[#f5f5dc] text-[#7c5a2a] border border-[#deb887]' :
                     'bg-[#f5f5dc] text-[#7c5a2a] border border-[#deb887]'
@@ -370,8 +550,8 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
               </div>
 
               {/* タスク内容 */}
-              <div className="bg-[#f5f5dc] rounded-lg p-6 mb-6 border border-[#deb887]">
-                <div className="prose prose-sm max-w-none text-[#8b4513]">
+              <div className="bg-[#f5f5dc] rounded-lg p-3 sm:p-6 mb-4 sm:mb-6 border border-[#deb887]">
+                <div className="prose prose-sm max-w-none text-[#8b4513] text-sm sm:text-base">
                   <ReactMarkdown>
                     {initialData.description || '*メモが入力されていません*'}
                   </ReactMarkdown>
@@ -380,15 +560,27 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
 
               {/* 実行タイマー */}
               <div>
-                <h3 className="text-lg font-semibold text-[#8b4513] mb-3">実行ログ</h3>
-                <div className="space-y-4">
-                  <TaskTimer 
-                    task={initialData as Task} 
-                    onExecutionComplete={() => {
-                      if (onRefresh) onRefresh();
-                    }}
-                  />
-                  <TaskExecutionHistory task={initialData as Task} />
+                <h3 className="text-base sm:text-lg font-semibold text-[#8b4513] mb-3">実行ログ</h3>
+                <div className="space-y-3 sm:space-y-4">
+                  {isMobile ? (
+                    <MobileTaskTimer 
+                      task={initialData as Task} 
+                      onExecutionComplete={() => {
+                        if (onRefresh) onRefresh();
+                      }}
+                    />
+                  ) : (
+                    <TaskTimer 
+                      task={initialData as Task} 
+                      onExecutionComplete={() => {
+                        if (onRefresh) onRefresh();
+                      }}
+                    />
+                  )}
+                  
+                  <div className="border-t border-[#deb887] pt-3 sm:pt-4">
+                    <TaskExecutionHistory task={initialData as Task} />
+                  </div>
                 </div>
               </div>
             </div>
@@ -402,7 +594,80 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
     <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 ${overlayClassName}`}>
       <div className={`bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden ${contentClassName} ${isFullScreen ? 'max-w-none max-h-none rounded-none' : ''}`}>
         {/* ヘッダー */}
-        <div className="bg-[#f5f5dc] border-b border-[#deb887] px-6 py-4">
+        <div className={`bg-[#f5f5dc] border-b border-[#deb887] px-4 sm:px-6 ${isMobile ? 'py-3 pt-safe' : 'py-4'}`}>
+          {/* モバイル版：3行レイアウト */}
+          {isMobile ? (
+            <>
+              {/* 1行目：編集中の状態とタイムスタンプ */}
+              <div className="flex items-center gap-4 text-xs text-[#7c5a2a] font-medium mb-1 mt-1">
+                {initialData ? (
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#7c5a2a]"></div>
+                    <span>編集中 {new Date(initialData.updated_at || initialData.created_at || '').toLocaleDateString('ja-JP', { 
+                      month: 'short', 
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#8b4513]"></div>
+                    <span>{modalTitle}</span>
+                  </div>
+                )}
+              </div>
+              
+              {/* 2行目：アクションボタン */}
+              <div className="flex items-center gap-2 mb-1">
+                {isExistingTask && initialData && onPreview && (
+                  <>
+                    <button
+                      onClick={() => onPreview(initialData as Task)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200"
+                    >
+                      {FaEye({ className: "w-3 h-3" })}
+                      プレビュー
+                    </button>
+                    <div className="w-px h-3 bg-[#deb887] mx-1"></div>
+                  </>
+                )}
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {FaSave({ className: "w-3 h-3" })}
+                  {isSaving ? '保存中...' : '保存'}
+                </button>
+                {isExistingTask && initialData && onDelete && (
+                  <>
+                    <div className="w-px h-3 bg-[#deb887] mx-1"></div>
+                    <button
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[#8b4513] hover:text-[#7c5a2a] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200 disabled:opacity-50"
+                    >
+                      {FaTrash({ className: "w-3 h-3" })}
+                      {isDeleting ? '削除中...' : '削除'}
+                    </button>
+                  </>
+                )}
+              </div>
+              
+              {/* 3行目：閉じるボタン（左寄せ） */}
+              <div className="flex justify-start">
+                <button
+                  onClick={() => handleCloseWithConfirm(onClose)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200"
+                >
+                  {FaTimes({ className: "w-3 h-3" })}
+                  閉じる
+                </button>
+              </div>
+            </>
+          ) : (
+            /* デスクトップ版：1行レイアウト（既存のまま） */
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
               <div className="flex items-center gap-4 text-xs text-[#7c5a2a] font-medium">
                 {isExistingTask && initialData && (
@@ -457,7 +722,7 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
               )}
               <div className="w-px h-3 bg-[#deb887] mx-1"></div>
               <button
-                onClick={onClose}
+                onClick={() => handleCloseWithConfirm(onClose)}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200"
               >
                 {FaTimes({ className: "w-3 h-3" })}
@@ -465,14 +730,15 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
               </button>
             </div>
           </div>
+          )}
         </div>
         
         {/* メインコンテンツ */}
-        <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
-          <div className="p-6">
-            <div className="space-y-6">
+        <div className={`overflow-y-auto ${isMobile ? 'max-h-[calc(100vh-200px)]' : 'max-h-[calc(90vh-120px)]'}`}>
+          <div className={`p-4 sm:p-6 ${isMobile ? 'pb-12' : ''}`}>
+            <div className="space-y-4 sm:space-y-6">
               {/* 基本情報 */}
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-[#8b4513] mb-2">
                     タイトル *
@@ -481,13 +747,13 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder={titlePlaceholder}
-                    className="w-full border-[#deb887] focus:border-[#7c5a2a] focus:ring-[#7c5a2a]"
+                    className="w-full border-[#deb887] focus:border-[#7c5a2a] focus:ring-[#7c5a2a] text-sm sm:text-base"
                     disabled={isPreviewMode}
                   />
                 </div>
 
                 {/* 日付設定（必須項目） */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-sm font-medium text-[#8b4513] mb-2">
                       開始日
@@ -495,7 +761,7 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
                     <DatePicker
                       selected={startDate}
                       onChange={setStartDate}
-                      className="w-full border-[#deb887] focus:border-[#7c5a2a] focus:ring-[#7c5a2a]"
+                      className="w-full border-[#deb887] focus:border-[#7c5a2a] focus:ring-[#7c5a2a] text-sm sm:text-base"
                     />
                   </div>
                   <div>
@@ -505,7 +771,7 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
                     <DatePicker
                       selected={dueDate}
                       onChange={setDueDate}
-                      className="w-full border-[#deb887] focus:border-[#7c5a2a] focus:ring-[#7c5a2a]"
+                      className="w-full border-[#deb887] focus:border-[#7c5a2a] focus:ring-[#7c5a2a] text-sm sm:text-base"
                     />
                   </div>
                 </div>
@@ -515,18 +781,18 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
               </div>
 
               {/* 詳細設定（スライドダウンパネル） */}
-              <div className="border-t border-[#deb887] pt-4">
+              <div className="border-t border-[#deb887] pt-3 sm:pt-4">
                 <button
                   onClick={() => setShowDetails(!showDetails)}
-                  className="flex items-center gap-2 text-[#7c5a2a] hover:text-[#8b4513] transition-colors"
+                  className="flex items-center gap-2 text-[#7c5a2a] hover:text-[#8b4513] transition-colors text-sm sm:text-base"
                 >
                   {showDetails ? FaChevronUp({ className: "w-4 h-4" }) : FaChevronDown({ className: "w-4 h-4" })}
                   <span className="font-medium">詳細設定</span>
                 </button>
 
                 {showDetails && (
-                  <div className="mt-4 space-y-4 bg-[#f5f5dc] rounded-lg p-4 border border-[#deb887]">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="mt-3 sm:mt-4 space-y-3 sm:space-y-4 bg-[#f5f5dc] rounded-lg p-3 sm:p-4 border border-[#deb887]">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                       <div>
                         <label className="block text-sm font-medium text-[#8b4513] mb-2">
                           優先度
@@ -556,7 +822,7 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
                       <DurationInput
                         value={estimatedDuration}
                         onChange={setEstimatedDuration}
-                        className="w-full border-[#deb887] focus:border-[#7c5a2a] focus:ring-[#7c5a2a]"
+                        className="w-full border-[#deb887] focus:border-[#7c5a2a] focus:ring-[#7c5a2a] text-sm sm:text-base"
                       />
                     </div>
                   </div>
@@ -570,10 +836,10 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
                     variant={initialData.status === 'done' ? 'secondary' : 'primary'}
                     onClick={handleComplete}
                     size="sm"
-                    className={initialData.status === 'done' 
+                    className={`${initialData.status === 'done' 
                       ? 'bg-[#f5f5dc] text-[#8b4513] border border-[#deb887] hover:bg-[#deb887]' 
                       : 'bg-[#7c5a2a] hover:bg-[#8b4513] text-white'
-                    }
+                    } text-sm sm:text-base`}
                   >
                     {initialData.status === 'done' ? '未完了に戻す' : '完了にする'}
                   </Button>
@@ -582,13 +848,13 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
             </div>
 
             {/* エディターエリア */}
-            <div className="bg-[#f5f5dc] rounded-lg border border-[#deb887] mb-6 mt-6">
-              <div className="p-6">
+            <div className="bg-[#f5f5dc] rounded-lg border border-[#deb887] mb-4 sm:mb-6 mt-4 sm:mt-6">
+              <div className="p-3 sm:p-6">
                 <textarea
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   placeholder={contentPlaceholder}
-                  className="w-full h-96 resize-none border-0 focus:ring-0 focus:outline-none text-[#8b4513] placeholder-[#7c5a2a] bg-transparent"
+                  className={`w-full resize-none border-0 focus:ring-0 focus:outline-none text-[#8b4513] placeholder-[#7c5a2a] bg-transparent text-sm sm:text-base ${isMobile ? 'h-64' : 'h-96'}`}
                   style={{ fontFamily: 'Monaco, Menlo, monospace' }}
                   disabled={isPreviewMode}
                 />
@@ -604,6 +870,38 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* 確認ダイアログ */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex-shrink-0 w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                {FaExclamationTriangle({ className: "w-5 h-5 text-yellow-600" })}
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-[#8b4513]">変更内容があります</h3>
+                <p className="text-sm text-gray-600">入力内容が保存されていません</p>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <button
+                onClick={handleConfirmClose}
+                className="w-full bg-[#7c5a2a] hover:bg-[#8b4513] text-white py-2 px-4 rounded-lg font-medium transition-colors"
+              >
+                保存せずに閉じる
+              </button>
+              <button
+                onClick={handleCancelClose}
+                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-medium transition-colors"
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }; 

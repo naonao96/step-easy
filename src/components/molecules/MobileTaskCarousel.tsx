@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Task } from '@/stores/taskStore';
 import { CategoryBadge } from '@/components/atoms/CategoryBadge';
-import { FaCheck, FaTrash, FaPlay, FaPause, FaStop, FaClock, FaEdit } from 'react-icons/fa';
+import { FaCheck, FaTrash, FaPlay, FaPause, FaStop, FaClock, FaEdit, FaFire } from 'react-icons/fa';
 import { useExecutionStore } from '@/stores/executionStore';
 
 interface MobileTaskCarouselProps {
@@ -361,7 +361,7 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
   };
 
   return (
-    <div className="relative w-full h-48 overflow-hidden mobile-carousel-container">
+    <div className="relative w-full h-56 overflow-hidden mobile-carousel-container">
       {/* カルーセルコンテナ */}
       <div
         ref={carouselRef}
@@ -398,13 +398,12 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
                 {/* Instagram Stories風のタスクカード */}
                 <div 
                   className={`
-                  w-full h-full bg-white rounded-3xl shadow-xl overflow-hidden
-                  ${isCenter ? 'border-2 border-blue-400 mobile-carousel-shadow-center' : 'border border-gray-200 mobile-carousel-shadow'}
+                  w-full h-full bg-white rounded-3xl overflow-hidden
+                  ${isCenter ? 'border-2 border-[#8b4513]' : 'border border-[#8b4513]'}
                   ${task.status === 'done' ? 'opacity-75' : ''}
                   ${isDragging ? '' : 'transition-all duration-300'}
-                  ${isCenter ? 'ring-2 ring-blue-200 ring-opacity-30' : ''}
-                  backdrop-blur-sm
-                    ${isCenter && onTaskClick ? 'cursor-pointer' : ''}
+                  ${isCenter ? 'ring-2 ring-[#8b4513] ring-opacity-30' : ''}
+                  ${isCenter && onTaskClick ? 'cursor-pointer' : ''}
                   `}
                   onClick={isCenter && onTaskClick ? () => onTaskClick(task) : undefined}
                 >
@@ -413,11 +412,14 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         <button
-                          onClick={() => onCompleteTask(task.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onCompleteTask(task.id);
+                          }}
                           className={`mt-1 flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
                             task.status === 'done'
-                              ? 'bg-green-500 border-green-500 text-white'
-                              : 'border-gray-300 hover:border-blue-400'
+                              ? 'bg-[#7c5a2a] border-[#7c5a2a] text-white'
+                              : 'border-[#deb887] hover:border-[#7c5a2a]'
                           }`}
                         >
                           {task.status === 'done' && FaCheck({ className: "w-3 h-3" })}
@@ -438,7 +440,7 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
                               e.stopPropagation();
                               onEditTask(task);
                             }}
-                            className="mt-1 p-1 text-gray-400 hover:text-blue-500 transition-colors flex-shrink-0"
+                            className="mt-1 p-1 text-[#7c5a2a] hover:text-[#8b4513] transition-colors flex-shrink-0"
                             title="編集"
                           >
                             {FaEdit({ className: "w-4 h-4" })}
@@ -449,7 +451,7 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
                             e.stopPropagation();
                             onDeleteTask(task.id);
                           }}
-                          className="mt-1 p-1 text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+                          className="mt-1 p-1 text-[#7c5a2a] hover:text-[#8b4513] transition-colors flex-shrink-0"
                           title="削除"
                         >
                           {FaTrash({ className: "w-4 h-4" })}
@@ -464,7 +466,7 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
                     {/* 説明（短縮版） */}
                     {task.description && (
                       <p className={`text-sm text-gray-600 mb-2 line-clamp-2 ${
-                        task.status === 'done' ? 'line-through text-gray-400' : ''
+                        task.status === 'done' ? 'line-through text-gray-500' : ''
                       }`}>
                         {task.description}
                       </p>
@@ -474,7 +476,8 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
                     <div className="flex flex-wrap gap-2 mb-2">
                       {/* 習慣ラベル */}
                       {isHabit && (
-                        <span className="text-xs bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-medium">
+                        <span className="text-xs bg-[#deb887] text-[#7c5a2a] px-1.5 sm:px-2 py-1 rounded flex items-center gap-1">
+                          {FaFire({ className: "w-2.5 h-2.5" })}
                           {getFrequencyLabel(task.habit_frequency)}
                         </span>
                       )}
@@ -484,13 +487,13 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
                       )}
                       {/* 優先度バッジ */}
                       {task.priority && (
-                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                          task.priority === 'high' ? 'bg-red-100 text-red-800' :
-                          task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-gray-100 text-gray-800'
+                        <div className={`text-xs px-2 py-1 rounded font-medium flex items-center justify-center ${
+                          task.priority === 'high' ? 'bg-[#deb887] text-[#8b4513]' :
+                          task.priority === 'medium' ? 'bg-[#f5f5dc] text-[#7c5a2a]' :
+                          'bg-[#f5f5dc] text-[#7c5a2a]'
                         }`}>
                           {task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}
-                        </span>
+                        </div>
                       )}
                     </div>
 
@@ -517,7 +520,7 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
                               className={`p-2 rounded-md text-sm transition-colors relative z-20 ${
                                 isOtherTaskRunning(task.id)
                                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                  : 'bg-green-500 text-white hover:bg-green-600'
+                                  : 'bg-[#7c5a2a] text-white hover:bg-[#8b4513]'
                               }`}
                               title={isOtherTaskRunning(task.id) ? '他のタスクが実行中' : '実行開始'}
                             >
@@ -531,7 +534,7 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
                                     e.stopPropagation();
                                     pauseExecution();
                                   }}
-                                  className="p-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 text-sm transition-colors relative z-20"
+                                  className="p-2 bg-[#deb887] text-[#7c5a2a] rounded-md hover:bg-[#8b4513] hover:text-white text-sm transition-colors relative z-20"
                                   title="一時停止"
                                 >
                                   {FaPause({ className: "w-3 h-3" })}
@@ -542,7 +545,7 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
                                     e.stopPropagation();
                                     resumeExecution();
                                   }}
-                                  className="p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm transition-colors relative z-20"
+                                  className="p-2 bg-[#7c5a2a] text-white rounded-md hover:bg-[#8b4513] text-sm transition-colors relative z-20"
                                   title="再開"
                                 >
                                   {FaPlay({ className: "w-3 h-3" })}
@@ -553,7 +556,7 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
                                   e.stopPropagation();
                                   stopExecution();
                                 }}
-                                className="p-2 bg-red-500 text-white rounded-md hover:bg-red-600 text-sm transition-colors relative z-20"
+                                className="p-2 bg-[#8b4513] text-white rounded-md hover:bg-[#7c5a2a] text-sm transition-colors relative z-20"
                                 title="停止・記録"
                               >
                                 {FaStop({ className: "w-3 h-3" })}

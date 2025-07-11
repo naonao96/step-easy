@@ -18,7 +18,7 @@ import { TaskModal } from '@/components/molecules/TaskModal';
 import { HabitModal } from '@/components/molecules/HabitModal';
 import { TaskPreviewModal } from '@/components/molecules/TaskPreviewModal';
 import { TaskEditModal } from '@/components/molecules/TaskEditModal';
-import { MobileTaskModal } from '@/components/molecules/MobileTaskModal';
+
 import { getGuestTasks, migrateGuestTasks, clearGuestTasks } from '@/lib/guestMigration';
 import { useCharacterMessage } from '@/hooks/useCharacterMessage';
 import { useEmotionLog } from '@/hooks/useEmotionLog';
@@ -498,7 +498,7 @@ export default function MenuPage() {
   };
 
   return (
-    <AppLayout variant="home" tasks={tasks as any} showNotifications={true} onFABClick={handleFABClick}>
+    <AppLayout variant="home" tasks={tasks as any} showNotifications={true} showFAB={true} onFABClick={handleFABClick}>
       {/* モダンなモバイル専用レイアウト */}
       <div className="lg:hidden">
         <ModernMobileHome
@@ -639,6 +639,7 @@ export default function MenuPage() {
             onDelete={handleDeleteTask}
             onComplete={handleCompleteTask}
             onRefresh={fetchTasks}
+            isMobile={!isDesktop}
           />
 
           <TaskEditModal
@@ -657,39 +658,7 @@ export default function MenuPage() {
               setShowTaskPreviewModal(true);
             }}
             onRefresh={fetchTasks}
-          />
-        </>
-      )}
-
-      {/* モバイル版専用モーダル */}
-      {selectedTask && (
-        <>
-          <MobileTaskModal
-            isOpen={showTaskPreviewModal && !isDesktop}
-            onClose={() => setShowTaskPreviewModal(false)}
-            mode="preview"
-            task={selectedTask as any}
-            onSave={async (taskData) => {
-              if (selectedTask) {
-                await updateTask(selectedTask.id, taskData);
-              }
-            }}
-            onDelete={handleDeleteTask}
-            onComplete={handleCompleteTask}
-          />
-
-          <MobileTaskModal
-            isOpen={showEditModal && !isDesktop}
-            onClose={() => setShowEditModal(false)}
-            mode="edit"
-            task={selectedTask as any}
-            onSave={async (taskData) => {
-              if (selectedTask) {
-                await updateTask(selectedTask.id, taskData);
-              }
-            }}
-            onDelete={handleDeleteTask}
-            onComplete={handleCompleteTask}
+            isMobile={!isDesktop}
           />
         </>
       )}

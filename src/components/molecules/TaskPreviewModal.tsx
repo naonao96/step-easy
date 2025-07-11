@@ -10,6 +10,7 @@ interface TaskPreviewModalProps {
   onDelete: (id: string) => void;
   onComplete: (id: string) => void;
   onRefresh: () => void;
+  isMobile?: boolean;
 }
 
 export const TaskPreviewModal: React.FC<TaskPreviewModalProps> = ({
@@ -20,6 +21,7 @@ export const TaskPreviewModal: React.FC<TaskPreviewModalProps> = ({
   onDelete,
   onComplete,
   onRefresh,
+  isMobile = false
 }) => {
   const createTaskFormData = (data: {
     title: string;
@@ -69,6 +71,7 @@ export const TaskPreviewModal: React.FC<TaskPreviewModalProps> = ({
 Markdownで自由に書けます！`}
       modalTitle="プレビュー"
       createFormData={createTaskFormData}
+      isMobile={isMobile}
     />
   );
 }; 

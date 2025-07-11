@@ -393,7 +393,7 @@ export default function TaskEditPage() {
               <div className="p-6">
                 {/* タスクタイトル */}
                 <div className="mb-6">
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{task.title}</h1>
+                  <h1 className="text-3xl font-bold text-[#8b4513] mb-2">{task.title}</h1>
                   <div className="flex items-center gap-4">
                     <span className={`px-3 py-1 text-sm rounded-full ${
                       task.priority === 'high' ? 'bg-red-100 text-red-700' :
