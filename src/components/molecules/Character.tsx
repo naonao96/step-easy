@@ -162,10 +162,10 @@ export const Character: React.FC<CharacterProps> = ({
       <div className="flex items-end gap-4">
         {/* モダンなスピーチバルーン（Radial Menu表示時は左にスライド） */}
         {showMessage && (
-          <div className="mb-4 transition-all duration-300" style={{ minHeight: '3cm', height: 'auto', transform: showEmotionMenu ? 'translateX(-120px)' : 'translateX(0px)', marginTop: '40px', zIndex: 50, right: 'calc(50% + 2cm)' }}>
+          <div className="mb-4 transition-all duration-300 pointer-events-none" style={{ minHeight: '3cm', height: 'auto', transform: showEmotionMenu ? 'translateX(-120px)' : 'translateX(0px)', marginTop: '40px', zIndex: 50, right: 'calc(50% + 2cm)' }}>
             <div className="relative">
               <div
-                className="bg-gradient-to-br from-blue-50/95 to-indigo-100/95 backdrop-blur-md rounded-2xl border border-blue-200/50 shadow-2xl transition-all duration-300 p-4 w-80"
+                className="bg-gradient-to-br from-blue-50/95 to-indigo-100/95 backdrop-blur-md rounded-2xl border border-blue-200/50 shadow-2xl transition-all duration-300 p-4 w-80 pointer-events-none"
               >
                 <div className="text-gray-800 font-medium leading-relaxed text-xs">
                   <span>{message}</span>
@@ -173,7 +173,7 @@ export const Character: React.FC<CharacterProps> = ({
                 </div>
               </div>
               {/* 尻尾部分（右辺に取り付け） */}
-              <div className="absolute top-1/2 -right-2 w-4 h-4 bg-gradient-to-br from-blue-50/95 to-indigo-100/95 border-r border-b border-blue-200/50 transform rotate-45 -translate-y-1/2"></div>
+              <div className="absolute top-1/2 -right-2 w-4 h-4 bg-gradient-to-br from-blue-50/95 to-indigo-100/95 border-r border-b border-blue-200/50 transform rotate-45 -translate-y-1/2 pointer-events-none"></div>
             </div>
           </div>
         )}
@@ -196,10 +196,10 @@ export const Character: React.FC<CharacterProps> = ({
             src={mood === 'happy' ? '/TalkToTheBird.png' : mood === 'sad' ? '/SilentBird.png' : '/TalkToTheBird.png'}
             alt="StepEasy Bird Character"
             style={{ height: '3cm', width: 'auto', objectFit: 'contain', display: 'block' }}
-            className={`
-              transition-transform transition-shadow duration-200 hover:scale-110
-              ${shouldBlink ? 'character-unrecorded' : ''}
-            `}
+                    className={`
+          transition-transform transition-shadow duration-200 hover:scale-110 active:scale-110
+          ${shouldBlink ? 'character-unrecorded' : ''}
+        `}
           />
           
           {/* 朝昼晩（統合型ヘッダー）をキャラクターの足元にabsolute配置：ホバー時のみ表示 */}
@@ -214,14 +214,7 @@ export const Character: React.FC<CharacterProps> = ({
             </div>
           )}
           
-          {/* テキストヒント（未記録時のみ表示） */}
-          {shouldBlink && (
-            <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 z-50">
-              <div className="hint-text bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs px-3 py-2 rounded-full whitespace-nowrap shadow-lg">
-                💭 今の気持ちを記録してみて！
-              </div>
-            </div>
-          )}
+
           
           {/* 感情ログホバーメニュー（Radial Menu） */}
           <EmotionHoverMenu
@@ -258,14 +251,7 @@ export const Character: React.FC<CharacterProps> = ({
           `}
         />
         
-        {/* テキストヒント（未記録時のみ表示） */}
-        {shouldBlink && (
-          <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 z-50">
-            <div className="hint-text bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs px-3 py-2 rounded-full whitespace-nowrap shadow-lg">
-              💭 今の気持ちを記録してみて！
-            </div>
-          </div>
-        )}
+
       </div>
       {message && (
         <div className="relative max-w-md z-50">

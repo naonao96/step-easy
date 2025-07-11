@@ -1,0 +1,21 @@
+name: Cleanup Expired Data
+
+on:
+  schedule:
+    # 毎日午前3時に実行
+    - cron: '0 3 * * *'
+  workflow_dispatch: # 手動実行も可能
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Cleanup expired data for free users
+        run: |
+          curl -X GET "https://stepeasy-prod.vercel.app/api/cleanup-expired-data" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json"
+        
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }} 

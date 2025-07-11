@@ -152,12 +152,12 @@ export const MobilePlansContent: React.FC<MobilePlansContentProps> = ({
                 <h3 className="text-xl font-bold text-[#8b4513]">プレミアム</h3>
               </div>
               <div className="flex items-center justify-center gap-2 mb-4">
-                <span className="text-[#7c5a2a]">より深い洞察と成長</span>
+                <span className="text-[#7c5a2a]">習慣の記録を"人生の記憶"として残せます</span>
                 <span className="bg-[#deb887] text-[#8b4513] px-2 py-1 rounded-full text-xs font-medium">
                   準備中
                 </span>
               </div>
-              <div className="text-2xl font-bold text-[#8b4513] mb-2">月額400円</div>
+                              <div className="text-2xl font-bold text-[#8b4513] mb-2">月額200円</div>
               <p className="text-sm text-[#7c5a2a] mb-4">2025年7月リリース予定</p>
               
               <div className="space-y-3 text-left mb-6">

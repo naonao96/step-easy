@@ -216,21 +216,12 @@ export default function TaskEditPage() {
     try {
       const taskData = createTaskFormData();
 
-      // デバッグ情報を出力
-      console.log('保存データ:', taskData);
-      console.log('開始日:', startDate);
-      console.log('期限日:', dueDate);
-
       if (isExistingTask && task) {
-        console.log('既存タスクを更新中...');
         await updateTask(task.id, taskData);
-        console.log('更新完了');
         // 保存後はプレビューモードに切り替え
         switchToPreviewMode();
       } else {
-        console.log('新規タスクを作成中...');
         const result = await createTask(taskData as any);
-        console.log('作成結果:', result);
         
         // エラーがある場合はストアのエラーを確認
         const error = useTaskStore.getState().error;
@@ -239,7 +230,6 @@ export default function TaskEditPage() {
           alert(error);
           return;
         }
-        console.log('メニューに遷移中...');
         
         // 短い遅延を入れてからリダイレクト（画面の更新を確実にする）
         setTimeout(() => {

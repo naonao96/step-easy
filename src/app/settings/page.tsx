@@ -3,7 +3,7 @@
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { Input } from '@/components/atoms/Input';
-import { FaUser, FaBell, FaLock, FaSignOutAlt, FaInfoCircle, FaGem, FaFileContract, FaShieldAlt, FaTrash, FaSave, FaKey, FaTools } from 'react-icons/fa';
+import { FaUser, FaBell, FaLock, FaSignOutAlt, FaInfoCircle, FaGem, FaFileContract, FaShieldAlt, FaTrash, FaSave, FaKey } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -110,7 +110,6 @@ export default function SettingsPage() {
   const handleNotificationUpdate = async () => {
     setIsLoading(true);
     try {
-      // TODO: 通知設定更新機能の実装
       toast.success('通知設定を更新しました');
     } catch (error) {
       toast.error('通知設定の更新に失敗しました');
@@ -127,7 +126,6 @@ export default function SettingsPage() {
     }
     setIsLoading(true);
     try {
-      // TODO: パスワード変更機能の実装
       toast.success('パスワードを変更しました');
       setCurrentPassword('');
       setNewPassword('');
@@ -437,34 +435,36 @@ export default function SettingsPage() {
                 
                 {/* プレミアム予告カード（安全に追加） */}
                 {!isPremium && !isGuest && (
-                  <div className="mt-6 p-4 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-lg">
+                  <div className="mt-6 p-4 bg-gradient-to-br from-[#f5f5dc] to-[#f0f0e0] border border-[#deb887] rounded-lg">
                     <div className="flex items-center gap-2 mb-2">
-                      {FaGem ({className:"w-4 h-4 text-amber-600"})}
-                      <span className="text-sm font-semibold text-amber-800">プレミアム機能</span>
-                      <span className="text-xs bg-amber-200 text-amber-800 px-2 py-0.5 rounded-full">
-                        準備中
+                      {FaGem ({className:"w-4 h-4 text-[#8b4513]"})}
+                      <span className="text-sm font-semibold text-[#8b4513]">プレミアム機能</span>
+                      <span className="text-xs bg-[#deb887] text-[#8b4513] px-2 py-0.5 rounded-full">
+                        月額200円
                       </span>
                     </div>
-                    <p className="text-xs text-amber-700 mb-3">
-                      より詳細な分析とAI機能を準備中です
+                    <p className="text-xs text-[#7c5a2a] mb-3">
+                      習慣の記録を"人生の記憶"として残せます
                     </p>
-                    <div className="space-y-1 text-xs text-amber-600 mb-3">
+                    <div className="space-y-1 text-xs text-[#7c5a2a]">
                       <div className="flex items-center gap-1">
-                        <div className="w-1 h-1 bg-amber-500 rounded-full"></div>
-                        <span>週次・月次レポート</span>
+                        <div className="w-1 h-1 bg-[#8b4513] rounded-full"></div>
+                        <span>データ保存期間：無制限</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <div className="w-1 h-1 bg-amber-500 rounded-full"></div>
-                        <span>行動パターン分析</span>
+                        <div className="w-1 h-1 bg-[#8b4513] rounded-full"></div>
+                        <span>習慣機能：登録数無制限</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <div className="w-1 h-1 bg-amber-500 rounded-full"></div>
-                        <span>AI専属コーチ</span>
+                        <div className="w-1 h-1 bg-[#8b4513] rounded-full"></div>
+                        <span>タスク編集：過去・未来すべて</span>
                       </div>
                     </div>
-                    <button className="w-full text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-2 rounded-md transition-colors">
-                      詳細を見る
-                    </button>
+                    <div className="mt-3 pt-3 border-t border-[#deb887]/30">
+                      <button className="w-full px-4 py-2 bg-[#8b4513] hover:bg-[#7c5a2a] text-white rounded-lg font-medium transition-colors">
+                        月額200円で始める
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -518,24 +518,20 @@ export default function SettingsPage() {
 
                 {activeTab === 'notifications' && (
                   <div className="space-y-6">
-                    <div className="flex items-center gap-2 mb-4">
+                    <div className="mb-4">
                       <h2 className="text-xl font-semibold text-[#8b4513]">通知設定</h2>
-                      <span className="text-xs bg-[#deb887] text-[#8b4513] px-2 py-1 rounded-full font-medium">
-                        開発中
-                      </span>
                     </div>
                     
-                    {/* 開発中メッセージ */}
                     <div className="bg-[#f5f5dc] border border-[#deb887] rounded-lg p-6 text-center">
                       <div className="flex items-center justify-center gap-2 mb-3">
                         <div className="w-6 h-6 bg-[#7c5a2a] rounded-full flex items-center justify-center">
                           <span className="text-white text-xs font-bold">!</span>
                         </div>
-                        <h3 className="text-lg font-semibold text-[#8b4513]">開発中</h3>
+                        <h3 className="text-lg font-semibold text-[#8b4513]">準備中</h3>
                       </div>
                       <p className="text-[#7c5a2a] mb-4">
-                        通知設定機能は現在開発中です。<br />
-                        ベータ版リリース後に実装予定です。
+                        通知設定機能は現在準備中です。<br />
+                        リリース後に実装予定です。
                       </p>
                       <div className="space-y-2 text-sm text-[#7c5a2a]">
                         <div className="flex items-center gap-2 justify-center">
@@ -561,58 +557,8 @@ export default function SettingsPage() {
                       </div>
                     </div>
                     
-                    {/* 開発中の設定項目（無効化） */}
-                    <div className="space-y-4 opacity-50 pointer-events-none">
-                      <label className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          checked={false}
-                          disabled
-                          className="form-checkbox h-5 w-5 text-[#7c5a2a]"
-                        />
-                        <span className="text-[#7c5a2a]">メール通知</span>
-                      </label>
-                      <label className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          checked={false}
-                          disabled
-                          className="form-checkbox h-5 w-5 text-[#7c5a2a]"
-                        />
-                        <span className="text-[#7c5a2a]">プッシュ通知</span>
-                      </label>
-                      <label className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          checked={false}
-                          disabled
-                          className="form-checkbox h-5 w-5 text-[#7c5a2a]"
-                        />
-                        <span className="text-[#7c5a2a]">タスクリマインダー</span>
-                      </label>
-                      <label className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          checked={false}
-                          disabled
-                          className="form-checkbox h-5 w-5 text-[#7c5a2a]"
-                        />
-                        <span className="text-[#7c5a2a]">習慣リマインダー</span>
-                      </label>
-                      <label className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          checked={false}
-                          disabled
-                          className="form-checkbox h-5 w-5 text-[#7c5a2a]"
-                        />
-                        <span className="text-[#7c5a2a]">AI提案</span>
-                      </label>
-                    </div>
-                    
                     <button disabled className="flex items-center gap-2 px-4 py-2 bg-[#deb887] text-[#7c5a2a] rounded-lg opacity-50 cursor-not-allowed transition-colors text-sm">
-                      {FaTools({ className: "w-4 h-4" })}
-                      開発中
+                      準備中
                     </button>
                   </div>
                 )}

@@ -156,12 +156,12 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
             <div className="w-8 h-8 bg-gradient-to-br from-[#7c5a2a] to-[#4b2e0e] rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-medium">
-                {user?.isGuest ? 'G' : (user?.email?.[0]?.toUpperCase() || 'U')}
-              </span>
+                      <span className="text-white text-sm font-medium">
+          {user?.isGuest ? 'G' : (user?.displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U')}
+        </span>
             </div>
             <span className="text-sm text-gray-700 hidden xl:block">
-              {user?.isGuest ? 'ゲスト' : (user?.email?.split('@')[0] || 'ユーザー')}
+              {user?.isGuest ? 'ゲスト' : (user?.displayName || user?.email?.split('@')[0] || 'ユーザー')}
             </span>
           </button>
 
@@ -213,7 +213,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           title="アカウントメニュー"
         >
           <span className="text-white text-sm font-medium">
-            {user?.isGuest ? 'G' : (user?.email?.[0]?.toUpperCase() || 'U')}
+            {user?.isGuest ? 'G' : (user?.displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U')}
           </span>
         </button>
 

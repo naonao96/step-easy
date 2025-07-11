@@ -143,12 +143,12 @@ export const PlansContent: React.FC<PlansContentProps> = ({ onLogin, onRegister,
                 <h3 className="text-2xl font-bold text-[#8b4513]">プレミアム</h3>
               </div>
               <div className="flex items-center justify-center gap-2 mb-6">
-                <span className="text-[#7c5a2a]">より深い洞察と成長</span>
+                <span className="text-[#7c5a2a]">習慣の記録を"人生の記憶"として残せます</span>
                 <span className="bg-[#deb887] text-[#8b4513] px-2 py-1 rounded-full text-xs font-medium">
                   準備中
                 </span>
               </div>
-              <div className="text-3xl font-bold text-[#8b4513] mb-2">月額400円</div>
+              <div className="text-3xl font-bold text-[#8b4513] mb-2">月額200円</div>
               <p className="text-sm text-[#7c5a2a] mb-6">2025年7月リリース予定</p>
               
               <div className="space-y-4 text-left mb-8">
@@ -158,23 +158,23 @@ export const PlansContent: React.FC<PlansContentProps> = ({ onLogin, onRegister,
                 </div>
                 <div className="flex items-center gap-3">
                   {(FaStar as any)({ className: "w-4 h-4 text-[#8b4513]" })}
-                  <span className="text-[#8b4513]">週次・月次詳細レポート</span>
+                  <span className="text-[#8b4513]">データ保存期間：無制限</span>
                 </div>
                 <div className="flex items-center gap-3">
                   {(FaStar as any)({ className: "w-4 h-4 text-[#8b4513]" })}
-                  <span className="text-[#8b4513]">性格タイプ分析</span>
+                  <span className="text-[#8b4513]">新規タスク作成：無制限の日付指定</span>
                 </div>
                 <div className="flex items-center gap-3">
                   {(FaStar as any)({ className: "w-4 h-4 text-[#8b4513]" })}
-                  <span className="text-[#8b4513]">AI専属コーチ強化</span>
+                  <span className="text-[#8b4513]">既存タスク編集：過去・未来すべて編集可能</span>
                 </div>
                 <div className="flex items-center gap-3">
                   {(FaStar as any)({ className: "w-4 h-4 text-[#8b4513]" })}
-                  <span className="text-[#8b4513]">習慣最適化提案</span>
+                  <span className="text-[#8b4513]">習慣機能：登録数無制限</span>
                 </div>
                 <div className="flex items-center gap-3">
                   {(FaStar as any)({ className: "w-4 h-4 text-[#8b4513]" })}
-                  <span className="text-[#8b4513]">感情パターン解析</span>
+                  <span className="text-[#8b4513]">タスクや感情の歩みを、いつまでも振り返れる</span>
                 </div>
                 
                 {/* 詳細プレビューボタン */}

@@ -12,8 +12,6 @@ import { TaskListHome } from '@/components/molecules/TaskListHome';
 import { GuestMigrationModal } from '@/components/molecules/GuestMigrationModal';
 import { ModernMobileHome } from '@/components/molecules/ModernMobileHome';
 import { PremiumComingSoonBanner } from '@/components/molecules/PremiumComingSoonBanner';
-import { PremiumPreviewModal } from '@/components/molecules/PremiumPreviewModal';
-import { NotificationSignupForm } from '@/components/molecules/NotificationSignupForm';
 import { TaskModal } from '@/components/molecules/TaskModal';
 import { HabitModal } from '@/components/molecules/HabitModal';
 import { TaskPreviewModal } from '@/components/molecules/TaskPreviewModal';
@@ -28,7 +26,7 @@ const { useMediaQuery } = require('react-responsive');
 export default function MenuPage() {
   const router = useRouter();
   const { user, signOut, shouldShowMigrationModal, setShouldShowMigrationModal, isGuest, planType } = useAuth();
-  const { tasks, fetchTasks, updateTask, deleteTask, resetExpiredStreaks, cleanupExpiredData } = useTaskStore();
+  const { tasks, fetchTasks, updateTask, deleteTask, resetExpiredStreaks } = useTaskStore();
   
   // 感情記録の状態を取得
   const { recordStatus, currentTimePeriod } = useEmotionLog();
@@ -47,10 +45,8 @@ export default function MenuPage() {
   const [contentHeight, setContentHeight] = useState(46); // rem単位（カレンダーと統一）
   const [speechBubbleVisible, setSpeechBubbleVisible] = useState(false);
   const [autoHideTimer, setAutoHideTimer] = useState<NodeJS.Timeout | null>(null);
-  const [showNotificationForm, setShowNotificationForm] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showHabitModal, setShowHabitModal] = useState(false);
-  const [showPremiumPreviewModal, setShowPremiumPreviewModal] = useState(false);
   const [showTaskPreviewModal, setShowTaskPreviewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -68,8 +64,6 @@ export default function MenuPage() {
       await fetchTasks();
       // アプリ起動時に期限切れストリークをリセット
       await resetExpiredStreaks();
-      // 無料ユーザーの30日経過データをクリーンアップ
-      await cleanupExpiredData();
     };
     
     initializeData();
@@ -293,77 +287,96 @@ export default function MenuPage() {
     selectedDate,
   });
 
+  const typewriterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // 外部クリックでメッセージを消す機能
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      // メッセージが表示中で、キャラクター以外の場所をクリックした場合
-      if (showMessage && !isTyping) {
+      if (showMessage) {
         const target = event.target as HTMLElement;
-        // キャラクター要素またはその子要素でない場合
         if (!target.closest('.character-container')) {
           setShowMessage(false);
-    setDisplayedMessage('');
+          setDisplayedMessage('');
+          setIsTyping(false);
+          if (typewriterTimeoutRef.current) {
+            clearTimeout(typewriterTimeoutRef.current);
+            typewriterTimeoutRef.current = null;
+          }
         }
       }
     };
-
     if (showMessage) {
       document.addEventListener('mousedown', handleClickOutside);
     }
-
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showMessage, isTyping]);
+  }, [showMessage]);
 
   // 初回表示（リロード・ログイン時は毎回実行）
   useEffect(() => {
-    // ユーザー情報が確実に取得できてからメッセージ表示（ゲストユーザーは除く）
     if (mounted && isDesktop && characterMessage && !showMessage && (user?.isGuest || user?.displayName || user?.email)) {
       setShowMessage(true);
-    setIsTyping(true);
-      // タイプライター開始
-    let i = 0;
-    const type = () => {
-      setDisplayedMessage(characterMessage.slice(0, i));
-      if (i < characterMessage.length) {
-        i++;
-        setTimeout(type, 30);
-      } else {
-        setIsTyping(false);
-          // タイプライター完了後、5秒で自動消去
-          setTimeout(() => {
+      setIsTyping(true);
+      let i = 0;
+      const type = () => {
+        setDisplayedMessage(characterMessage.slice(0, i));
+        if (i < characterMessage.length) {
+          i++;
+          typewriterTimeoutRef.current = setTimeout(type, 30);
+        } else {
+          setIsTyping(false);
+          typewriterTimeoutRef.current = setTimeout(() => {
             setShowMessage(false);
             setDisplayedMessage('');
+            setIsTyping(false);
+            if (typewriterTimeoutRef.current) {
+              clearTimeout(typewriterTimeoutRef.current);
+              typewriterTimeoutRef.current = null;
+            }
           }, 5000);
-      }
-    };
-    type();
+        }
+      };
+      type();
     }
+    // クリーンアップでタイマーを必ず解除
+    return () => {
+      if (typewriterTimeoutRef.current) {
+        clearTimeout(typewriterTimeoutRef.current);
+        typewriterTimeoutRef.current = null;
+      }
+      // 画面切り替え時に状態をリセット
+      setIsTyping(false);
+      setDisplayedMessage('');
+      setShowMessage(false);
+    };
   }, [mounted, isDesktop, characterMessage, user]);
 
   // クリック処理
   const handleClick = () => {
     if (characterMessage && !isTyping) {
       setShowMessage(true);
-    setIsTyping(true);
-      // タイプライター開始
-    let i = 0;
-    const type = () => {
-      setDisplayedMessage(characterMessage.slice(0, i));
-      if (i < characterMessage.length) {
-        i++;
-        setTimeout(type, 30);
-      } else {
-        setIsTyping(false);
-          // タイプライター完了後、5秒で自動消去
-          setTimeout(() => {
+      setIsTyping(true);
+      let i = 0;
+      const type = () => {
+        setDisplayedMessage(characterMessage.slice(0, i));
+        if (i < characterMessage.length) {
+          i++;
+          typewriterTimeoutRef.current = setTimeout(type, 30);
+        } else {
+          setIsTyping(false);
+          typewriterTimeoutRef.current = setTimeout(() => {
             setShowMessage(false);
             setDisplayedMessage('');
+            setIsTyping(false);
+            if (typewriterTimeoutRef.current) {
+              clearTimeout(typewriterTimeoutRef.current);
+              typewriterTimeoutRef.current = null;
+            }
           }, 5000);
-      }
-    };
-    type();
+        }
+      };
+      type();
     }
   };
 
@@ -571,10 +584,7 @@ export default function MenuPage() {
             {/* プレミアム導線（デスクトップ版）- 一番下に移動 */}
             {(isGuest || (!isGuest && planType === 'free')) && (
               <div className="mb-6">
-                <PremiumComingSoonBanner
-                  onPreviewClick={() => setShowPremiumPreviewModal(true)}
-                  onNotificationSignup={() => setShowNotificationForm(true)}
-                />
+                <PremiumComingSoonBanner />
               </div>
             )}
             </div>
@@ -592,23 +602,7 @@ export default function MenuPage() {
         error={migrationError}
       />
 
-      {/* プレミアム関連モーダル（デスクトップ版） */}
-      <PremiumPreviewModal
-        isOpen={showPremiumPreviewModal}
-        onClose={() => setShowPremiumPreviewModal(false)}
-        onNotificationSignup={() => {
-          setShowPremiumPreviewModal(false);
-          setShowNotificationForm(true);
-        }}
-      />
 
-      <NotificationSignupForm
-        isOpen={showNotificationForm}
-        onClose={() => setShowNotificationForm(false)}
-        onSuccess={() => {
-          console.log('Premium notification signup successful (desktop)');
-        }}
-      />
 
 
 

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Task } from '@/types/task';
 import { formatDurationShort } from '@/lib/timeUtils';
 import { useExecutionStore } from '@/stores/executionStore';
+import { handleTimerError, getTimerErrorMessage } from '@/lib/timerUtils';
 import { FaClock, FaPlay, FaPause, FaStop, FaUndo } from 'react-icons/fa';
 
 interface MobileTaskTimerProps {
@@ -73,37 +74,15 @@ export const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
     try {
       const result = await startExecution(task.id);
       
-      // エラー種別に応じた処理
       if (result && !result.success) {
-        switch (result.error) {
-          case 'DEVICE_CONFLICT':
-            const shouldCleanup = confirm(`⚠️ ${result.message}\n\n他のデバイス（${result.conflictInfo?.deviceType}）でタスクが実行中です。\n\n「OK」を押すと強制的に実行状態をクリーンアップして新しく開始します。\n「キャンセル」を押すと操作を中止します。`);
-            if (shouldCleanup) {
-              // 強制クリーンアップして再開始
-              const { forceCleanupActiveExecutions } = useExecutionStore.getState();
-              await forceCleanupActiveExecutions();
-              // 再度実行開始
-              await startExecution(task.id);
-            }
-            return;
-          case 'DATABASE_ERROR':
-            alert(`🔌 ${result.message}`);
-            return;
-          case 'AUTH_ERROR':
-            alert(`🔐 ${result.message}`);
-            // 必要に応じて再ログインページへリダイレクト
-            return;
-          case 'PERMISSION_ERROR':
-            alert(`🚫 ${result.message}`);
-            return;
-          default:
-            alert(`❌ ${result.message || '予期しないエラーが発生しました。'}`);
-            return;
-        }
+        const success = await handleTimerError(result as any, 'start', async () => {
+          await startExecution(task.id);
+        });
+        if (!success) return;
       }
     } catch (error) {
       console.error('タスク開始エラー:', error);
-      alert('タスクの開始に失敗しました。もう一度お試しください。');
+      alert(getTimerErrorMessage('start'));
     }
   };
 
@@ -122,27 +101,15 @@ export const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
     try {
       const result = await resumeExecution();
       
-      // エラー種別に応じた処理
       if (result && !result.success) {
-        switch (result.error) {
-          case 'DEVICE_CONFLICT':
-            const shouldCleanup = confirm(`⚠️ ${result.message}\n\n他のデバイス（${result.conflictInfo?.deviceType}）で別のタスクが実行中です。\n\n「OK」を押すと強制的に実行状態をクリーンアップして再開します。\n「キャンセル」を押すと操作を中止します。`);
-            if (shouldCleanup) {
-              // 強制クリーンアップして再開
-              const { forceCleanupActiveExecutions } = useExecutionStore.getState();
-              await forceCleanupActiveExecutions();
-              // 再度再開実行
-              await resumeExecution();
-            }
-            return;
-          default:
-            alert(`❌ ${result.message || '再開に失敗しました。'}`);
-            return;
-        }
+        const success = await handleTimerError(result as any, 'resume', async () => {
+          await resumeExecution();
+        });
+        if (!success) return;
       }
     } catch (error) {
       console.error('タスク再開エラー:', error);
-      alert('タスクの再開に失敗しました。もう一度お試しください。');
+      alert(getTimerErrorMessage('resume'));
     }
   };
 
@@ -161,7 +128,7 @@ export const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
       }
     } catch (error) {
       console.error('リセット処理エラー:', error);
-      alert('リセット処理に失敗しました。もう一度お試しください。');
+      alert(getTimerErrorMessage('reset'));
     }
   };
 

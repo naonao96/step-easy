@@ -117,7 +117,7 @@ export const EmotionHoverMenu: React.FC<EmotionHoverMenuProps> = ({
           setSelectedEmotion(null);
           setIsRecording(false);
           onClose();
-        }, 800);
+        }, 300);
       } else {
         console.error('感情記録失敗');
         setSelectedEmotion(null);
@@ -272,17 +272,6 @@ export const EmotionHoverMenu: React.FC<EmotionHoverMenuProps> = ({
           {/* 内側のドーナッツ（中央エリア） - 透明にしてキャラクターを表示 */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="w-3/5 h-3/5 rounded-full border-2 border-blue-200/30 flex items-center justify-center">
-              {/* 円の中心に説明メッセージを表示 */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="text-center">
-                  <div className="text-xs text-gray-600 mb-1">
-                    {recordStatus[currentTimePeriod] !== null ? '今の気持ちを変更' : '今の気持ちを'}
-                  </div>
-                  <div className="text-xs text-gray-600">
-                    {recordStatus[currentTimePeriod] !== null ? 'できます' : '記録してください'}
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>

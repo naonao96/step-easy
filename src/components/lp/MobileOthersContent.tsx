@@ -20,7 +20,7 @@ export const MobileOthersContent: React.FC = () => {
   const faqs = [
     {
       question: 'StepEasyは無料で使えますか？',
-      answer: 'はい、基本的な機能は全て無料でご利用いただけます。プレミアム機能（月額400円）は現在開発中です。'
+      answer: 'はい、基本的な機能は全て無料でご利用いただけます。プレミアム機能（月額200円）は準備中です。'
     },
     {
       question: 'ゲストモードと登録ユーザーの違いは？',
@@ -40,7 +40,7 @@ export const MobileOthersContent: React.FC = () => {
     },
     {
       question: 'データのエクスポートはできますか？',
-      answer: '現在開発中の機能です。将来的にはタスクデータや統計情報のエクスポート機能を提供予定です。'
+      answer: '現在準備中の機能です。将来的にはタスクデータや統計情報のエクスポート機能を提供予定です。'
     },
     {
       question: 'モバイルアプリはありますか？',

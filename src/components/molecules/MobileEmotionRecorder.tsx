@@ -77,7 +77,7 @@ export const MobileEmotionRecorder: React.FC<MobileEmotionRecorderProps> = ({
           setSelectedEmotion(null);
           setIsRecording(false);
           onClose();
-        }, 800);
+        }, 300);
       } else {
         console.error('感情記録失敗');
         setSelectedEmotion(null);

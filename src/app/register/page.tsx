@@ -68,28 +68,22 @@ export default function RegisterPage() {
     e.preventDefault();
     setError(null);
 
-    console.log('🚀 登録処理開始:', { email, displayName, passwordLength: password.length });
-
-    // フロントエンドバリデーション
     if (emailCheckStatus === 'taken') {
       setError('このメールアドレスは既に登録されています。ログイン画面をご利用ください。');
       return;
     }
 
     if (password !== confirmPassword) {
-      console.log('❌ パスワード不一致');
       setError('パスワードが一致しません');
       return;
     }
 
     if (password.length < 6) {
-      console.log('❌ パスワード文字数不足:', password.length);
       setError('パスワードは6文字以上で入力してください');
       return;
     }
 
     if (displayName.trim().length < 1) {
-      console.log('❌ ユーザー名未入力');
       setError('ユーザー名を入力してください');
       return;
     }

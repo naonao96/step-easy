@@ -67,7 +67,7 @@ export const TermsOfServiceContent: React.FC = () => {
                 
                 <h3 className="font-medium mb-2 mt-4">3. プレミアムユーザー</h3>
                 <ul className="list-disc ml-6 space-y-1">
-                  <li>月額400円のサブスクリプション</li>
+                  <li>月額200円のサブスクリプション</li>
                   <li>データは無制限保存</li>
                   <li>AI機能、詳細分析等の高度な機能を利用可能</li>
                 </ul>
@@ -127,7 +127,7 @@ export const TermsOfServiceContent: React.FC = () => {
               <p>プレミアム機能の利用料金は以下の通りです：</p>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <ul className="space-y-2">
-                  <li><strong>月額料金：</strong> 400円（税込）</li>
+                  <li><strong>月額料金：</strong> 200円（税込）</li>
                   <li><strong>支払い方法：</strong> クレジットカード（Stripe経由）</li>
                   <li><strong>課金日：</strong> 初回登録日から毎月同日</li>
                   <li><strong>無料期間：</strong> 初回7日間無料</li>
@@ -138,7 +138,7 @@ export const TermsOfServiceContent: React.FC = () => {
                 支払い情報は当方では保存せず、Stripe社が安全に管理します。
               </p>
               <p>
-                プレミアム機能は現在開発中です。機能の提供開始時期については、
+                プレミアム機能は現在準備中です。機能の提供開始時期については、
                 本サービス内でお知らせいたします。
               </p>
               <p>

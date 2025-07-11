@@ -309,7 +309,7 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
         {
           name: '日次メッセージ配信',
           description: '毎朝のモチベーション向上メッセージを自動生成・配信',
-          howToUse: 'Edge Function による自動配信（開発中）',
+          howToUse: 'Edge Function による自動配信',
           status: 'implemented'
         },
         {
@@ -395,7 +395,7 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
       id: 'premium-features',
       title: 'プレミアム機能',
       icon: FaGem,
-      description: '月額400円で利用できる高度な分析・サポート機能',
+      description: '月額200円で利用できる高度な分析・サポート機能',
       features: [
         {
           name: '週次・月次詳細レポート',

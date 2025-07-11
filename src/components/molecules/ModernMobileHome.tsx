@@ -9,8 +9,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { MobileTaskTimer } from './MobileTaskTimer';
 import { MobileTaskHistory } from './MobileTaskHistory';
 import { PremiumComingSoonBanner } from './PremiumComingSoonBanner';
-import { PremiumPreviewModal } from './PremiumPreviewModal';
-import { NotificationSignupForm } from './NotificationSignupForm';
 import { useEmotionLog } from '@/hooks/useEmotionLog';
 import ReactMarkdown from 'react-markdown';
 import { MobileTaskCarousel } from './MobileTaskCarousel';
@@ -91,9 +89,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   // 感情記録の状態を取得
   const { recordStatus, currentTimePeriod } = useEmotionLog();
   
-  // プレミアム機能モーダル関連の状態
-  const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [showNotificationForm, setShowNotificationForm] = useState(false);
+
 
   // タスクプレビュー・編集モーダル関連の状態
   const [selectedTask, setSelectedTask] = useState<any>(null);
@@ -245,24 +241,29 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
     router.push('/progress');
   };
 
+  const typewriterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // キャラクタークリック処理（デスクトップ版と同じ）
   const handleCharacterClick = () => {
     if (characterMessage && !isTyping) {
       setShowMessage(true);
       setIsTyping(true);
-      // タイプライター開始
       let i = 0;
       const type = () => {
         setDisplayedMessage(characterMessage.slice(0, i));
         if (i < characterMessage.length) {
           i++;
-          setTimeout(type, 30);
+          typewriterTimeoutRef.current = setTimeout(type, 30);
         } else {
           setIsTyping(false);
-          // タイプライター完了後、5秒で自動消去
-          setTimeout(() => {
+          typewriterTimeoutRef.current = setTimeout(() => {
             setShowMessage(false);
             setDisplayedMessage('');
+            setIsTyping(false);
+            if (typewriterTimeoutRef.current) {
+              clearTimeout(typewriterTimeoutRef.current);
+              typewriterTimeoutRef.current = null;
+            }
           }, 5000);
         }
       };
@@ -280,53 +281,65 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       const isCharacterContainer = target.closest('.character-container');
-      
-      // メッセージが表示中で、キャラクター以外の場所をクリックした場合
-      if (showMessage && !isTyping && !isCharacterContainer) {
+      if (showMessage && !isCharacterContainer) {
         setShowMessage(false);
         setDisplayedMessage('');
+        setIsTyping(false);
+        if (typewriterTimeoutRef.current) {
+          clearTimeout(typewriterTimeoutRef.current);
+          typewriterTimeoutRef.current = null;
+        }
       }
-      
-      // 感情メニューが表示中で、キャラクター以外の場所をクリックした場合
       if (showEmotionMenu && !isCharacterContainer) {
         setShowEmotionMenu(false);
       }
     };
-
     if (showMessage || showEmotionMenu) {
       document.addEventListener('mousedown', handleClickOutside);
     }
-
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showMessage, showEmotionMenu, isTyping]);
+  }, [showMessage, showEmotionMenu]);
 
   // 初回表示（リロード・ログイン時は毎回実行）
   useEffect(() => {
-    // ユーザー情報が確実に取得できてからメッセージ表示（ゲストユーザーは除く）
     if (characterMessage && !showMessage && (isGuest || user?.displayName || user?.email)) {
       setShowMessage(true);
       setIsTyping(true);
-      // タイプライター開始
       let i = 0;
       const type = () => {
         setDisplayedMessage(characterMessage.slice(0, i));
         if (i < characterMessage.length) {
           i++;
-          setTimeout(type, 30);
+          typewriterTimeoutRef.current = setTimeout(type, 30);
         } else {
           setIsTyping(false);
-          // タイプライター完了後、5秒で自動消去
-          setTimeout(() => {
+          typewriterTimeoutRef.current = setTimeout(() => {
             setShowMessage(false);
             setDisplayedMessage('');
+            setIsTyping(false);
+            if (typewriterTimeoutRef.current) {
+              clearTimeout(typewriterTimeoutRef.current);
+              typewriterTimeoutRef.current = null;
+            }
           }, 5000);
         }
       };
       type();
     }
-  }, [characterMessage, isGuest, user]); // showMessageを依存配列から削除
+    // クリーンアップでタイマーを必ず解除
+    return () => {
+      if (typewriterTimeoutRef.current) {
+        clearTimeout(typewriterTimeoutRef.current);
+        typewriterTimeoutRef.current = null;
+      }
+      // 画面切り替え時に状態をリセット
+      setIsTyping(false);
+      setDisplayedMessage('');
+      setShowMessage(false);
+    };
+  }, [characterMessage, isGuest, user]);
 
   // タスクカードのレンダリング関数
   const renderTaskCard = (task: Task, isHabit: boolean) => (
@@ -537,14 +550,14 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
         <div className="character-container relative flex justify-center">
           {/* メッセージバブル（キャラクターの上に配置） */}
           {showMessage && (
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-4 w-80 max-w-sm">
-              <div className="bg-gradient-to-br from-blue-50/95 to-indigo-100/95 backdrop-blur-md rounded-2xl border border-blue-200/50 shadow-2xl transition-all duration-300 p-4 w-80">
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-4 w-80 max-w-sm pointer-events-none">
+              <div className="bg-gradient-to-br from-blue-50/95 to-indigo-100/95 backdrop-blur-md rounded-2xl border border-blue-200/50 shadow-2xl transition-all duration-300 p-4 w-80 pointer-events-none">
                 <div className="text-gray-800 font-medium leading-relaxed text-xs">
                   <span>{displayedMessage}</span>
                   {isTyping && <span className="animate-blink ml-1">|</span>}
                 </div>
                 {/* 尻尾部分（下向き） */}
-                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gradient-to-br from-blue-50/95 to-indigo-100/95 border-r border-b border-blue-200/50 transform rotate-45 -translate-y-1/2"></div>
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gradient-to-br from-blue-50/95 to-indigo-100/95 border-r border-b border-blue-200/50 transform rotate-45 -translate-y-1/2 pointer-events-none"></div>
               </div>
             </div>
           )}
@@ -591,14 +604,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
                 </div>
               )}
               
-              {/* テキストヒント（未記録時のみ表示） */}
-              {recordStatus && currentTimePeriod && recordStatus[currentTimePeriod] === null && (
-                <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 z-50">
-                  <div className="hint-text bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs px-3 py-2 rounded-full whitespace-nowrap shadow-lg">
-                    💭 今の気持ちを記録してみて！
-                  </div>
-                </div>
-              )}
+
               
               {/* 感情記録メニュー - キャラクター画像の中心に配置 */}
               {showEmotionMenu && (
@@ -630,23 +636,9 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
       </div>
 
       {/* Premium Features */}
-      <PremiumComingSoonBanner
-        onPreviewClick={() => setShowPreviewModal(true)}
-        onNotificationSignup={() => setShowNotificationForm(true)}
-      />
+      <PremiumComingSoonBanner />
       
-      <PremiumPreviewModal
-        isOpen={showPreviewModal}
-        onClose={() => setShowPreviewModal(false)}
-        onNotificationSignup={() => setShowNotificationForm(true)}
-      />
-      
-      {showNotificationForm && (
-        <NotificationSignupForm
-          isOpen={showNotificationForm}
-          onClose={() => setShowNotificationForm(false)}
-        />
-      )}
+
 
       {/* タスクプレビュー・編集モーダル */}
       {selectedTask && (
