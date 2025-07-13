@@ -7,6 +7,7 @@ import { Button } from '@/components/atoms/Button';
 import { NotificationDropdown } from '@/components/molecules/NotificationDropdown';
 import { FaArrowLeft, FaSignOutAlt, FaUser, FaUserPlus, FaSignInAlt } from 'react-icons/fa';
 import { Task } from '@/types/task';
+import Image from 'next/image';
 
 interface AppHeaderProps {
   // ページ固有の設定
@@ -124,7 +125,14 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           className="cursor-pointer flex items-center gap-3"
           onClick={() => router.push('/menu')}
         >
-          <img src="/logo.png" alt="StepEasy" className="h-8 sm:h-10" style={{ width: 'auto' }} />
+          <img 
+            src="/logo.png" 
+            alt="StepEasy" 
+            className="h-8 sm:h-10 w-auto"
+            style={{ width: 'auto' }}
+            loading="eager"
+            decoding="sync"
+          />
           {title && (
           <h1 className="text-lg sm:text-xl font-bold text-[#8b4513] truncate">
             {title}

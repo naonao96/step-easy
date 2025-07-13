@@ -192,14 +192,17 @@ export const Character: React.FC<CharacterProps> = ({
             ${shouldBlink ? 'background-circle-unrecorded' : 'bg-blue-200/20 border-blue-300/30'}
           `} style={{ left: '50%', top: '50%', zIndex: -1 }}></div>
           
-          <img
+          <Image
             src={mood === 'happy' ? '/TalkToTheBird.png' : mood === 'sad' ? '/SilentBird.png' : '/TalkToTheBird.png'}
             alt="StepEasy Bird Character"
+            width={120}
+            height={120}
+            priority={true}
             style={{ height: '3cm', width: 'auto', objectFit: 'contain', display: 'block' }}
-                    className={`
-          transition-transform transition-shadow duration-200 hover:scale-110 active:scale-110
-          ${shouldBlink ? 'character-unrecorded' : ''}
-        `}
+            className={`
+              transition-transform transition-shadow duration-200 hover:scale-110 active:scale-110
+              ${shouldBlink ? 'character-unrecorded' : ''}
+            `}
           />
           
           {/* 朝昼晩（統合型ヘッダー）をキャラクターの足元にabsolute配置：ホバー時のみ表示 */}

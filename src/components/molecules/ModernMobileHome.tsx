@@ -3,7 +3,6 @@ import { useRouter } from 'next/navigation';
 import { Task } from '@/types/task';
 import { CategoryBadge } from '@/components/atoms/CategoryBadge';
 import { Character } from './Character';
-import { MobileEmotionRecorder } from './MobileEmotionRecorder';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { MobileTaskTimer } from './MobileTaskTimer';
@@ -32,6 +31,7 @@ import {
   FaCrown
 } from 'react-icons/fa';
 import { EmotionHoverMenu } from '@/components/molecules/EmotionHoverMenu';
+import Image from 'next/image';
 
 
 interface ModernMobileHomeProps {
@@ -86,19 +86,28 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   };
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   
-  // 感情記録の状態を取得
-  const { recordStatus, currentTimePeriod } = useEmotionLog();
+  // 感情記録の状態を取得（UIに影響しない独立したデータ取得）
+  const emotionLogData = useEmotionLog();
+  const recordStatus = useMemo(() => emotionLogData.recordStatus, [emotionLogData.recordStatus]);
+  const currentTimePeriod = useMemo(() => emotionLogData.currentTimePeriod, [emotionLogData.currentTimePeriod]);
   
-
-
   // タスクプレビュー・編集モーダル関連の状態
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [showTaskPreviewModal, setShowTaskPreviewModal] = useState(false);
   const [showTaskEditModal, setShowTaskEditModal] = useState(false);
 
-  // 感情記録関連の状態
-  const [showEmotionMenu, setShowEmotionMenu] = useState(false);
+  // 感情記録UIの状態管理（データ取得による再レンダリングの影響を受けない）
   const characterRef = useRef<HTMLImageElement>(null);
+  const showEmotionMenuRef = useRef(false);
+  const [, forceUpdate] = useState({});
+  
+  // 感情メニューの開閉状態を管理
+  const setShowEmotionMenu = (value: boolean) => {
+    showEmotionMenuRef.current = value;
+    forceUpdate({});
+  };
+  
+  const showEmotionMenu = showEmotionMenuRef.current;
   
   // メッセージ表示関連の状態（デスクトップ版と同じ仕様）
   const [showMessage, setShowMessage] = useState(false);
@@ -276,12 +285,22 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
     setShowEmotionMenu(false);
   };
 
-  // 外部クリックでメッセージと感情メニューを消す機能（デスクトップ版と同じ）
+  // 外部クリックでメッセージと感情メニューを消す機能（キャラクター画像のみ除外）
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      const isCharacterContainer = target.closest('.character-container');
-      if (showMessage && !isCharacterContainer) {
+      
+      // キャラクター画像自体かどうかを判定
+      const isCharacterImage = target.tagName === 'IMG' && 
+        target.getAttribute('alt') === 'StepEasy Bird Character';
+      
+      // 感情メニュー内の要素かどうかを判定
+      const isEmotionMenuElement = target.closest('[data-emotion-menu]') !== null;
+      
+      // ハートボタンかどうかを判定
+      const isEmotionButton = target.closest('[data-emotion-button]') !== null;
+      
+      if (showMessage && !isCharacterImage) {
         setShowMessage(false);
         setDisplayedMessage('');
         setIsTyping(false);
@@ -290,7 +309,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
           typewriterTimeoutRef.current = null;
         }
       }
-      if (showEmotionMenu && !isCharacterContainer) {
+      if (showEmotionMenu && !isCharacterImage && !isEmotionMenuElement && !isEmotionButton) {
         setShowEmotionMenu(false);
       }
     };
@@ -575,10 +594,13 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
                 ${recordStatus && currentTimePeriod && recordStatus[currentTimePeriod] === null ? 'background-circle-unrecorded' : 'bg-blue-200/20 border-blue-300/30'}
               `} style={{ left: '50%', top: '50%', zIndex: -1 }}></div>
               
-              <img
+              <Image
                 ref={characterRef}
                 src={characterMood === 'happy' ? '/TalkToTheBird.png' : characterMood === 'sad' ? '/SilentBird.png' : '/TalkToTheBird.png'}
                 alt="StepEasy Bird Character"
+                width={120}
+                height={120}
+                priority={true}
                 style={{ height: '3cm', width: 'auto', objectFit: 'contain', display: 'block' }}
                 className={`
                   transition-transform transition-shadow duration-200 active:scale-110
@@ -588,9 +610,9 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
               
               {/* 朝昼晩（統合型ヘッダー）をキャラクターの足元にabsolute配置：感情メニュー表示時のみ表示 */}
               {showEmotionMenu && (
-                <div className="absolute left-1/2 -translate-x-1/2 -bottom-8 z-50 w-auto min-w-fit max-w-md flex justify-center pointer-events-none">
+                <div className="absolute left-1/2 -translate-x-1/2 -bottom-8 z-30 w-auto min-w-fit max-w-md flex justify-center pointer-events-none">
                   <span className={`
-                    bg-white/90 border border-gray-200 rounded-full px-4 py-1 text-sm font-bold text-gray-800 shadow-md pointer-events-auto
+                    bg-white/90 border border-gray-200 rounded-full px-4 py-1 text-sm font-bold text-gray-800 shadow-md pointer-events-none select-none
                     ${recordStatus && currentTimePeriod && recordStatus[currentTimePeriod] === null ? 'border-blue-400 bg-blue-50' : ''}
                   `}>
                     {(() => {
@@ -608,7 +630,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
               
               {/* 感情記録メニュー - キャラクター画像の中心に配置 */}
               {showEmotionMenu && (
-                <div className="absolute inset-0 z-50">
+                <div className="absolute inset-0 z-[50]">
                   <EmotionHoverMenu
                     isVisible={showEmotionMenu}
                     onClose={handleCloseEmotionMenu}
@@ -624,8 +646,9 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
             {/* 感情記録ボタン（モバイル版専用） */}
             <button
               onClick={() => setShowEmotionMenu(!showEmotionMenu)}
-              className="absolute -bottom-3 -right-3 w-14 h-14 bg-pink-400/30 backdrop-blur-sm rounded-full shadow-lg border-2 border-white flex items-center justify-center text-white hover:bg-pink-500/30 active:scale-95 transition-all duration-200 z-50"
+              className="absolute -bottom-8 -right-8 w-14 h-14 bg-pink-400/30 backdrop-blur-sm rounded-full shadow-lg border-2 border-white flex items-center justify-center text-white hover:bg-pink-500/30 active:scale-95 transition-all duration-200 z-[50]"
               title="感情を記録"
+              data-emotion-button="true"
             >
               <svg className="w-6 h-6" fill="#be185d" viewBox="0 0 24 24">
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />

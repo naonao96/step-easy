@@ -116,12 +116,14 @@ export interface ActiveTaskExecution {
 export interface ExecutionLog {
   id: string;
   user_id: string;
-  task_id: string;
+  task_id?: string; // オプショナル（習慣の場合はNULL）
+  habit_id?: string; // オプショナル（タスクの場合はNULL）
+  execution_type: 'task' | 'habit'; // 新しいフィールド
   start_time: string; // ISO string
   end_time?: string; // ISO string
   duration: number; // 実行時間（秒）
   device_type: 'mobile' | 'desktop' | 'unknown';
-  session_type: 'normal' | 'habit';
+  session_type: 'normal' | 'habit'; // 後方互換性のため保持
   is_completed: boolean;
   created_at: string;
   updated_at: string;
@@ -130,7 +132,9 @@ export interface ExecutionLog {
 export interface ActiveExecution {
   id: string;
   user_id: string;
-  task_id: string;
+  task_id?: string; // オプショナル（習慣の場合はNULL）
+  habit_id?: string; // オプショナル（タスクの場合はNULL）
+  execution_type: 'task' | 'habit'; // 新しいフィールド
   start_time: string; // ISO string
   device_type: 'mobile' | 'desktop' | 'unknown';
   is_paused: boolean;

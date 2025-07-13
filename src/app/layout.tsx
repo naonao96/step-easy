@@ -45,6 +45,10 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="StepEasy" />
         <link rel="apple-touch-icon" href="/favicon.png" />
         <link rel="manifest" href="/manifest.json" />
+        {/* 重要な画像のプリロード */}
+        <link rel="preload" href="/logo.png" as="image" type="image/png" />
+        <link rel="preload" href="/TalkToTheBird.png" as="image" type="image/png" />
+        <link rel="preload" href="/SilentBird.png" as="image" type="image/png" />
       </head>
       <body className={`${inter.className} min-h-screen overflow-x-hidden`}> 
         {/* 背景レイヤー（最背面） */}

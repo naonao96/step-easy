@@ -61,11 +61,7 @@ export const useEmotionLog = (): UseEmotionLogReturn => {
       setCurrentTimePeriod(data.currentTimePeriod);
       setIsComplete(data.isComplete);
 
-      console.log('感情記録取得完了:', {
-        recordCount: data.todayEmotions.length,
-        currentTimePeriod: data.currentTimePeriod,
-        isComplete: data.isComplete
-      });
+      // データ取得完了
 
     } catch (err) {
       console.error('感情記録取得エラー:', err);
@@ -107,8 +103,34 @@ export const useEmotionLog = (): UseEmotionLogReturn => {
         recordId: result.data.id
       });
 
-      // 記録後に今日のデータを再取得
-      await fetchTodayEmotions();
+      // 記録後に部分更新のみ実行
+      setRecordStatus(prev => {
+        const newRecordStatus = {
+          ...prev,
+          [timePeriod]: result.data
+        };
+        
+        // isCompleteの状態も更新
+        const newIsComplete = Object.values(newRecordStatus).every(record => record !== null);
+        setIsComplete(newIsComplete);
+        
+        return newRecordStatus;
+      });
+
+      // todayEmotionsも部分更新
+      setTodayEmotions(prev => {
+        const existingIndex = prev.findIndex(e => e.time_period === timePeriod);
+        if (existingIndex >= 0) {
+          // 既存の記録を更新
+          const updated = [...prev];
+          updated[existingIndex] = result.data;
+          return updated;
+        } else {
+          // 新規記録を追加
+          return [...prev, result.data];
+        }
+      });
+
       return true;
 
     } catch (err) {
@@ -116,24 +138,27 @@ export const useEmotionLog = (): UseEmotionLogReturn => {
       setError(err instanceof Error ? err.message : '感情記録の保存に失敗しました');
       return false;
     }
-  }, [fetchTodayEmotions]);
+  }, []);
 
   // 初期化と定期的な更新
   useEffect(() => {
     fetchTodayEmotions();
     
-    // 1分ごとに現在の時間帯を更新
+    // 5分ごとに現在の時間帯を更新
     const interval = setInterval(() => {
       const newTimePeriod = getCurrentTimePeriod();
-      if (newTimePeriod !== currentTimePeriod) {
-        setCurrentTimePeriod(newTimePeriod);
-        // 時間帯が変わったらデータを再取得
-        fetchTodayEmotions();
-      }
-    }, 60000); // 1分
+      setCurrentTimePeriod(prev => {
+        if (newTimePeriod !== prev) {
+          // 時間帯が変わったらデータを再取得
+          fetchTodayEmotions();
+          return newTimePeriod;
+        }
+        return prev;
+      });
+    }, 300000); // 5分
 
     return () => clearInterval(interval);
-  }, [fetchTodayEmotions, currentTimePeriod]);
+  }, []); // 依存配列を空にして無限ループを防ぐ
 
   return {
     todayEmotions,

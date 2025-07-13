@@ -155,7 +155,7 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
 
       {/* フローティングアクションボタン - モバイルのみ表示 */}
       {showAddButton && (
-        <div className={`md:hidden fixed bottom-20 right-5 z-50 transition-all duration-500 transform ${
+        <div className={`md:hidden fixed bottom-24 right-5 z-50 transition-all duration-500 transform pb-safe ${
           isFABVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
         }`}>
           <button
@@ -217,7 +217,7 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
       `}</style>
 
       {/* ボトムナビゲーション分のスペース確保 - モバイルのみ */}
-      <div className="md:hidden h-16" />
+      <div className="md:hidden h-16 pb-safe" />
     </>
   );
 }; 
