@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Task } from '@/types/task';
 import { useAuth } from '@/contexts/AuthContext';
-import { StreakBadge } from '../atoms/StreakBadge';
+import { getHabitLimits, getFrequencyLabel, getHabitStatus } from '@/lib/habitUtils';
+
 import { ToggleSwitch } from '../atoms/ToggleSwitch';
 import { SortOption } from '../atoms/SortDropdown';
 import { sortTasks, getSavedSortOption, saveSortOption } from '@/lib/sortUtils';
@@ -18,6 +19,8 @@ interface TaskListHomeProps {
   onEditTask?: (task: Task) => void;
   onViewAll?: () => void;
   height?: number; // rem単位
+  activeTab?: TabType; // 外部から制御するタブ状態
+  onTabChange?: (tab: TabType) => void; // タブ変更コールバック
 }
 
 type TabType = 'tasks' | 'habits';
@@ -30,12 +33,24 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
   onTaskClick,
   onEditTask,
   onViewAll,
-  height = 46
+  height = 46,
+  activeTab: externalActiveTab,
+  onTabChange
 }) => {
   const router = useRouter();
   const { isGuest, isPremium, planType, canAddTaskOnDate, togglePremiumForDev } = useAuth();
   const [sortOption, setSortOption] = useState<SortOption>('default');
-  const [activeTab, setActiveTab] = useState<TabType>('habits');
+  const [internalActiveTab, setInternalActiveTab] = useState<TabType>('habits');
+  
+  // 外部から制御される場合はそれを使用、そうでなければ内部状態を使用
+  const activeTab = externalActiveTab !== undefined ? externalActiveTab : internalActiveTab;
+  const setActiveTab = (tab: TabType) => {
+    if (onTabChange) {
+      onTabChange(tab);
+    } else {
+      setInternalActiveTab(tab);
+    }
+  };
 
   // ソート設定の読み込み
   useEffect(() => {
@@ -75,17 +90,7 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
   const regularIncompleteCount = getIncompleteCount(regularTasks);
   const habitIncompleteCount = getIncompleteCount(habitTasks);
 
-  // プラン別習慣制限
-  const getHabitLimits = () => {
-    switch (planType) {
-      case 'guest': return { maxHabits: 0, maxStreakDays: 0 };
-      case 'free': return { maxHabits: 3, maxStreakDays: 14 };
-      case 'premium': return { maxHabits: Infinity, maxStreakDays: Infinity };
-      default: return { maxHabits: 0, maxStreakDays: 0 };
-    }
-  };
-
-  const { maxHabits, maxStreakDays } = getHabitLimits();
+  const { maxHabits, maxStreakDays } = getHabitLimits(planType);
 
   // タスク詳細表示（モーダル表示方式）
   const handleTaskClick = (task: any) => {
@@ -174,25 +179,7 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
     }
   };
 
-  // 習慣タスクの頻度表示
-  const getFrequencyLabel = (frequency?: string) => {
-    switch (frequency) {
-      case 'daily': return '毎日';
-      case 'weekly': return '週1回';
-      case 'monthly': return '月1回';
-      default: return '毎日';
-    }
-  };
 
-  // 習慣タスクの継続状況表示
-  const getHabitStatus = (task: Task) => {
-    if (!task.is_habit) return '';
-    
-    const currentStreak = task.current_streak || 0;
-    if (currentStreak === 0) return '未開始';
-    
-    return `${currentStreak}日継続中`;
-  };
 
   // タスクカードの共通レンダリング
   const renderTaskCard = (task: any, isHabit = false) => (
@@ -221,7 +208,10 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
         {/* デスクトップ: 改良チェックボックス */}
         <div className="hidden sm:block">
           <button
-            onClick={() => onCompleteTask?.(task.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onCompleteTask?.(task.id);
+            }}
             className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${
               task.status === 'done'
                 ? 'bg-[#7c5a2a] border-[#7c5a2a] text-white scale-110'
@@ -266,7 +256,7 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
           )}
           {isHabit && task.current_streak! > 0 && (
             <span className="text-xs text-[#8b4513] font-medium">
-              {getHabitStatus(task)}
+              {getHabitStatus(task.current_streak || 0)}
             </span>
           )}
         </div>
@@ -274,13 +264,6 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
 
       {/* バッジエリア */}
       <div className="flex items-center gap-1 sm:gap-2">
-        {/* 継続日数バッジ */}
-        <StreakBadge 
-          task={task}
-          size="sm"
-          showText={false}
-        />
-
         {/* 優先度表示 */}
         <div className={`px-1.5 sm:px-2 py-1 text-xs rounded ${
           task.priority === 'high' ? 'bg-[#deb887] text-[#8b4513]' :

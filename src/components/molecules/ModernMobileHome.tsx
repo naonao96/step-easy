@@ -1,10 +1,10 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Task } from '@/stores/taskStore';
+import { Task } from '@/types/task';
 import { CategoryBadge } from '@/components/atoms/CategoryBadge';
 import { Character } from './Character';
 import { MobileEmotionRecorder } from './MobileEmotionRecorder';
-import { StreakBadge } from '@/components/atoms/StreakBadge';
+
 import { useAuth } from '@/contexts/AuthContext';
 import { MobileTaskTimer } from './MobileTaskTimer';
 import { MobileTaskHistory } from './MobileTaskHistory';
@@ -660,6 +660,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
               }
             }}
             isMobile={true}
+            selectedDate={selectedDate}
           />
 
           <TaskEditModal

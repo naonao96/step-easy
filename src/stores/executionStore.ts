@@ -284,6 +284,15 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
         const endTime = new Date();
         
         if (user) {
+          // 現在のタスクが習慣かどうかを判定
+          const { data: currentTask } = await supabase
+            .from('tasks')
+            .select('is_habit')
+            .eq('id', state.activeExecution.task_id)
+            .single();
+
+          const sessionType = currentTask?.is_habit ? 'habit' : 'normal';
+
           // 実行履歴に記録
           const { error: logError } = await supabase
             .from('execution_logs')
@@ -294,7 +303,7 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
               end_time: endTime.toISOString(),
               duration: sessionDuration,
               device_type: state.deviceType,
-              session_type: 'normal',
+              session_type: sessionType,
               is_completed: true
             });
 
@@ -304,15 +313,15 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
           const todayTotal = await calculateTodayTotal(state.activeExecution.task_id, sessionDuration);
 
           // タスクテーブルを更新（累積加算）
-          const { data: currentTask } = await supabase
+          const { data: taskData } = await supabase
             .from('tasks')
             .select('all_time_total, execution_count')
             .eq('id', state.activeExecution.task_id)
             .eq('user_id', user.id)
             .single();
 
-          const newAllTimeTotal = ((currentTask?.all_time_total as number) || 0) + sessionDuration;
-          const newExecutionCount = ((currentTask?.execution_count as number) || 0) + 1;
+          const newAllTimeTotal = ((taskData?.all_time_total as number) || 0) + sessionDuration;
+          const newExecutionCount = ((taskData?.execution_count as number) || 0) + 1;
 
           const { error: updateError } = await supabase
             .from('tasks')

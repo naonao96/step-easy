@@ -1,6 +1,6 @@
 import React from 'react';
 import { MobileStatsCard } from './MobileStatsCard';
-import { Task } from '@/stores/taskStore';
+import { Task } from '@/types/task';
 import { DEFAULT_CATEGORIES } from '@/types/task';
 import { FaCalendarCheck, FaFolderOpen, FaFire, FaChartLine } from 'react-icons/fa';
 

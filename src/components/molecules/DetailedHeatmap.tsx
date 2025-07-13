@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Task } from '@/stores/taskStore';
+import { Task } from '@/types/task';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface DetailedHeatmapProps {

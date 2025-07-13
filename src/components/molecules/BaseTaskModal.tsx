@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { useTaskStore } from '@/stores/taskStore';
 import { type Task } from '@/types/task';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,6 +14,8 @@ import { TaskExecutionHistory } from './TaskExecutionHistory';
 import { FaTimes, FaSave, FaEdit, FaTrash, FaCheck, FaEye, FaChevronDown, FaChevronUp, FaExclamationTriangle } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
 import { TASK_CONSTANTS, MODAL_CONSTANTS } from '@/lib/constants';
+import { useHabitStore } from '@/stores/habitStore';
+import { isNewHabit, isHabitCompleted } from '@/lib/habitUtils';
 
 // 型定義
 interface BaseTaskFormData {
@@ -80,9 +82,12 @@ interface BaseTaskModalProps {
   enableSwipeToClose?: boolean;
   // レスポンシブ対応用プロパティ
   isMobile?: boolean;
+  selectedDate?: Date;
+  // 外部から閉じる処理を呼び出すためのプロパティ
+  onRequestClose?: () => void;
 }
 
-export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
+export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, BaseTaskModalProps>(({
   isOpen,
   onClose,
   initialData,
@@ -107,10 +112,14 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
   isFullScreen = false,
   enableSwipeToClose = false,
   // レスポンシブ対応用プロパティ
-  isMobile = false
-}) => {
+  isMobile = false,
+  selectedDate,
+  // 外部から閉じる処理を呼び出すためのプロパティ
+  onRequestClose
+}, ref) => {
   const { createTask, updateTask } = useTaskStore();
   const { planType, canEditTaskOnDate } = useAuth();
+  const { habitCompletions } = useHabitStore();
   
   // 編集中のタスクデータ
   const [title, setTitle] = useState('');
@@ -123,6 +132,9 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  
+  // 完了状態のローカル管理
+  const [localCompletionStatus, setLocalCompletionStatus] = useState<'done' | 'todo' | 'doing' | null>(null);
 
   // 変更検知用の状態
   const [initialValues, setInitialValues] = useState<InitialFormValues>({
@@ -141,6 +153,29 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
   const isExistingTask = !!initialData?.id;
   const isPreviewMode = mode === 'preview';
   const isEditMode = mode === 'edit';
+  
+  // 習慣の完了状態を正しく判定（リアルタイム + ローカル状態）
+  const getTaskStatus = () => {
+    // ローカル状態が設定されている場合はそれを優先
+    if (localCompletionStatus !== null) {
+      return localCompletionStatus;
+    }
+    
+    if (initialData && initialData.id && isNewHabit(initialData as any)) {
+      // 新しい習慣テーブルの習慣の場合：habitCompletionsからリアルタイムで判定
+      const targetDate = selectedDate || new Date();
+      const japanTime = new Date(targetDate.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+      const dateString = japanTime.toISOString().split('T')[0];
+      
+      const isCompleted = habitCompletions.some(
+        completion => completion.habit_id === initialData.id && completion.completed_date === dateString
+      );
+      return isCompleted ? 'done' : 'todo';
+    } else {
+      // 既存のタスクテーブルの習慣または通常のタスクの場合
+      return initialData?.status || 'todo';
+    }
+  };
 
   // 変更検知関数
   const hasChanges = (): boolean => {
@@ -180,6 +215,24 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
     setShowConfirmDialog(false);
     setPendingCloseAction(null);
   };
+
+  // モーダルが閉じられた時にローカル状態をリセット
+  const handleModalClose = () => {
+    setLocalCompletionStatus(null);
+    onClose();
+  };
+
+  // 外部から閉じる処理を呼び出すための関数
+  const handleRequestClose = () => {
+    handleCloseWithConfirm(handleModalClose);
+  };
+
+  // 外部から閉じる処理を呼び出せるようにする
+  useImperativeHandle(ref, () => ({
+    closeWithValidation: () => {
+      handleCloseWithConfirm(handleModalClose);
+    }
+  }));
 
   // 初期データの設定
   useEffect(() => {
@@ -335,7 +388,9 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
   const handleDelete = async () => {
     if (!isExistingTask || !initialData?.id || !onDelete) return;
     
-    if (window.confirm('このタスクを削除してもよろしいですか？')) {
+    const message = isHabit ? 'この習慣を削除してもよろしいですか？' : 'このタスクを削除してもよろしいですか？';
+    
+    if (window.confirm(message)) {
       setIsDeleting(true);
       try {
         await onDelete(initialData.id);
@@ -349,15 +404,27 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
     }
   };
 
-  // 完了処理
+  // 完了処理（楽観的更新）
   const handleComplete = async () => {
-    if (!isExistingTask || !initialData?.id || !onComplete || !onRefresh) return;
+    if (!isExistingTask || !initialData?.id || !onComplete) return;
+    
+    // 現在の状態を取得
+    const currentStatus = getTaskStatus();
+    const newStatus = currentStatus === 'done' ? 'todo' : 'done';
+    
+    // 即座にローカル状態を更新（楽観的更新）
+    setLocalCompletionStatus(newStatus);
     
     try {
       await onComplete(initialData.id);
-      onRefresh();
+      // onRefreshが提供されている場合は呼び出し
+      if (onRefresh) {
+        onRefresh();
+      }
     } catch (error) {
       console.error('ステータス更新エラー:', error);
+      // エラーが発生した場合は元の状態に戻す
+      setLocalCompletionStatus(currentStatus);
       alert('ステータス更新に失敗しました');
     }
   };
@@ -414,13 +481,13 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
                     <button
                       onClick={handleComplete}
                       className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg transition-all duration-200 ${
-                        initialData.status === 'done' 
+                        getTaskStatus() === 'done' 
                           ? 'text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc]' 
                           : 'text-[#8b4513] hover:text-[#7c5a2a] hover:bg-[#f5f5dc]'
                       }`}
                     >
                       {FaCheck({ className: "w-3 h-3" })}
-                      {initialData.status === 'done' ? '未完了に戻す' : '完了'}
+                      {getTaskStatus() === 'done' ? '未完了に戻す' : '完了'}
                     </button>
                   )}
                   {onDelete && (
@@ -441,7 +508,7 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
                               {/* 3行目：閉じるボタン（左寄せ） */}
               <div className="flex justify-start">
                 <button
-                  onClick={() => handleCloseWithConfirm(onClose)}
+                  onClick={() => handleCloseWithConfirm(handleModalClose)}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200"
                 >
                   {FaTimes({ className: "w-3 h-3" })}
@@ -485,13 +552,13 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
                   <button
                     onClick={handleComplete}
                     className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
-                      initialData.status === 'done' 
+                      getTaskStatus() === 'done' 
                         ? 'text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc]' 
                         : 'text-[#8b4513] hover:text-[#7c5a2a] hover:bg-[#f5f5dc]'
                     }`}
                   >
                     {FaCheck({ className: "w-3 h-3" })}
-                    {initialData.status === 'done' ? '未完了に戻す' : '完了'}
+                    {getTaskStatus() === 'done' ? '未完了に戻す' : '完了'}
                   </button>
                 )}
                 {onDelete && (
@@ -509,7 +576,7 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
                 )}
                 <div className="w-px h-3 bg-[#deb887] mx-1"></div>
                 <button
-                  onClick={() => handleCloseWithConfirm(onClose)}
+                  onClick={() => handleCloseWithConfirm(handleModalClose)}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200"
                 >
                   {FaTimes({ className: "w-3 h-3" })}
@@ -521,7 +588,7 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
           </div>
           
           {/* メインコンテンツ */}
-            <div className={`overflow-y-auto ${isMobile ? 'max-h-[calc(100vh-200px)]' : 'max-h-[calc(90vh-120px)]'}`}>
+            <div className={`overflow-y-auto ${isMobile ? 'max-h-[calc(100vh-320px)]' : 'max-h-[calc(90vh-120px)]'}`}>
               <div className={`p-4 sm:p-6 ${isMobile ? 'pb-12' : ''}`}>
               {/* タスクタイトル */}
               <div className="mb-4 sm:mb-6">
@@ -540,11 +607,11 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
                     </span>
                   )}
                   <span className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-full ${
-                    initialData.status === 'done' ? 'bg-[#f5f5dc] text-[#8b4513] border border-[#deb887]' :
-                    initialData.status === 'doing' ? 'bg-[#f5f5dc] text-[#7c5a2a] border border-[#deb887]' :
+                    getTaskStatus() === 'done' ? 'bg-[#f5f5dc] text-[#8b4513] border border-[#deb887]' :
+                    getTaskStatus() === 'doing' ? 'bg-[#f5f5dc] text-[#7c5a2a] border border-[#deb887]' :
                     'bg-[#f5f5dc] text-[#7c5a2a] border border-[#deb887]'
                   }`}>
-                    {initialData.status === 'done' ? '完了' : initialData.status === 'doing' ? '進行中' : '未着手'}
+                    {getTaskStatus() === 'done' ? '完了' : getTaskStatus() === 'doing' ? '進行中' : '未着手'}
                   </span>
                 </div>
               </div>
@@ -734,7 +801,7 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
         </div>
         
         {/* メインコンテンツ */}
-        <div className={`overflow-y-auto ${isMobile ? 'max-h-[calc(100vh-200px)]' : 'max-h-[calc(90vh-120px)]'}`}>
+        <div className={`overflow-y-auto ${isMobile ? 'max-h-[calc(100vh-320px)]' : 'max-h-[calc(90vh-120px)]'}`}>
           <div className={`p-4 sm:p-6 ${isMobile ? 'pb-12' : ''}`}>
             <div className="space-y-4 sm:space-y-6">
               {/* 基本情報 */}
@@ -833,15 +900,15 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
               {isExistingTask && initialData && onComplete && (
                 <div className="flex items-center gap-2">
                   <Button
-                    variant={initialData.status === 'done' ? 'secondary' : 'primary'}
+                    variant={getTaskStatus() === 'done' ? 'secondary' : 'primary'}
                     onClick={handleComplete}
                     size="sm"
-                    className={`${initialData.status === 'done' 
+                    className={`${getTaskStatus() === 'done' 
                       ? 'bg-[#f5f5dc] text-[#8b4513] border border-[#deb887] hover:bg-[#deb887]' 
                       : 'bg-[#7c5a2a] hover:bg-[#8b4513] text-white'
                     } text-sm sm:text-base`}
                   >
-                    {initialData.status === 'done' ? '未完了に戻す' : '完了にする'}
+                    {getTaskStatus() === 'done' ? '未完了に戻す' : '完了にする'}
                   </Button>
                 </div>
               )}
@@ -904,4 +971,4 @@ export const BaseTaskModal: React.FC<BaseTaskModalProps> = ({
       )}
     </div>
   );
-}; 
+}); 

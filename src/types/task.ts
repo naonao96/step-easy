@@ -1,35 +1,26 @@
-export interface Task {
-  id: string;
-  title: string;
-  description: string;
+import { BaseItem, StreakData } from './habit';
+
+export interface Task extends BaseItem, StreakData {
   status: 'todo' | 'doing' | 'done';
-  priority: 'low' | 'medium' | 'high'; // 既存のTEXT型に合わせる
+  priority: 'low' | 'medium' | 'high';
   due_date: string | null;
   start_date: string | null;
   completed_at?: string;
-  created_at: string;
-  updated_at: string;
-  user_id: string;
   is_habit: boolean;
   habit_frequency?: 'daily' | 'weekly' | 'monthly';
-  current_streak: number;
-  max_streak?: number;
-  longest_streak?: number;
-  last_completed_date?: string | null;
-  streak_start_date?: string | null;
-  category?: string; // カテゴリ（work, health, study, personal, hobby, other）
+  
+  // 時間関連フィールド
   estimated_duration?: number; // 予想所要時間（分）
-  actual_duration?: number; // 実際の所要時間（分） - 後方互換性のため保持
-  
-  // 継続日数関連フィールド
-  streak_count?: number;
-  
-  // 新しい時間管理フィールド
+  actual_duration?: number; // 実際の所要時間（分）
   session_time?: number; // 現在セッション時間（秒）
   today_total?: number; // 今日の累計時間（秒）
   all_time_total?: number; // 全期間累計時間（秒）
   last_execution_date?: string; // 最終実行日（YYYY-MM-DD）
   execution_count?: number; // 実行回数
+  
+  // 後方互換性のため保持
+  streak_count?: number;
+  max_streak?: number;
 }
 
 export interface CreateTaskInput {

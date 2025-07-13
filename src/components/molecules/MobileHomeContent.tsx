@@ -1,7 +1,7 @@
 import React from 'react';
 import { TaskListHome } from './TaskListHome';
 import { Calendar } from './Calendar';
-import { Task } from '@/stores/taskStore';
+import { Task } from '@/types/task';
 
 interface MobileHomeContentProps {
   tasks: Task[];

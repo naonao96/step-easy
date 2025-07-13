@@ -1,40 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef } from 'react';
+import { useHabitStore } from '@/stores/habitStore';
 import { useTaskStore } from '@/stores/taskStore';
 import { type Task } from '@/types/task';
+import { type Habit, type HabitFormData } from '@/types/habit';
 import { useAuth } from '@/contexts/AuthContext';
 import { BaseTaskModal } from './BaseTaskModal';
-import { FaFire } from 'react-icons/fa';
 
 interface HabitModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialData?: Partial<Task>;
-  onSave?: (task: Task) => void;
+  initialData?: Partial<Habit>;
+  onSave?: (habit: Habit) => void;
   mode?: 'create' | 'edit' | 'preview';
+  isMobile?: boolean;
+  onRequestClose?: () => void;
 }
 
-export const HabitModal: React.FC<HabitModalProps> = ({
+export const HabitModal = forwardRef<{ closeWithValidation: () => void }, HabitModalProps>(({
   isOpen,
   onClose,
   initialData,
   onSave,
-  mode = 'create'
-}) => {
+  mode = 'create',
+  isMobile = false,
+  onRequestClose
+}, ref) => {
+  const { habits } = useHabitStore();
   const { tasks } = useTaskStore();
   const { planType } = useAuth();
-  const [habitFrequency, setHabitFrequency] = useState<'daily' | 'weekly' | 'monthly'>('daily');
-  const [initialHabitFrequency, setInitialHabitFrequency] = useState<'daily' | 'weekly' | 'monthly'>('daily');
-
-  // 初期値の設定
-  useEffect(() => {
-    if (initialData?.habit_frequency) {
-      setHabitFrequency(initialData.habit_frequency);
-      setInitialHabitFrequency(initialData.habit_frequency);
-    } else {
-      setHabitFrequency('daily');
-      setInitialHabitFrequency('daily');
-    }
-  }, [initialData, isOpen]);
+  const { createHabit, updateHabit } = useHabitStore();
 
   // 習慣制限チェック
   const checkHabitLimit = () => {
@@ -45,7 +39,7 @@ export const HabitModal: React.FC<HabitModalProps> = ({
       };
     }
 
-    if (planType === 'free' && tasks.filter(t => t.is_habit).length >= 3) {
+    if (planType === 'free' && habits.length >= 3) {
       return {
         isValid: false,
         message: '無料プランでは習慣を3個までしか作成できません。プレミアムプランにアップグレードしてください。'
@@ -55,12 +49,9 @@ export const HabitModal: React.FC<HabitModalProps> = ({
     return { isValid: true, message: '' };
   };
 
-  // 習慣特有の変更検知
-  const hasHabitChanges = () => {
-    return habitFrequency !== initialHabitFrequency;
-  };
 
-  const createHabitFormData = (data: {
+
+  const handleSave = async (data: {
     title: string;
     content: string;
     priority: 'low' | 'medium' | 'high';
@@ -68,49 +59,52 @@ export const HabitModal: React.FC<HabitModalProps> = ({
     dueDate: Date | null;
     estimatedDuration: number | undefined;
     category: string;
-  }) => ({
-    title: data.title.trim(),
-    description: data.content,
-    priority: data.priority,
-    is_habit: true, // 習慣は常にtrue
-    habit_frequency: habitFrequency,
-    status: 'todo' as const,
-    start_date: data.startDate ? data.startDate.toISOString().split('T')[0] : null,
-    due_date: data.dueDate ? data.dueDate.toLocaleDateString('sv-SE') : null,
-    estimated_duration: data.estimatedDuration,
-    category: data.category
-  });
+  }) => {
+    try {
+      const habitData: HabitFormData = {
+        title: data.title.trim(),
+        description: data.content,
+        category: data.category
+      };
+
+      if (mode === 'create') {
+        await createHabit(habitData);
+      } else if (initialData?.id) {
+        await updateHabit(initialData.id, habitData);
+      }
+
+      if (onSave) {
+        // 新しい習慣データを取得してコールバック
+        const newHabit = habits.find(h => h.title === habitData.title);
+        if (newHabit) {
+          onSave(newHabit);
+        }
+      }
+      
+      onClose();
+    } catch (error) {
+      console.error('習慣保存エラー:', error);
+    }
+  };
 
   const renderAdditionalFields = () => (
     <div className="flex items-center gap-4">
       <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-gray-700">習慣タスク</span>
+        <span className="text-sm font-medium text-gray-700">習慣</span>
         <div className="flex items-center gap-2 px-3 py-1 bg-blue-100 rounded-lg">
-          {FaFire({ className: "w-4 h-4 text-blue-600" })}
-          <span className="text-sm text-blue-700 font-medium">習慣</span>
+          <span className="text-sm text-blue-700 font-medium">🔥 毎日</span>
         </div>
-      </div>
-      <div className="flex items-center gap-2">
-        <label className="text-sm font-medium text-gray-700">頻度:</label>
-        <select
-          value={habitFrequency}
-          onChange={(e) => setHabitFrequency(e.target.value as any)}
-          className="border border-gray-300 rounded-md px-3 py-1 text-sm"
-        >
-          <option value="daily">毎日</option>
-          <option value="weekly">週1回</option>
-          <option value="monthly">月1回</option>
-        </select>
       </div>
     </div>
   );
 
   return (
     <BaseTaskModal
+      ref={ref}
       isOpen={isOpen}
       onClose={onClose}
-      initialData={initialData}
-      onSave={onSave}
+      initialData={initialData as any}
+      onSave={handleSave as any}
       mode={mode}
       isHabit={true}
       titlePlaceholder="習慣のタイトルを入力"
@@ -129,8 +123,10 @@ export const HabitModal: React.FC<HabitModalProps> = ({
 Markdownで自由に書けます！`}
       modalTitle="新規作成"
       additionalValidation={checkHabitLimit}
-      createFormData={createHabitFormData}
+      createFormData={handleSave as any}
       renderAdditionalFields={renderAdditionalFields}
+      isMobile={isMobile}
+      onRequestClose={onRequestClose}
     />
   );
-}; 
+}); 

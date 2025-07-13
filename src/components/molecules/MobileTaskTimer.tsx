@@ -177,24 +177,24 @@ export const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
 
 
   return (
-    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+    <div className="bg-[#f5f5dc] rounded-lg p-3 border border-[#deb887]">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          {FaClock({className:"w-4 h-4 text-gray-500"})}
-          <span className="text-sm font-medium text-gray-700">{getSessionLabel()}</span>
+          {FaClock({className:"w-4 h-4 text-[#7c5a2a]"})}
+          <span className="text-sm font-medium text-[#8b4513]">{getSessionLabel()}</span>
         </div>
-        <div className="text-lg font-mono font-bold text-gray-900">
+        <div className="text-lg font-mono font-bold text-[#8b4513]">
           {getDisplayTime()}
         </div>
       </div>
 
       {/* 時間情報の表示 */}
-      <div className="flex justify-between text-xs text-gray-600 mb-3">
+      <div className="flex justify-between text-xs text-[#7c5a2a] mb-3">
         {isHabitTask ? (
           // 習慣タスクの場合
           <>
             <span>今日累計: {task.today_total ? `${Math.floor(task.today_total / 60)}分` : (task.actual_duration && task.actual_duration > 0) ? `${task.actual_duration}分` : '0分'}</span>
-            <span className="text-blue-600">🔥 継続中</span>
+            <span className="text-[#8b4513]">🔥 継続中</span>
           </>
         ) : (
           // 通常タスクの場合
@@ -202,7 +202,7 @@ export const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
         {task.estimated_duration && (
               <span>予想時間: {formatDurationShort(task.estimated_duration)}</span>
         )}
-            <span className="text-green-600">総累計: {task.all_time_total ? `${Math.floor(task.all_time_total / 60)}分` : (task.actual_duration && task.actual_duration > 0) ? `${task.actual_duration}分` : '0分'}</span>
+            <span className="text-[#8b4513]">総累計: {task.all_time_total ? `${Math.floor(task.all_time_total / 60)}分` : (task.actual_duration && task.actual_duration > 0) ? `${task.actual_duration}分` : '0分'}</span>
           </>
         )}
       </div>
@@ -215,8 +215,8 @@ export const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
             disabled={isOtherTaskRunning}
             className={`flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors flex-1 justify-center min-h-[44px] ${
               isOtherTaskRunning
-                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                : 'bg-green-500 text-white hover:bg-green-600'
+                ? 'bg-[#f5f5dc] text-[#7c5a2a] border border-[#deb887] cursor-not-allowed'
+                : 'bg-[#7c5a2a] text-white hover:bg-[#8b4513]'
             }`}
             title={isOtherTaskRunning ? '他のタスクが実行中です' : '実行開始'}
           >
@@ -228,7 +228,7 @@ export const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
             {isRunning ? (
               <button
                 onClick={handlePause}
-                className="flex items-center gap-1 px-3 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 text-xs font-medium transition-colors flex-1 justify-center min-h-[44px]"
+                className="flex items-center gap-1 px-3 py-2 bg-[#deb887] text-[#8b4513] rounded-lg hover:bg-[#8b4513] hover:text-white text-xs font-medium transition-colors flex-1 justify-center min-h-[44px]"
                 title="一時停止"
               >
                 {FaPause({className:"w-3 h-3"})}
@@ -237,7 +237,7 @@ export const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
             ) : (
               <button
                 onClick={handleResume}
-                className="flex items-center gap-1 px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-xs font-medium transition-colors flex-1 justify-center min-h-[44px]"
+                className="flex items-center gap-1 px-3 py-2 bg-[#7c5a2a] text-white rounded-lg hover:bg-[#8b4513] text-xs font-medium transition-colors flex-1 justify-center min-h-[44px]"
                 title="再開"
               >
                 {FaPlay({className:"w-3 h-3"})}
@@ -247,7 +247,7 @@ export const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
             
             <button
               onClick={handleStop}
-              className="flex items-center gap-1 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 text-xs font-medium transition-colors flex-1 justify-center min-h-[44px]"
+              className="flex items-center gap-1 px-3 py-2 bg-[#8b4513] text-white rounded-lg hover:bg-[#7c5a2a] text-xs font-medium transition-colors flex-1 justify-center min-h-[44px]"
               title="停止・記録"
             >
               {FaStop({className:"w-3 h-3"})}
@@ -258,7 +258,7 @@ export const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
             <div className="flex-1 relative">
               <button
                 onClick={handleResetClick}
-                className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors w-full justify-center min-h-[44px] bg-gray-500 text-white hover:bg-gray-600"
+                className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors w-full justify-center min-h-[44px] bg-[#f5f5dc] text-[#7c5a2a] border border-[#deb887] hover:bg-[#deb887]"
                 title="リセット"
               >
                 {FaUndo({className:"w-3 h-3"})}
@@ -269,7 +269,7 @@ export const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
               {showResetPopover && (
                 <div 
                   ref={popoverRef}
-                  className="absolute bottom-full mb-2 left-0 transform -translate-x-1/2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-3"
+                  className="absolute bottom-full mb-2 left-0 transform -translate-x-1/2 w-56 bg-[#f5f5dc] border border-[#deb887] rounded-lg shadow-lg z-50 p-3"
                   style={{ 
                     boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
                   }}
@@ -281,12 +281,12 @@ export const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
                       marginLeft: '-4px',
                       borderLeft: '4px solid transparent',
                       borderRight: '4px solid transparent',
-                      borderTop: '4px solid white'
+                      borderTop: '4px solid #f5f5dc'
                     }}
                   ></div>
                   <div className="mb-2">
-                    <h3 className="text-xs font-medium text-gray-900 mb-2 flex items-center gap-1">
-                      <span className="text-yellow-600 text-sm">⚠️</span>
+                    <h3 className="text-xs font-medium text-[#8b4513] mb-2 flex items-center gap-1">
+                      <span className="text-[#8b4513] text-sm">⚠️</span>
                       リセット種別を選択
                     </h3>
                     
@@ -294,26 +294,26 @@ export const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
                     <div className="space-y-1.5 mb-2">
                       <button
                         onClick={() => handleResetConfirm('session')}
-                        className="w-full text-left p-2 bg-gray-50 hover:bg-gray-100 rounded transition-colors"
+                        className="w-full text-left p-2 bg-[#f5f5dc] hover:bg-[#deb887] rounded transition-colors border border-[#deb887]"
                       >
-                        <div className="font-medium text-xs text-gray-900">⏱️ セッションのみ</div>
-                        <div className="text-xs text-gray-500">現在の実行時間のみ</div>
+                        <div className="font-medium text-xs text-[#8b4513]">⏱️ セッションのみ</div>
+                        <div className="text-xs text-[#7c5a2a]">現在の実行時間のみ</div>
                       </button>
                       
                       <button
                         onClick={() => handleResetConfirm('today')}
-                        className="w-full text-left p-2 bg-blue-50 hover:bg-blue-100 rounded transition-colors"
+                        className="w-full text-left p-2 bg-[#f5f5dc] hover:bg-[#deb887] rounded transition-colors border border-[#deb887]"
                       >
-                        <div className="font-medium text-xs text-blue-900">📅 今日累計</div>
-                        <div className="text-xs text-blue-600">今日分の累積時間</div>
+                        <div className="font-medium text-xs text-[#8b4513]">📅 今日累計</div>
+                        <div className="text-xs text-[#7c5a2a]">今日分の累積時間</div>
                       </button>
                       
                       <button
                         onClick={() => handleResetConfirm('total')}
-                        className="w-full text-left p-2 bg-red-50 hover:bg-red-100 rounded transition-colors"
+                        className="w-full text-left p-2 bg-[#f5f5dc] hover:bg-[#deb887] rounded transition-colors border border-[#deb887]"
                       >
-                        <div className="font-medium text-xs text-red-900">🗑️ 総累計</div>
-                        <div className="text-xs text-red-600">全期間の記録を削除</div>
+                        <div className="font-medium text-xs text-[#8b4513]">🗑️ 総累計</div>
+                        <div className="text-xs text-[#7c5a2a]">全期間の記録を削除</div>
                       </button>
                     </div>
                   </div>
@@ -321,7 +321,7 @@ export const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
                   <div className="flex justify-end">
                     <button
                       onClick={handleResetCancel}
-                      className="px-2 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
+                      className="px-2 py-1 text-xs font-medium text-[#7c5a2a] bg-[#f5f5dc] border border-[#deb887] rounded hover:bg-[#deb887] transition-colors"
                     >
                       キャンセル
                     </button>
@@ -335,7 +335,7 @@ export const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
 
       {/* 他のタスク実行中の警告 */}
       {isOtherTaskRunning && (
-        <div className="text-xs text-orange-600 mt-2 text-center">
+        <div className="text-xs text-[#8b4513] mt-2 text-center">
           他のタスクが実行中
         </div>
       )}

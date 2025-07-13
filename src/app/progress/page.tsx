@@ -10,7 +10,7 @@ import { MobileProgressDashboard } from '@/components/molecules/MobileProgressDa
 
 import { FaChartBar, FaChartPie, FaFire, FaChartLine, FaTrophy } from 'react-icons/fa';
 import { DEFAULT_CATEGORIES } from '@/types/task';
-import { Task } from '@/stores/taskStore';
+import { Task } from '@/types/task';
 import { useSearchParams } from 'next/navigation';
 
 type TabType = 'today' | 'category' | 'heatmap' | 'overall';

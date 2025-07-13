@@ -1,5 +1,5 @@
 import React from 'react';
-import { Task } from '@/stores/taskStore';
+import { Task } from '@/types/task';
 import { TaskCard } from './TaskCard';
 
 interface TaskListProps {

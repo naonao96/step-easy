@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { type Task } from '@/types/task';
 import { BaseTaskModal } from './BaseTaskModal';
 
@@ -8,15 +8,19 @@ interface TaskModalProps {
   initialData?: Partial<Task>;
   onSave?: (task: Task) => void;
   mode?: 'create' | 'edit' | 'preview';
+  isMobile?: boolean;
+  onRequestClose?: () => void;
 }
 
-export const TaskModal: React.FC<TaskModalProps> = ({
+export const TaskModal = forwardRef<{ closeWithValidation: () => void }, TaskModalProps>(({
   isOpen,
   onClose,
   initialData,
   onSave,
-  mode = 'create'
-}) => {
+  mode = 'create',
+  isMobile = false,
+  onRequestClose
+}, ref) => {
   const createTaskFormData = (data: {
     title: string;
     content: string;
@@ -39,6 +43,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
 
   return (
     <BaseTaskModal
+      ref={ref}
       isOpen={isOpen}
       onClose={onClose}
       initialData={initialData}
@@ -61,6 +66,8 @@ export const TaskModal: React.FC<TaskModalProps> = ({
 Markdownで自由に書けます！`}
       modalTitle="新規作成"
       createFormData={createTaskFormData}
+      isMobile={isMobile}
+      onRequestClose={onRequestClose}
     />
   );
-}; 
+}); 

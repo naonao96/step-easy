@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Task } from '@/stores/taskStore';
+import { Task } from '@/types/task';
 import { CategoryBadge } from '@/components/atoms/CategoryBadge';
 import { FaCheck, FaTrash, FaPlay, FaPause, FaStop, FaClock, FaEdit, FaFire } from 'react-icons/fa';
 import { useExecutionStore } from '@/stores/executionStore';

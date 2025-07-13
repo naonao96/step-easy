@@ -1,7 +1,7 @@
 import React from 'react';
 import { Task } from '@/types/task';
 import { Button } from '../atoms/Button';
-import { StreakBadge } from '../atoms/StreakBadge';
+
 import { CategoryBadge } from '../atoms/CategoryBadge';
 import { FaEdit, FaTrash, FaCheck } from 'react-icons/fa';
 import { PRIORITY_LABELS } from '@/types/task';
@@ -106,11 +106,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           </span>
         )}
         
-        {/* ストリークバッジ */}
-        <StreakBadge 
-          task={task}
-          size="sm"
-        />
+
       </div>
 
       {task.status !== 'done' && (

@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Task } from '@/types/task';
 import { BaseTaskModal } from './BaseTaskModal';
+import { useHabitStore } from '@/stores/habitStore';
+import { isNewHabit, isHabitCompleted } from '@/lib/habitUtils';
 
 interface TaskPreviewModalProps {
   task: Task;
@@ -11,6 +13,7 @@ interface TaskPreviewModalProps {
   onComplete: (id: string) => void;
   onRefresh: () => void;
   isMobile?: boolean;
+  selectedDate?: Date;
 }
 
 export const TaskPreviewModal: React.FC<TaskPreviewModalProps> = ({
@@ -21,8 +24,62 @@ export const TaskPreviewModal: React.FC<TaskPreviewModalProps> = ({
   onDelete,
   onComplete,
   onRefresh,
-  isMobile = false
+  isMobile = false,
+  selectedDate
 }) => {
+  const { habitCompletions } = useHabitStore();
+  const [localCompletionStatus, setLocalCompletionStatus] = useState<'done' | 'todo' | 'doing' | null>(null);
+  
+  // 習慣の完了状態を正しく判定（リアルタイム + ローカル状態）
+  const getTaskStatus = () => {
+    // ローカル状態が設定されている場合はそれを優先
+    if (localCompletionStatus !== null) {
+      return localCompletionStatus;
+    }
+    
+    if (isNewHabit(task)) {
+      // 新しい習慣テーブルの習慣の場合：habitCompletionsからリアルタイムで判定
+      const targetDate = selectedDate || new Date();
+      const japanTime = new Date(targetDate.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+      const dateString = japanTime.toISOString().split('T')[0];
+      
+      const isCompleted = habitCompletions.some(
+        completion => completion.habit_id === task.id && completion.completed_date === dateString
+      );
+      return isCompleted ? 'done' : 'todo';
+    } else {
+      // 既存のタスクテーブルの習慣または通常のタスクの場合
+      return task.status;
+    }
+  };
+  
+  // 完了状態を反映したタスクデータを作成
+  const taskWithCorrectStatus = {
+    ...task,
+    status: getTaskStatus()
+  };
+  
+  // 楽観的更新付きの完了処理
+  const handleCompleteWithOptimisticUpdate = async (id: string) => {
+    // 現在の状態を取得
+    const currentStatus = getTaskStatus();
+    const newStatus = currentStatus === 'done' ? 'todo' : 'done';
+    
+    // 即座にローカル状態を更新（楽観的更新）
+    setLocalCompletionStatus(newStatus);
+    
+    try {
+      await onComplete(id);
+      if (onRefresh) {
+        onRefresh();
+      }
+    } catch (error) {
+      console.error('完了処理エラー:', error);
+      // エラーが発生した場合は元の状態に戻す
+      setLocalCompletionStatus(currentStatus);
+      alert('完了処理に失敗しました');
+    }
+  };
   const createTaskFormData = (data: {
     title: string;
     content: string;
@@ -44,13 +101,19 @@ export const TaskPreviewModal: React.FC<TaskPreviewModalProps> = ({
     category: data.category
   });
 
+  // モーダルが閉じられた時にローカル状態をリセット
+  const handleClose = () => {
+    setLocalCompletionStatus(null);
+    onClose();
+  };
+
   return (
     <BaseTaskModal
       isOpen={isOpen}
-      onClose={onClose}
-      initialData={task}
+      onClose={handleClose}
+      initialData={taskWithCorrectStatus}
       onDelete={async (id: string) => onDelete(id)}
-      onComplete={async (id: string) => onComplete(id)}
+      onComplete={handleCompleteWithOptimisticUpdate}
       onEdit={onEdit}
       onRefresh={onRefresh}
       mode="preview"
@@ -72,6 +135,7 @@ Markdownで自由に書けます！`}
       modalTitle="プレビュー"
       createFormData={createTaskFormData}
       isMobile={isMobile}
+      selectedDate={selectedDate}
     />
   );
 }; 

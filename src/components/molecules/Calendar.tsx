@@ -1,23 +1,48 @@
-import React, { useMemo, useState } from 'react';
-import { Task } from '@/stores/taskStore';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Task } from '@/types/task';
 import { FaChevronLeft, FaChevronRight, FaCalendarAlt, FaFire, FaTasks, FaInfoCircle } from 'react-icons/fa';
 
 interface CalendarProps {
   tasks?: Task[];
+  habits?: any[]; // 習慣データを直接受け取る
   selectedDate?: Date;
   onDateSelect?: (date: Date) => void;
+  onTabChange?: (tab: 'tasks' | 'habits') => void; // タブ切り替えコールバック
   onHeightChange?: (height: number) => void;
+  activeTab?: 'tasks' | 'habits'; // 外部から制御するタブ状態
 }
 
 type DisplayMode = 'month' | 'week';
 type CalendarMode = 'tasks' | 'habits';
 
-export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, onDateSelect, onHeightChange }) => {
+export const Calendar: React.FC<CalendarProps> = ({ tasks = [], habits = [], selectedDate, onDateSelect, onTabChange, onHeightChange, activeTab }) => {
   const today = new Date();
   
   // 表示モードとカレンダーモードの状態管理
   const [displayMode, setDisplayMode] = useState<DisplayMode>('month');
   const [calendarMode, setCalendarMode] = useState<CalendarMode>('habits');
+  
+  // 外部からのタブ変更を監視
+  useEffect(() => {
+    if (activeTab) {
+      setCalendarMode(activeTab);
+    }
+  }, [activeTab]);
+  
+  // 習慣データをタスク形式に変換して統合
+  const allTasks = useMemo(() => {
+    const convertedHabits = habits.map(habit => ({
+      ...habit,
+      is_habit: true,
+      start_date: null,
+      due_date: null,
+      status: habit.isCompleted ? 'done' : 'todo',
+      completed_at: habit.isCompleted ? new Date().toISOString() : undefined
+    }));
+    
+    console.log('Calendar - 変換された習慣:', convertedHabits);
+    return [...tasks, ...convertedHabits];
+  }, [tasks, habits]);
   
   // ツールチップの状態管理
   const [showLegendTooltip, setShowLegendTooltip] = useState(false);
@@ -89,7 +114,7 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, on
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    return tasks.filter(task => {
+    const filteredTasks = allTasks.filter(task => {
       // カレンダーモードに応じてフィルタリング
       if (calendarMode === 'tasks' && task.is_habit) return false;
       if (calendarMode === 'habits' && !task.is_habit) return false;
@@ -158,21 +183,43 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, on
       
       // 開始日も期限日もないタスクの処理
       if (!task.start_date && !task.due_date) {
-        // 完了済みタスク：完了日が対象日と一致
-        if (task.status === 'done' && task.completed_at) {
-          const completedDate = new Date(task.completed_at);
-          completedDate.setHours(0, 0, 0, 0);
-          return completedDate.getTime() === targetDate.getTime();
-        }
-        
-        // 未完了タスク：今日のみ表示（対象日が今日の場合）
-        if (task.status !== 'done') {
-          return targetDate.getTime() === today.getTime();
+        // 習慣タスクの場合：毎日表示
+        if (task.is_habit) {
+          // 完了済みタスク：完了日が対象日と一致
+          if (task.status === 'done' && task.completed_at) {
+            const completedDate = new Date(task.completed_at);
+            completedDate.setHours(0, 0, 0, 0);
+            return completedDate.getTime() === targetDate.getTime();
+          }
+          
+          // 未完了タスク：毎日表示
+          if (task.status !== 'done') {
+            return true;
+          }
+        } else {
+          // 通常タスクの場合：完了済みタスクは完了日のみ表示
+          if (task.status === 'done' && task.completed_at) {
+            const completedDate = new Date(task.completed_at);
+            completedDate.setHours(0, 0, 0, 0);
+            return completedDate.getTime() === targetDate.getTime();
+          }
+          
+          // 未完了タスク：今日のみ表示（対象日が今日の場合）
+          if (task.status !== 'done') {
+            return targetDate.getTime() === today.getTime();
+          }
         }
       }
       
       return false;
     });
+    
+    // デバッグログ
+    if (calendarMode === 'habits' && filteredTasks.length > 0) {
+      console.log(`Calendar - ${targetDate.toDateString()} の習慣:`, filteredTasks);
+    }
+    
+    return filteredTasks;
   };
 
   // タスク表示情報を取得（カレンダーモード対応）
@@ -198,11 +245,11 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, on
 
   // アクティブな習慣を取得
   const activeHabits = useMemo(() => {
-    return tasks.filter(task => 
-      task.is_habit 
-      // 一時的にstatus条件を削除してデバッグ
-    );
-  }, [tasks]);
+    const habits = allTasks.filter(task => task.is_habit);
+    console.log('Calendar - 習慣データ:', habits);
+    console.log('Calendar - 全タスクデータ:', allTasks);
+    return habits;
+  }, [allTasks]);
 
   // カレンダーの高さを動的に調整
   React.useEffect(() => {
@@ -413,7 +460,10 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, on
           {/* カレンダーモード切り替え */}
           <div className="flex items-center gap-1 bg-[#f5f5dc] rounded-lg p-1">
             <button
-              onClick={() => setCalendarMode('habits')}
+              onClick={() => {
+                setCalendarMode('habits');
+                if (onTabChange) onTabChange('habits');
+              }}
               className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${
                 calendarMode === 'habits' 
                   ? 'bg-white text-[#7c5a2a] shadow-sm' 
@@ -424,7 +474,10 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], selectedDate, on
               <span>習慣</span>
             </button>
             <button
-              onClick={() => setCalendarMode('tasks')}
+              onClick={() => {
+                setCalendarMode('tasks');
+                if (onTabChange) onTabChange('tasks');
+              }}
               className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${
                 calendarMode === 'tasks' 
                   ? 'bg-white text-[#7c5a2a] shadow-sm' 

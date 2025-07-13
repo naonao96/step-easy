@@ -29,18 +29,18 @@ export const TaskExecutionHistory: React.FC<TaskExecutionHistoryProps> = ({ task
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4">
+    <div className="bg-[#f5f5dc] border border-[#deb887] rounded-lg p-4">
       <div className="flex items-center gap-2 mb-3">
-        {FaHistory ({className:"w-4 h-4 text-gray-500"})}
-        <h4 className="font-medium text-gray-900">実行時間情報</h4>
+        {FaHistory ({className:"w-4 h-4 text-[#7c5a2a]"})}
+        <h4 className="font-medium text-[#8b4513]">実行時間情報</h4>
       </div>
       
       <div className="space-y-3">
         {/* 予想時間 */}
         {estimatedDuration && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
-            <span className="text-sm text-gray-600">予想時間</span>
-            <span className="text-sm font-medium text-blue-600">
+            <span className="text-sm text-[#7c5a2a]">予想時間</span>
+            <span className="text-sm font-medium text-[#8b4513]">
               {formatDuration(estimatedDuration)}
             </span>
           </div>
@@ -49,8 +49,8 @@ export const TaskExecutionHistory: React.FC<TaskExecutionHistoryProps> = ({ task
         {/* 実際の実行時間 */}
         {hasExecutionData && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
-            <span className="text-sm text-gray-600">実行時間</span>
-            <span className="text-sm font-medium text-green-600">
+            <span className="text-sm text-[#7c5a2a]">実行時間</span>
+            <span className="text-sm font-medium text-[#8b4513]">
               {formatDuration(actualDuration!)}
             </span>
           </div>
@@ -58,13 +58,13 @@ export const TaskExecutionHistory: React.FC<TaskExecutionHistoryProps> = ({ task
 
         {/* 実行時間と予想時間の比較 */}
         {hasExecutionData && estimatedDuration && (
-          <div className="border-t border-gray-100 pt-3">
+          <div className="border-t border-[#deb887] pt-3">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
-              <span className="text-sm text-gray-600">予想との差</span>
+              <span className="text-sm text-[#7c5a2a]">予想との差</span>
               <span className={`text-sm font-medium ${
                 actualDuration! <= estimatedDuration 
-                  ? 'text-green-600' 
-                  : 'text-orange-600'
+                  ? 'text-[#8b4513]' 
+                  : 'text-[#8b4513]'
               }`}>
                 {actualDuration! <= estimatedDuration ? '⭐︎ ' : ''}
                 {actualDuration! <= estimatedDuration
@@ -76,18 +76,18 @@ export const TaskExecutionHistory: React.FC<TaskExecutionHistoryProps> = ({ task
             
             {/* 達成率バー */}
             <div className="mt-2">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs text-gray-500 mb-1">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs text-[#7c5a2a] mb-1">
                 <span>達成率</span>
                 <span className="font-medium">
                   {Math.round((estimatedDuration / actualDuration!) * 100)}%
                 </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-[#deb887] rounded-full h-2">
                 <div 
                   className={`h-2 rounded-full transition-all duration-300 ${
                     actualDuration! <= estimatedDuration 
-                      ? 'bg-green-500' 
-                      : 'bg-orange-500'
+                      ? 'bg-[#8b4513]' 
+                      : 'bg-[#7c5a2a]'
                   }`}
                   style={{ 
                     width: `${Math.min(100, (estimatedDuration / actualDuration!) * 100)}%`
@@ -100,7 +100,7 @@ export const TaskExecutionHistory: React.FC<TaskExecutionHistoryProps> = ({ task
 
         {/* 実行時間のみの場合の表示 */}
         {hasExecutionData && !estimatedDuration && (
-          <div className="flex items-center gap-2 text-xs text-gray-500">
+          <div className="flex items-center gap-2 text-xs text-[#7c5a2a]">
             {FaClock ({className:"w-3 h-3"})}
             <span>次回は予想時間を設定してみましょう</span>
           </div>

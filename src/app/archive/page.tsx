@@ -3,7 +3,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTaskStore, Task } from '@/stores/taskStore';
+import { useTaskStore } from '@/stores/taskStore';
+import { Task } from '@/types/task';
 import { AppLayout } from '@/components/templates/AppLayout';
 import { Button } from '@/components/atoms/Button';
 import { FaCalendarAlt, FaCheckCircle, FaUndo, FaTrash, FaFilter, FaHistory, FaSearch, FaSort } from 'react-icons/fa';

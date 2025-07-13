@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Task } from '@/stores/taskStore';
-import { StreakBadge } from '../atoms/StreakBadge';
+import { Task } from '@/types/task';
+
 import { getActiveStreakTasks, getRiskyStreakTasks } from '@/lib/streakUtils';
 
 interface ActivityStatsProps {
@@ -228,12 +228,9 @@ export const ActivityStats: React.FC<ActivityStatsProps> = ({
               {streakStats.topStreaks.map(task => (
                 <div key={task.id} className="flex justify-between items-center text-xs">
                   <span className="text-gray-600 truncate flex-1 mr-2">{task.title}</span>
-                  <StreakBadge 
-                    task={task}
-                    size="sm"
-                    showText={false}
-                    showTimeRemaining={true}
-                  />
+                  <span className="text-xs text-gray-500 font-medium">
+                    {task.current_streak || 0}日
+                  </span>
                 </div>
               ))}
               {streakStats.totalActiveStreaks > 3 && (

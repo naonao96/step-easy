@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Task } from '@/stores/taskStore';
+import { Task } from '@/types/task';
 
 interface HeatmapChartProps {
   tasks?: Task[];

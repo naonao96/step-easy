@@ -3,7 +3,10 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTaskStore, Task } from '@/stores/taskStore';
+import { useTaskStore } from '@/stores/taskStore';
+import { Task } from '@/types/task';
+import { useHabitStore } from '@/stores/habitStore';
+import { HabitWithCompletion } from '@/types/habit';
 import { AppLayout } from '@/components/templates/AppLayout';
 import { Calendar } from '@/components/molecules/Calendar';
 import { Character } from '@/components/molecules/Character';
@@ -16,10 +19,13 @@ import { TaskModal } from '@/components/molecules/TaskModal';
 import { HabitModal } from '@/components/molecules/HabitModal';
 import { TaskPreviewModal } from '@/components/molecules/TaskPreviewModal';
 import { TaskEditModal } from '@/components/molecules/TaskEditModal';
+import { HabitCard } from '@/components/molecules/HabitCard';
 
 import { getGuestTasks, migrateGuestTasks, clearGuestTasks } from '@/lib/guestMigration';
 import { useCharacterMessage } from '@/hooks/useCharacterMessage';
 import { useEmotionLog } from '@/hooks/useEmotionLog';
+import { integrateHabitData, convertHabitsToTasks, isNewHabit } from '@/lib/habitUtils';
+import { completeHabit, deleteHabit as deleteHabitOperation, editHabit } from '@/lib/habitOperations';
 // react-responsiveが未インストールの場合は `npm install react-responsive` を実行してください
 const { useMediaQuery } = require('react-responsive');
 
@@ -27,6 +33,7 @@ export default function MenuPage() {
   const router = useRouter();
   const { user, signOut, shouldShowMigrationModal, setShouldShowMigrationModal, isGuest, planType } = useAuth();
   const { tasks, fetchTasks, updateTask, deleteTask, resetExpiredStreaks } = useTaskStore();
+  const { habits, habitCompletions, fetchHabits, deleteHabit } = useHabitStore();
   
   // 感情記録の状態を取得
   const { recordStatus, currentTimePeriod } = useEmotionLog();
@@ -40,6 +47,7 @@ export default function MenuPage() {
   const [mounted, setMounted] = useState(false);
   const [greeting, setGreeting] = useState('');
   const [currentMobileTab, setCurrentMobileTab] = useState<'tasks' | 'habits'>('habits');
+  const [currentDesktopTab, setCurrentDesktopTab] = useState<'tasks' | 'habits'>('habits');
   const [guestTasks, setGuestTasks] = React.useState<Task[]>([]);
   const [migrationError, setMigrationError] = React.useState<string | null>(null);
   const [contentHeight, setContentHeight] = useState(46); // rem単位（カレンダーと統一）
@@ -49,7 +57,11 @@ export default function MenuPage() {
   const [showHabitModal, setShowHabitModal] = useState(false);
   const [showTaskPreviewModal, setShowTaskPreviewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedTask, setSelectedTask] = useState<any>(null);
+  
+  // モーダルのref
+  const taskModalRef = useRef<{ closeWithValidation: () => void }>(null);
+  const habitModalRef = useRef<{ closeWithValidation: () => void }>(null);
 
   const isDesktop = useMediaQuery({ minWidth: 1024 });
   useEffect(() => { setMounted(true); }, []);
@@ -62,6 +74,7 @@ export default function MenuPage() {
     
     const initializeData = async () => {
       await fetchTasks();
+      await fetchHabits();
       // アプリ起動時に期限切れストリークをリセット
       await resetExpiredStreaks();
     };
@@ -72,9 +85,9 @@ export default function MenuPage() {
     if (shouldShowMigrationModal) {
       setGuestTasks(getGuestTasks());
     }
-  }, [user, router, fetchTasks, resetExpiredStreaks, shouldShowMigrationModal]);
+  }, [user, router, fetchTasks, fetchHabits, resetExpiredStreaks, shouldShowMigrationModal]);
 
-  // 選択された日付のタスクをフィルタリング
+  // 選択された日付のタスクをフィルタリング（習慣以外）
   const selectedDateTasks = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -82,6 +95,11 @@ export default function MenuPage() {
     selectedDateTime.setHours(0, 0, 0, 0);
     
     return tasks.filter(task => {
+      // 習慣タスクは除外
+      if (task.is_habit) {
+        return false;
+      }
+      
       // 期間タスクの処理（開始日と期限日の両方がある場合）
       if (task.start_date && task.due_date) {
         const taskStartDate = new Date(task.start_date);
@@ -162,6 +180,29 @@ export default function MenuPage() {
       return false;
     });
   }, [tasks, selectedDate]);
+
+  // 習慣の表示（常に表示）
+  const displayHabits = useMemo(() => {
+    return integrateHabitData(habits, tasks);
+  }, [habits, tasks]);
+
+  // 新しい習慣データをTask型に変換（未来日付では表示しない）
+  const convertedHabits = useMemo(() => {
+    if (!selectedDate) return convertHabitsToTasks(habits, selectedDate, habitCompletions);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selected = new Date(selectedDate);
+    selected.setHours(0, 0, 0, 0);
+    
+    // 未来日付の場合は空配列を返す
+    if (selected.getTime() > today.getTime()) {
+      return [];
+    }
+    
+    // 過去・今日の場合は通常通り
+    return convertHabitsToTasks(habits, selectedDate, habitCompletions);
+  }, [habits, selectedDate, habitCompletions]);
 
   // 統計計算
   const statistics = useMemo(() => {
@@ -399,28 +440,79 @@ export default function MenuPage() {
   }, [statistics]); // selectedDateを依存配列から削除
 
   const handleCompleteTask = async (id: string) => {
+    // タスクか習慣かを判定
     const task = tasks.find(t => t.id === id);
-    if (!task) return;
+    const habit = habits.find(h => h.id === id);
     
-    // 完了⇔未完了の切り替え
-    const newStatus = task.status === 'done' ? 'todo' : 'done';
-    const completedAt = newStatus === 'done' ? new Date().toISOString() : undefined;
+    if (habit || (task && task.is_habit)) {
+      // 習慣の場合：completeHabit関数を使用
+      const { completeHabit: completeHabitFn, toggleHabitCompletion: toggleHabitCompletionFn } = useHabitStore.getState();
+      const result = await completeHabit(id, habits, tasks, completeHabitFn, updateTask, fetchHabits, toggleHabitCompletionFn, selectedDate);
+      
+      if (!result.success) {
+        console.error('習慣完了エラー:', result.message);
+      }
+      
+      await fetchHabits();
+    } else if (task && !task.is_habit) {
+      // 通常のタスクの場合：直接updateTaskを使用
+      const newStatus = task.status === 'done' ? 'todo' : 'done';
+      const completedAt = newStatus === 'done' ? new Date().toISOString() : undefined;
+      
+      try {
+        await updateTask(id, { status: newStatus, completed_at: completedAt });
+      } catch (error) {
+        console.error('タスク完了エラー:', error);
+      }
+    }
     
-    await updateTask(id, { 
-      status: newStatus, 
-      completed_at: completedAt 
-    });
+    await fetchTasks(); // タスクデータを再取得
   };
 
   const handleDeleteTask = async (id: string) => {
-    if (window.confirm('このタスクを削除してもよろしいですか？')) {
-      await deleteTask(id);
+    // 習慣かどうかを判定
+    const isHabit = habits.some(habit => habit.id === id) || 
+                   tasks.some(task => task.id === id && task.is_habit);
+    
+    const message = isHabit ? 'この習慣を削除してもよろしいですか？' : 'このタスクを削除してもよろしいですか？';
+    
+    if (window.confirm(message)) {
+      if (isHabit) {
+        // 習慣の場合は習慣削除処理を使用
+        const { deleteHabit: deleteHabitFn } = useHabitStore.getState();
+        await deleteHabitOperation(id, habits, tasks, deleteHabitFn, deleteTask);
+        await fetchHabits();
+      } else {
+        // 通常のタスクの場合はタスク削除処理を使用
+        await deleteTask(id);
+      }
+    }
+  };
+
+  const handleDeleteHabit = async (id: string) => {
+    if (window.confirm('この習慣を削除してもよろしいですか？')) {
+      const { deleteHabit: deleteHabitFn } = useHabitStore.getState();
+      await deleteHabitOperation(id, habits, tasks, deleteHabitFn, deleteTask);
+      await fetchHabits(); // 習慣データを再取得
     }
   };
 
   const handleEditTask = (task: any) => {
     setSelectedTask(task as any);
     setShowEditModal(true);
+  };
+
+  const handleEditHabit = (habit: any) => {
+    // 新しい習慣テーブルの習慣の場合
+    if (isNewHabit(habit)) {
+      // 新しい習慣はHabitModalで編集
+      setSelectedTask(habit);
+      setShowHabitModal(true);
+    } else {
+      // 既存のタスクテーブルの習慣はTaskEditModalで編集
+      setSelectedTask(habit);
+      setShowEditModal(true);
+    }
   };
 
   const handleTaskClick = (task: any) => {
@@ -473,6 +565,20 @@ export default function MenuPage() {
 
   // FABクリック時の処理（現在のタブに応じて直接モーダル表示）
   const handleFABClick = () => {
+    // モーダルが開いている場合は閉じるボタンと同じ動作
+    if (showTaskModal || showHabitModal) {
+      // 閉じるボタンと同じ処理を実行（変更がある場合は確認ダイアログ）
+      if (showTaskModal) {
+        // TaskModalの閉じる処理を呼び出し（既存のhandleCloseWithConfirmと同じ動作）
+        taskModalRef.current?.closeWithValidation();
+      } else if (showHabitModal) {
+        // HabitModalの閉じる処理を呼び出し（既存のhandleCloseWithConfirmと同じ動作）
+        habitModalRef.current?.closeWithValidation();
+      }
+      return;
+    }
+    
+    // モーダルが閉じている場合は開く
     if (currentMobileTab === 'habits') {
       setShowHabitModal(true);
     } else {
@@ -516,7 +622,7 @@ export default function MenuPage() {
       <div className="lg:hidden">
         <ModernMobileHome
           selectedDate={selectedDate}
-          selectedDateTasks={selectedDateTasks}
+          selectedDateTasks={[...selectedDateTasks, ...convertedHabits] as any}
           tasks={tasks}
           statistics={statistics}
           characterMood={characterMood}
@@ -559,21 +665,28 @@ export default function MenuPage() {
               className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8"
             >
               <TaskListHome
-                tasks={selectedDateTasks as any}
+                tasks={[...selectedDateTasks, ...convertedHabits] as any}
                 selectedDate={selectedDate}
                 onCompleteTask={handleCompleteTask}
                 onTaskClick={handleTaskClick}
                 onEditTask={handleEditTask}
                 height={46}
+                activeTab={currentDesktopTab}
+                onTabChange={setCurrentDesktopTab}
               />
               <Calendar 
                 tasks={tasks}
+                habits={habits}
                 selectedDate={selectedDate}
                 onDateSelect={(date) => {
                   const newDate = new Date(date);
                   newDate.setHours(0, 0, 0, 0);
                   setSelectedDate(newDate);
                 }}
+                onTabChange={(tab: 'tasks' | 'habits') => {
+                  setCurrentDesktopTab(tab);
+                }}
+                activeTab={currentDesktopTab}
               />
             </div>
 
@@ -608,14 +721,18 @@ export default function MenuPage() {
 
       {/* タスク作成モーダル */}
       <TaskModal
+        ref={taskModalRef}
         isOpen={showTaskModal}
         onClose={() => setShowTaskModal(false)}
+        isMobile={!isDesktop}
       />
 
       {/* 習慣作成モーダル */}
       <HabitModal
+        ref={habitModalRef}
         isOpen={showHabitModal}
         onClose={() => setShowHabitModal(false)}
+        isMobile={!isDesktop}
       />
 
       {/* タスクプレビュー・編集モーダル */}
@@ -634,6 +751,7 @@ export default function MenuPage() {
             onComplete={handleCompleteTask}
             onRefresh={fetchTasks}
             isMobile={!isDesktop}
+            selectedDate={selectedDate}
           />
 
           <TaskEditModal
