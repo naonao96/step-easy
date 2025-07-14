@@ -154,11 +154,11 @@ export const MobilePlansContent: React.FC<MobilePlansContentProps> = ({
               <div className="flex items-center justify-center gap-2 mb-4">
                 <span className="text-[#7c5a2a]">習慣の記録を"人生の記憶"として残せます</span>
                 <span className="bg-[#deb887] text-[#8b4513] px-2 py-1 rounded-full text-xs font-medium">
-                  準備中
+                  7日間無料
                 </span>
               </div>
                               <div className="text-2xl font-bold text-[#8b4513] mb-2">月額200円</div>
-              <p className="text-sm text-[#7c5a2a] mb-4">2025年7月リリース予定</p>
+              <p className="text-sm text-[#7c5a2a] mb-4">いつでも解約可能</p>
               
               <div className="space-y-3 text-left mb-6">
                 <div className="flex items-center gap-3">
@@ -202,16 +202,16 @@ export const MobilePlansContent: React.FC<MobilePlansContentProps> = ({
                 {showPremiumDetails && (
                   <div className="text-xs text-slate-500 mt-2 border-t pt-2">
                     タスク作成数：無制限｜新規作成可能日：無制限｜既存タスク編集：無制限｜期限日設定：可能｜データ保存期間：無制限｜習慣機能：無制限
-                    <span className="text-amber-500 ml-2">※ベータ版では利用できません</span>
                   </div>
                 )}
               </div>
               
               <button
-                disabled
-                className="w-full bg-amber-200 text-amber-700 px-6 py-3 rounded-xl font-bold cursor-not-allowed"
+                onClick={onRegister}
+                disabled={isLoading}
+                className="w-full bg-[#8b4513] hover:bg-[#7c5a2a] text-white px-6 py-3 rounded-xl font-bold transition-colors disabled:opacity-50"
               >
-                Coming Soon
+                プレミアムで始める
               </button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { AuthProvider } from '@/contexts/AuthContext';
+import { NotificationBanner } from '@/components/molecules/NotificationBanner';
 
 export default function ClientLayout({
   children,
@@ -9,6 +10,7 @@ export default function ClientLayout({
 }) {
   return (
     <AuthProvider>
+      <NotificationBanner />
       {children}
     </AuthProvider>
   );

@@ -14,7 +14,7 @@ import { Character } from '@/components/molecules/Character';
 import { TaskListHome } from '@/components/molecules/TaskListHome';
 import { GuestMigrationModal } from '@/components/molecules/GuestMigrationModal';
 import { ModernMobileHome } from '@/components/molecules/ModernMobileHome';
-import { PremiumComingSoonBanner } from '@/components/molecules/PremiumComingSoonBanner';
+
 import { TaskModal } from '@/components/molecules/TaskModal';
 import { HabitModal } from '@/components/molecules/HabitModal';
 import { TaskPreviewModal } from '@/components/molecules/TaskPreviewModal';
@@ -631,12 +631,7 @@ export default function MenuPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 md:grid-cols-2 gap-4 mb-6">
             </div>
 
-            {/* プレミアム導線（デスクトップ版）- 一番下に移動 */}
-            {(isGuest || (!isGuest && planType === 'free')) && (
-              <div className="mb-6">
-                <PremiumComingSoonBanner />
-              </div>
-            )}
+
             </div>
           </div>
         </div>

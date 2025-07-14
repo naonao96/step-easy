@@ -7,7 +7,7 @@ import { Character } from './Character';
 import { useAuth } from '@/contexts/AuthContext';
 import { MobileTaskTimer } from './MobileTaskTimer';
 import { MobileTaskHistory } from './MobileTaskHistory';
-  import { PremiumComingSoonBanner } from './PremiumComingSoonBanner';
+
   import { useEmotionLog } from '@/hooks/useEmotionLog';
   import { useMessageDisplay } from '@/hooks/useMessageDisplay';
   import ReactMarkdown from 'react-markdown';
@@ -631,8 +631,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
         </div>
       </div>
 
-      {/* Premium Features */}
-      <PremiumComingSoonBanner />
+
       
 
 

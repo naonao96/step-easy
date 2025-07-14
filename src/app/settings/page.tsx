@@ -3,13 +3,15 @@
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { Input } from '@/components/atoms/Input';
-import { FaUser, FaBell, FaLock, FaSignOutAlt, FaInfoCircle, FaGem, FaFileContract, FaShieldAlt, FaTrash, FaSave, FaKey } from 'react-icons/fa';
+import { FaUser, FaBell, FaLock, FaSignOutAlt, FaInfoCircle, FaGem, FaFileContract, FaShieldAlt, FaTrash, FaSave, FaKey, FaCrown, FaCreditCard, FaQuestionCircle, FaHeart } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/templates/AppLayout';
 import { useTaskStore } from '@/stores/taskStore';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { PremiumComingSoonBanner } from '@/components/molecules/PremiumComingSoonBanner';
+import { TrialStatusBanner } from '@/components/molecules/TrialStatusBanner';
 
 // AuthContextと同じSupabaseクライアント作成方法を使用して認証状態を統一
 const supabase = createClientComponentClient();
@@ -18,8 +20,17 @@ export default function SettingsPage() {
   const router = useRouter();
   const { user, signOut, isPremium, isGuest } = useAuth();
   const { tasks, fetchTasks } = useTaskStore();
-  const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'security'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'subscription' | 'security'>('profile');
   const [isLoading, setIsLoading] = useState(false);
+
+  // デバッグ用ログ
+  console.log('SettingsPage Debug:', {
+    user,
+    isPremium,
+    isGuest,
+    userIsPremium: user?.isPremium,
+    userPlanType: user?.planType
+  });
 
   const [profileData, setProfileData] = useState({
     displayName: '',
@@ -351,10 +362,10 @@ export default function SettingsPage() {
                     {/* モバイル用タブナビゲーション（上部固定） */}
           <div className="md:hidden mb-6">
             <div className="bg-[#f5f5dc] rounded-lg shadow-md p-2 sticky top-0 z-10 border border-[#deb887]">
-              <div className="flex overflow-x-auto gap-1">
+              <div className="grid grid-cols-4 gap-1">
                 <button
                   onClick={() => setActiveTab('profile')}
-                  className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[70px] ${
+                  className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg transition-colors ${
                     activeTab === 'profile'
                       ? 'bg-[#deb887] text-[#8b4513]'
                       : 'text-[#7c5a2a] hover:bg-[#deb887]'
@@ -365,7 +376,7 @@ export default function SettingsPage() {
                 </button>
                 <button
                   onClick={() => setActiveTab('notifications')}
-                  className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[70px] ${
+                  className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg transition-colors ${
                     activeTab === 'notifications'
                       ? 'bg-[#deb887] text-[#8b4513]'
                       : 'text-[#7c5a2a] hover:bg-[#deb887]'
@@ -374,19 +385,28 @@ export default function SettingsPage() {
                   {FaBell({ className: "w-4 h-4" })}
                   <span className="text-xs font-medium">通知</span>
                 </button>
-
-                  <button
-                    onClick={() => setActiveTab('security')}
-                    className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[70px] ${
-                      activeTab === 'security'
-                        ? 'bg-[#deb887] text-[#8b4513]'
-                        : 'text-[#7c5a2a] hover:bg-[#deb887]'
-                    }`}
-                  >
-                    {FaLock({ className: "w-4 h-4" })}
-                    <span className="text-xs font-medium">セキュリティ</span>
-                  </button>
-
+                <button
+                  onClick={() => setActiveTab('subscription')}
+                  className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg transition-colors ${
+                    activeTab === 'subscription'
+                      ? 'bg-[#deb887] text-[#8b4513]'
+                      : 'text-[#7c5a2a] hover:bg-[#deb887]'
+                  }`}
+                >
+                  {FaCrown({ className: "w-4 h-4" })}
+                  <span className="text-xs font-medium">プレミアム</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('security')}
+                  className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg transition-colors ${
+                    activeTab === 'security'
+                      ? 'bg-[#deb887] text-[#8b4513]'
+                      : 'text-[#7c5a2a] hover:bg-[#deb887]'
+                  }`}
+                >
+                  {FaLock({ className: "w-4 h-4" })}
+                  <span className="text-xs font-medium">セキュリティ</span>
+                </button>
               </div>
             </div>
           </div>
@@ -418,56 +438,30 @@ export default function SettingsPage() {
                     {FaBell({ className: "w-5 h-5" })}
                     <span>通知</span>
                   </button>
-
-                    <button
-                      onClick={() => setActiveTab('security')}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                        activeTab === 'security'
-                          ? 'bg-[#deb887] text-[#8b4513] border border-[#7c5a2a]'
-                          : 'text-[#7c5a2a] hover:bg-[#deb887]'
-                      }`}
-                    >
-                      {FaLock({ className: "w-5 h-5" })}
-                      <span>セキュリティ</span>
-                    </button>
-
+                  <button
+                    onClick={() => setActiveTab('subscription')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                      activeTab === 'subscription'
+                        ? 'bg-[#deb887] text-[#8b4513] border border-[#7c5a2a]'
+                        : 'text-[#7c5a2a] hover:bg-[#deb887]'
+                    }`}
+                  >
+                    {FaCrown({ className: "w-5 h-5" })}
+                    <span>プレミアム</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('security')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                      activeTab === 'security'
+                        ? 'bg-[#deb887] text-[#8b4513] border border-[#7c5a2a]'
+                        : 'text-[#7c5a2a] hover:bg-[#deb887]'
+                    }`}
+                  >
+                    {FaLock({ className: "w-5 h-5" })}
+                    <span>セキュリティ</span>
+                  </button>
                 </div>
                 
-                {/* プレミアム予告カード（安全に追加） */}
-                {!isPremium && !isGuest && (
-                  <div className="mt-6 p-4 bg-gradient-to-br from-[#f5f5dc] to-[#f0f0e0] border border-[#deb887] rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      {FaGem ({className:"w-4 h-4 text-[#8b4513]"})}
-                      <span className="text-sm font-semibold text-[#8b4513]">プレミアム機能</span>
-                      <span className="text-xs bg-[#deb887] text-[#8b4513] px-2 py-0.5 rounded-full">
-                        月額200円
-                      </span>
-                    </div>
-                    <p className="text-xs text-[#7c5a2a] mb-3">
-                      習慣の記録を"人生の記憶"として残せます
-                    </p>
-                    <div className="space-y-1 text-xs text-[#7c5a2a]">
-                      <div className="flex items-center gap-1">
-                        <div className="w-1 h-1 bg-[#8b4513] rounded-full"></div>
-                        <span>データ保存期間：無制限</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <div className="w-1 h-1 bg-[#8b4513] rounded-full"></div>
-                        <span>習慣機能：登録数無制限</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <div className="w-1 h-1 bg-[#8b4513] rounded-full"></div>
-                        <span>タスク編集：過去・未来すべて</span>
-                      </div>
-                    </div>
-                    <div className="mt-3 pt-3 border-t border-[#deb887]/30">
-                      <button className="w-full px-4 py-2 bg-[#8b4513] hover:bg-[#7c5a2a] text-white rounded-lg font-medium transition-colors">
-                        月額200円で始める
-                      </button>
-                    </div>
-                  </div>
-                )}
-
                 <div className="mt-6 pt-6 border-t border-[#deb887]">
                   <button
                     onClick={signOut}
@@ -482,6 +476,9 @@ export default function SettingsPage() {
 
             {/* メインコンテンツ */}
             <div className="md:col-span-3 col-span-1">
+              {/* 体験期間ステータスバナー */}
+              <TrialStatusBanner />
+              
               <div className="bg-[#f5f5dc] rounded-lg shadow-md p-4 md:p-6 border border-[#deb887]">
                 {activeTab === 'profile' && (
                   <form onSubmit={handleProfileUpdate} className="space-y-6">
@@ -560,6 +557,233 @@ export default function SettingsPage() {
                     <button disabled className="flex items-center gap-2 px-4 py-2 bg-[#deb887] text-[#7c5a2a] rounded-lg opacity-50 cursor-not-allowed transition-colors text-sm">
                       準備中
                     </button>
+                  </div>
+                )}
+
+                {activeTab === 'subscription' && (
+                  <div className="space-y-6">
+                    <div className="mb-4">
+                      <h2 className="text-xl font-semibold text-[#8b4513]">プレミアム管理</h2>
+                    </div>
+                    
+                    {/* 体験期間ステータスバナー */}
+                    <TrialStatusBanner />
+                    
+                    {isPremium ? (
+                      /* プレミアムユーザー向け表示 */
+                      <div className="space-y-6">
+                        {/* 現在のプラン状況 */}
+                        <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-lg p-6">
+                          <div className="flex items-center gap-3 mb-4">
+                            {FaCrown({ className: "w-6 h-6 text-green-600" })}
+                            <h3 className="text-lg font-semibold text-green-800">プレミアム会員</h3>
+                            <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+                              アクティブ
+                            </span>
+                          </div>
+                          
+                          <p className="text-green-700 mb-4">
+                            すべてのプレミアム機能をご利用いただけます。習慣の記録を"人生の記憶"として残し、無制限の管理・分析が可能です。
+                          </p>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <div className="flex items-center gap-2">
+                              {FaHeart({ className: "w-4 h-4 text-green-600" })}
+                              <span className="text-sm text-green-700">無制限の習慣管理</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {FaHeart({ className: "w-4 h-4 text-green-600" })}
+                              <span className="text-sm text-green-700">データの永続保存</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {FaHeart({ className: "w-4 h-4 text-green-600" })}
+                              <span className="text-sm text-green-700">高度な分析機能</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {FaHeart({ className: "w-4 h-4 text-green-600" })}
+                              <span className="text-sm text-green-700">無制限のタスク作成</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* サブスクリプション管理 */}
+                        <div className="bg-[#f5f5dc] border border-[#deb887] rounded-lg p-6">
+                          <div className="flex items-center gap-2 mb-4">
+                            {FaCreditCard({ className: "w-5 h-5 text-[#8b4513]" })}
+                            <h3 className="text-lg font-semibold text-[#8b4513]">サブスクリプション管理</h3>
+                          </div>
+                          <p className="text-[#7c5a2a] mb-4 text-sm">
+                            支払い方法の変更、解約、請求履歴の確認などができます。
+                          </p>
+                          <div className="space-y-4">
+                            <button
+                              onClick={async () => {
+                                if (!user?.id) return;
+                                setIsLoading(true);
+                                try {
+                                  console.log('🔗 Creating portal session...');
+                                  const response = await fetch('/api/stripe/create-portal-session', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ userId: user.id }),
+                                  });
+                                  
+                                  if (!response.ok) {
+                                    console.error('❌ Stripe API failed:', response.status);
+                                    throw new Error('Failed to create portal session');
+                                  }
+                                  
+                                  const { url } = await response.json();
+                                  window.location.href = url;
+                                } catch (error: any) {
+                                  console.error('Portal session error:', error);
+                                  alert('サブスクリプション管理ページを開けませんでした。\n\nエラー: ' + (error.message || '不明なエラー'));
+                                } finally {
+                                  setIsLoading(false);
+                                }
+                              }}
+                              disabled={isLoading}
+                              className="w-full sm:w-auto flex items-center gap-2 px-4 py-2 bg-[#7c5a2a] text-white rounded-lg hover:bg-[#8b4513] transition-colors text-sm disabled:opacity-50"
+                            >
+                              {isLoading ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                              ) : (
+                                FaCreditCard({ className: "w-4 h-4" })
+                              )}
+                              サブスクリプション管理
+                            </button>
+                            <div className="space-y-2">
+                              <button
+                                onClick={() => window.open('/lp?section=faq', '_blank')}
+                                className="flex items-center gap-2 text-[#7c5a2a] hover:text-[#8b4513] transition-colors text-sm"
+                              >
+                                {FaQuestionCircle({ className: "w-4 h-4" })}
+                                <span>プレミアム機能の活用方法</span>
+                              </button>
+                              <button
+                                onClick={() => window.open('/terms', '_blank')}
+                                className="flex items-center gap-2 text-[#7c5a2a] hover:text-[#8b4513] transition-colors text-sm"
+                              >
+                                {FaFileContract({ className: "w-4 h-4" })}
+                                <span>利用規約・課金について</span>
+                              </button>
+                              <button
+                                onClick={() => window.open('mailto:stepeasytasks@gmail.com?subject=プレミアム機能について')}
+                                className="flex items-center gap-2 text-[#7c5a2a] hover:text-[#8b4513] transition-colors text-sm"
+                              >
+                                {FaInfoCircle({ className: "w-4 h-4" })}
+                                <span>お問い合わせ・サポート</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* 未登録ユーザー向け表示 */
+                      <div className="space-y-6">
+                        {/* プレミアム機能説明 */}
+                        <div className="bg-gradient-to-br from-[#f5f5dc] to-[#f0f0e0] border border-[#deb887] rounded-lg p-6">
+                          <div className="flex items-center gap-3 mb-4">
+                            {FaCrown({ className: "w-6 h-6 text-[#8b4513]" })}
+                            <h3 className="text-lg font-semibold text-[#8b4513]">プレミアム機能</h3>
+                            <span className="bg-[#deb887] text-[#8b4513] px-2 py-1 rounded-full text-xs font-medium">
+                              月額200円
+                            </span>
+                          </div>
+                          
+                          <p className="text-[#7c5a2a] mb-4">
+                            習慣の記録を"人生の記憶"として残せます。無制限の習慣管理、高度な分析機能、データの永続保存が可能です。
+                          </p>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <div className="flex items-center gap-2">
+                              {FaHeart({ className: "w-4 h-4 text-[#7c5a2a]" })}
+                              <span className="text-sm text-[#7c5a2a]">無制限の習慣管理</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {FaHeart({ className: "w-4 h-4 text-[#7c5a2a]" })}
+                              <span className="text-sm text-[#7c5a2a]">データの永続保存</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {FaHeart({ className: "w-4 h-4 text-[#7c5a2a]" })}
+                              <span className="text-sm text-[#7c5a2a]">高度な分析機能</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {FaHeart({ className: "w-4 h-4 text-[#7c5a2a]" })}
+                              <span className="text-sm text-[#7c5a2a]">無制限のタスク作成</span>
+                            </div>
+                          </div>
+                          
+                          {/* 安心感を与えるバッジ・注釈 */}
+                          <div className="bg-white/50 rounded-lg p-4 border border-[#deb887]/30">
+                            <div className="flex items-center gap-2 mb-2">
+                              {FaHeart({ className: "w-4 h-4 text-[#8b4513]" })}
+                              <span className="text-sm font-medium text-[#8b4513]">安心してご利用いただけます</span>
+                            </div>
+                            <div className="space-y-2 text-xs text-[#7c5a2a]">
+                              <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 bg-[#7c5a2a] rounded-full"></span>
+                                <span>7日間の無料体験期間付き</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 bg-[#7c5a2a] rounded-full"></span>
+                                <span>いつでも解約可能（次回課金日まで利用可能）</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 bg-[#7c5a2a] rounded-full"></span>
+                                <span>安全な決済システム（Stripe）を使用</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 bg-[#7c5a2a] rounded-full"></span>
+                                <span>支払い情報は当方では保存しません</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* プレミアム申込ボタン */}
+                        <div className="bg-[#f5f5dc] border border-[#deb887] rounded-lg p-4">
+                          <h3 className="text-lg font-semibold text-[#8b4513] mb-2">
+                            プレミアムにアップグレード
+                          </h3>
+                          <p className="text-[#7c5a2a] mb-4 text-sm">
+                            今すぐプレミアム機能をお試しいただけます。
+                          </p>
+                          <PremiumComingSoonBanner />
+                        </div>
+                        
+                        {/* FAQ・サポート */}
+                        <div className="bg-[#f5f5dc] border border-[#deb887] rounded-lg p-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            {FaQuestionCircle({ className: "w-5 h-5 text-[#8b4513]" })}
+                            <h3 className="text-lg font-semibold text-[#8b4513]">よくある質問</h3>
+                          </div>
+                          <div className="space-y-3 text-sm">
+                            <button
+                              onClick={() => window.open('/lp?section=faq', '_blank')}
+                              className="flex items-center gap-2 text-[#7c5a2a] hover:text-[#8b4513] transition-colors"
+                            >
+                              {FaQuestionCircle({ className: "w-3 h-3" })}
+                              <span>プレミアム機能について詳しく知りたい</span>
+                            </button>
+                            <button
+                              onClick={() => window.open('/terms', '_blank')}
+                              className="flex items-center gap-2 text-[#7c5a2a] hover:text-[#8b4513] transition-colors"
+                            >
+                              {FaFileContract({ className: "w-3 h-3" })}
+                              <span>利用規約・課金について</span>
+                            </button>
+                            <button
+                              onClick={() => window.open('mailto:stepeasytasks@gmail.com?subject=プレミアム機能について')}
+                              className="flex items-center gap-2 text-[#7c5a2a] hover:text-[#8b4513] transition-colors"
+                            >
+                              {FaInfoCircle({ className: "w-3 h-3" })}
+                              <span>お問い合わせ・サポート</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 

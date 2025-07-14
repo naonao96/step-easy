@@ -8,7 +8,7 @@ import { ToggleSwitch } from '../atoms/ToggleSwitch';
 import { SortOption } from '../atoms/SortDropdown';
 import { sortTasks, getSavedSortOption, saveSortOption } from '@/lib/sortUtils';
 import { formatDurationShort } from '@/lib/timeUtils';
-import { FaPlus, FaCheck, FaEdit, FaFilter, FaCrown, FaFire, FaTasks } from 'react-icons/fa';
+import { FaPlus, FaCheck, FaEdit, FaFilter, FaFire, FaTasks } from 'react-icons/fa';
 
 interface TaskListHomeProps {
   tasks?: Task[];
@@ -497,20 +497,7 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
               </div>
             )}
 
-            {/* 無料ユーザー向けプレミアム誘導 */}
-            {planType === 'free' && habitTasks.length > 0 && (
-              <div className="bg-[#f5f5dc] border border-[#deb887] rounded-lg p-3 mb-3">
-                <div className="flex items-center gap-2 mb-1">
-                  {FaCrown({ className: "w-3 h-3 text-[#7c5a2a]" })}
-                  <span className="text-xs font-medium text-[#8b4513]">
-                    プレミアムで習慣を無制限に ({habitTasks.length}/{maxHabits}個)
-                  </span>
-                </div>
-                <p className="text-xs text-[#7c5a2a]">
-                  ストリークも永続保存！高度な分析機能も利用可能
-                </p>
-              </div>
-            )}
+
 
             {/* 習慣タスク一覧 */}
             {planType !== 'guest' && (

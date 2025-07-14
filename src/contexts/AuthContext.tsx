@@ -55,7 +55,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('*')
+        .select(`
+          id,
+          email,
+          display_name,
+          plan_type
+        `)
         .eq('id', userId)
         .single();
 
@@ -525,7 +530,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut,
     signInAsGuest,
     isGuest: !!user?.isGuest,
-    isPremium: devPremiumOverride !== null ? devPremiumOverride : !!user?.isPremium,
+    isPremium: devPremiumOverride !== null ? devPremiumOverride : user?.planType === 'premium',
     planType: getPlanType(),
     shouldShowMigrationModal,
     setShouldShowMigrationModal,
