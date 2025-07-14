@@ -24,6 +24,7 @@ import { HabitCard } from '@/components/molecules/HabitCard';
 import { getGuestTasks, migrateGuestTasks, clearGuestTasks } from '@/lib/guestMigration';
 import { useCharacterMessage } from '@/hooks/useCharacterMessage';
 import { useEmotionLog } from '@/hooks/useEmotionLog';
+import { useMessageDisplay } from '@/hooks/useMessageDisplay';
 import { integrateHabitData, convertHabitsToTasks, isNewHabit } from '@/lib/habitUtils';
 import { completeHabit, deleteHabit as deleteHabitOperation, editHabit } from '@/lib/habitOperations';
 // react-responsiveが未インストールの場合は `npm install react-responsive` を実行してください
@@ -40,10 +41,6 @@ export default function MenuPage() {
   
   // 状態管理
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [characterMood, setCharacterMood] = React.useState<'happy' | 'normal' | 'sad'>('normal');
-  const [showMessage, setShowMessage] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
-  const [displayedMessage, setDisplayedMessage] = useState('');
   const [mounted, setMounted] = useState(false);
   const [greeting, setGreeting] = useState('');
   const [currentMobileTab, setCurrentMobileTab] = useState<'tasks' | 'habits'>('habits');
@@ -314,7 +311,7 @@ export default function MenuPage() {
   }, [tasks, selectedDateTasks]);
 
   // AIキャラクターメッセージ（ユーザー情報が確実に取得できてから実行）
-  const { message: characterMessage } = useCharacterMessage({
+  const { characterMessage, messageParts } = useCharacterMessage({
     userType: user?.planType || 'guest',
     userName: user?.displayName || user?.email?.split('@')[0] || 'ユーザー',
     tasks,
@@ -328,7 +325,25 @@ export default function MenuPage() {
     selectedDate,
   });
 
-  const typewriterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // 統一されたメッセージ表示状態管理
+  const {
+    showMessage,
+    isTyping,
+    displayedMessage,
+    isShowingParts,
+    currentPartIndex,
+    handleAutoDisplay,
+    handleManualDisplay,
+    handleMessageClick,
+    handleCharacterClick,
+    clearMessage
+  } = useMessageDisplay({
+    characterMessage,
+    messageParts,
+    isGuest,
+    user,
+    mounted
+  });
 
   // 外部クリックでメッセージを消す機能
   useEffect(() => {
@@ -336,13 +351,7 @@ export default function MenuPage() {
       if (showMessage) {
         const target = event.target as HTMLElement;
         if (!target.closest('.character-container')) {
-          setShowMessage(false);
-          setDisplayedMessage('');
-          setIsTyping(false);
-          if (typewriterTimeoutRef.current) {
-            clearTimeout(typewriterTimeoutRef.current);
-            typewriterTimeoutRef.current = null;
-          }
+          clearMessage();
         }
       }
     };
@@ -352,92 +361,19 @@ export default function MenuPage() {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showMessage]);
+  }, [showMessage, clearMessage]);
 
-  // 初回表示（リロード・ログイン時は毎回実行）
+  // 自動表示の実行
   useEffect(() => {
-    if (mounted && isDesktop && characterMessage && !showMessage && (user?.isGuest || user?.displayName || user?.email)) {
-      setShowMessage(true);
-      setIsTyping(true);
-      let i = 0;
-      const type = () => {
-        setDisplayedMessage(characterMessage.slice(0, i));
-        if (i < characterMessage.length) {
-          i++;
-          typewriterTimeoutRef.current = setTimeout(type, 30);
-        } else {
-          setIsTyping(false);
-          typewriterTimeoutRef.current = setTimeout(() => {
-            setShowMessage(false);
-            setDisplayedMessage('');
-            setIsTyping(false);
-            if (typewriterTimeoutRef.current) {
-              clearTimeout(typewriterTimeoutRef.current);
-              typewriterTimeoutRef.current = null;
-            }
-          }, 5000);
-        }
-      };
-      type();
-    }
-    // クリーンアップでタイマーを必ず解除
-    return () => {
-      if (typewriterTimeoutRef.current) {
-        clearTimeout(typewriterTimeoutRef.current);
-        typewriterTimeoutRef.current = null;
-      }
-      // 画面切り替え時に状態をリセット
-      setIsTyping(false);
-      setDisplayedMessage('');
-      setShowMessage(false);
-    };
-  }, [mounted, isDesktop, characterMessage, user]);
+    handleAutoDisplay();
+  }, [handleAutoDisplay]);
 
-  // クリック処理
+  // クリック処理（デスクトップ版用）
   const handleClick = () => {
-    if (characterMessage && !isTyping) {
-      setShowMessage(true);
-      setIsTyping(true);
-      let i = 0;
-      const type = () => {
-        setDisplayedMessage(characterMessage.slice(0, i));
-        if (i < characterMessage.length) {
-          i++;
-          typewriterTimeoutRef.current = setTimeout(type, 30);
-        } else {
-          setIsTyping(false);
-          typewriterTimeoutRef.current = setTimeout(() => {
-            setShowMessage(false);
-            setDisplayedMessage('');
-            setIsTyping(false);
-            if (typewriterTimeoutRef.current) {
-              clearTimeout(typewriterTimeoutRef.current);
-              typewriterTimeoutRef.current = null;
-            }
-          }, 5000);
-        }
-      };
-      type();
-    }
+    handleMessageClick();
   };
 
-  useEffect(() => {
-    // タスクの状態に応じてキャラクターの表情を更新
-    // 注意: 選択された日付に関係なく、常に今日のタスク状況に基づいて表情を決定
-    const { todayCompletedTasks, todayTotalTasks } = statistics;
 
-    if (todayTotalTasks === 0) {
-      setCharacterMood('normal');
-    } else if (todayCompletedTasks === todayTotalTasks) {
-      setCharacterMood('happy');
-    } else if (todayCompletedTasks / todayTotalTasks >= 0.7) {
-      setCharacterMood('happy');
-    } else if (todayCompletedTasks / todayTotalTasks >= 0.3) {
-      setCharacterMood('normal');
-    } else {
-      setCharacterMood('sad');
-    }
-  }, [statistics]); // selectedDateを依存配列から削除
 
   const handleCompleteTask = async (id: string) => {
     // タスクか習慣かを判定
@@ -625,14 +561,15 @@ export default function MenuPage() {
           selectedDateTasks={[...selectedDateTasks, ...convertedHabits] as any}
           tasks={tasks}
           statistics={statistics}
-          characterMood={characterMood}
           characterMessage={characterMessage}
+          messageParts={messageParts}
           onCompleteTask={handleCompleteTask}
           onDeleteTask={handleDeleteTask}
           onEditTask={(task) => handleEditTask(task as any)}
           onDateSelect={setSelectedDate}
           onTabChange={handleMobileTabChange}
           onTaskUpdate={fetchTasks} // データ更新関数を追加
+          onMessageClick={handleMessageClick} // メッセージクリック用
         />
       </div>
 
@@ -642,14 +579,14 @@ export default function MenuPage() {
         {mounted && isDesktop && (
           <div className="fixed bottom-6 right-24 z-10 character-container">
             <Character
-              mood={characterMood}
               message={displayedMessage}
+              messageParts={messageParts}
               showMessage={showMessage}
               isTyping={isTyping}
+              displayedMessage={displayedMessage}
               bubblePosition="left"
               size="3cm"
               onClick={handleClick}
-              isDesktop={isDesktop}
               recordStatus={recordStatus}
               currentTimePeriod={currentTimePeriod}
             />

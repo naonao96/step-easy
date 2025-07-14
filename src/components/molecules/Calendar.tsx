@@ -214,10 +214,10 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], habits = [], sel
       return false;
     });
     
-    // デバッグログ
-    if (calendarMode === 'habits' && filteredTasks.length > 0) {
-      console.log(`Calendar - ${targetDate.toDateString()} の習慣:`, filteredTasks);
-    }
+    // デバッグログ（開発時のみ）
+    // if (calendarMode === 'habits' && filteredTasks.length > 0) {
+    //   console.log(`Calendar - ${targetDate.toDateString()} の習慣:`, filteredTasks);
+    // }
     
     return filteredTasks;
   };
@@ -246,8 +246,8 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], habits = [], sel
   // アクティブな習慣を取得
   const activeHabits = useMemo(() => {
     const habits = allTasks.filter(task => task.is_habit);
-    console.log('Calendar - 習慣データ:', habits);
-    console.log('Calendar - 全タスクデータ:', allTasks);
+    // console.log('Calendar - 習慣データ:', habits);
+    // console.log('Calendar - 全タスクデータ:', allTasks);
     return habits;
   }, [allTasks]);
 

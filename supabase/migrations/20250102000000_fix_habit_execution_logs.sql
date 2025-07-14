@@ -1,8 +1,8 @@
 -- =====================================================
--- 習慣実行ログ修正マイグレーション
+-- 習慣実行ログ修正マイグレーション（統合版）
 -- 作成日: 2025-01-02
 -- 目的: 習慣の実行ログエラーを修正し、習慣とタスクの両方に対応
--- 特徴: 既存データを保持しつつ、新しい構造に対応
+-- 特徴: 既存データを保持しつつ、新しい構造に対応、実行時間フィールドも追加
 -- =====================================================
 
 -- =====================================================
@@ -98,7 +98,59 @@ BEGIN
 END $$;
 
 -- =====================================================
--- 3. 制約の追加（task_idまたはhabit_idのいずれかが必須）
+-- 3. habitsテーブルに実行時間関連フィールドを追加
+-- =====================================================
+
+-- all_time_totalカラムを追加（全期間累計時間：秒）
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'habits') THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_name = 'habits' AND column_name = 'all_time_total'
+        ) THEN
+            ALTER TABLE habits ADD COLUMN all_time_total INTEGER DEFAULT 0;
+            RAISE NOTICE 'all_time_total column added to habits table';
+        ELSE
+            RAISE NOTICE 'all_time_total column already exists in habits table';
+        END IF;
+    END IF;
+END $$;
+
+-- today_totalカラムを追加（今日の累計時間：秒）
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'habits') THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_name = 'habits' AND column_name = 'today_total'
+        ) THEN
+            ALTER TABLE habits ADD COLUMN today_total INTEGER DEFAULT 0;
+            RAISE NOTICE 'today_total column added to habits table';
+        ELSE
+            RAISE NOTICE 'today_total column already exists in habits table';
+        END IF;
+    END IF;
+END $$;
+
+-- last_execution_dateカラムを追加（最終実行日）
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'habits') THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_name = 'habits' AND column_name = 'last_execution_date'
+        ) THEN
+            ALTER TABLE habits ADD COLUMN last_execution_date DATE;
+            RAISE NOTICE 'last_execution_date column added to habits table';
+        ELSE
+            RAISE NOTICE 'last_execution_date column already exists in habits table';
+        END IF;
+    END IF;
+END $$;
+
+-- =====================================================
+-- 4. 制約の追加（task_idまたはhabit_idのいずれかが必須）
 -- =====================================================
 
 -- active_executionsテーブルに制約を追加
@@ -122,32 +174,8 @@ BEGIN
     END IF;
 END $$;
 
--- execution_logsテーブルに制約を追加（移行後に追加）
--- 制約は移行処理の後に追加するため、ここではコメントアウト
-/*
-DO $$
-BEGIN
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'execution_logs') THEN
-        IF NOT EXISTS (
-            SELECT 1 FROM information_schema.table_constraints 
-            WHERE constraint_name = 'execution_logs_task_or_habit_required'
-        ) THEN
-            ALTER TABLE execution_logs 
-            ADD CONSTRAINT execution_logs_task_or_habit_required 
-            CHECK (
-                (task_id IS NOT NULL AND habit_id IS NULL AND execution_type = 'task') OR
-                (habit_id IS NOT NULL AND task_id IS NULL AND execution_type = 'habit')
-            );
-            RAISE NOTICE 'Constraint added to execution_logs table';
-        ELSE
-            RAISE NOTICE 'Constraint already exists in execution_logs table';
-        END IF;
-    END IF;
-END $$;
-*/
-
 -- =====================================================
--- 4. インデックスの追加
+-- 5. インデックスの追加
 -- =====================================================
 
 -- active_executionsテーブルにインデックスを追加
@@ -198,8 +226,32 @@ BEGIN
     END IF;
 END $$;
 
+-- habitsテーブルにインデックスを追加
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'habits') THEN
+        -- last_execution_dateのインデックス
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes 
+            WHERE tablename = 'habits' AND indexname = 'idx_habits_last_execution_date'
+        ) THEN
+            CREATE INDEX idx_habits_last_execution_date ON habits(last_execution_date);
+            RAISE NOTICE 'idx_habits_last_execution_date index created';
+        END IF;
+        
+        -- all_time_totalのインデックス
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes 
+            WHERE tablename = 'habits' AND indexname = 'idx_habits_all_time_total'
+        ) THEN
+            CREATE INDEX idx_habits_all_time_total ON habits(all_time_total);
+            RAISE NOTICE 'idx_habits_all_time_total index created';
+        END IF;
+    END IF;
+END $$;
+
 -- =====================================================
--- 5. 既存の制約を削除（移行前）
+-- 6. 既存の制約を削除（移行前）
 -- =====================================================
 
 -- 既存の制約を削除（移行処理を安全に行うため）
@@ -223,7 +275,7 @@ BEGIN
 END $$;
 
 -- =====================================================
--- 6. 既存データの移行
+-- 7. 既存データの移行
 -- =====================================================
 
 -- 既存の習慣タスクの実行ログを確認
@@ -344,7 +396,7 @@ BEGIN
 END $$;
 
 -- =====================================================
--- 7. 制約追加前のデータ修正
+-- 8. 制約追加前のデータ修正
 -- =====================================================
 
 -- execution_logsテーブルのデータを制約に合わせて修正
@@ -396,7 +448,23 @@ BEGIN
 END $$;
 
 -- =====================================================
--- 8. 移行後の制約追加
+-- 9. 既存データの初期化
+-- =====================================================
+
+-- 既存の習慣データの実行時間フィールドを初期化
+DO $$
+BEGIN
+    UPDATE habits 
+    SET 
+        all_time_total = COALESCE(all_time_total, 0),
+        today_total = COALESCE(today_total, 0)
+    WHERE all_time_total IS NULL OR today_total IS NULL;
+    
+    RAISE NOTICE '既存の習慣データの実行時間フィールドを初期化しました';
+END $$;
+
+-- =====================================================
+-- 10. 移行後の制約追加
 -- =====================================================
 
 -- 移行処理が完了した後に制約を追加
@@ -424,27 +492,15 @@ BEGIN
 END $$;
 
 -- =====================================================
--- 9. 完了通知
+-- 11. 完了通知
 -- =====================================================
 
 DO $$
 BEGIN
-    RAISE NOTICE '習慣実行ログ修正マイグレーションが完了しました';
+    RAISE NOTICE '習慣実行ログ修正マイグレーション（統合版）が完了しました';
     RAISE NOTICE 'active_executionsテーブル: habit_id, execution_typeカラムを追加';
     RAISE NOTICE 'execution_logsテーブル: habit_id, execution_typeカラムを追加';
-    RAISE NOTICE '制約とインデックスを追加してデータ整合性を確保';
-    RAISE NOTICE '既存データの移行が完了しました';
-END $$;
-
--- =====================================================
--- 8. 完了通知
--- =====================================================
-
-DO $$
-BEGIN
-    RAISE NOTICE '習慣実行ログ修正マイグレーションが完了しました';
-    RAISE NOTICE 'active_executionsテーブル: habit_id, execution_typeカラムを追加';
-    RAISE NOTICE 'execution_logsテーブル: habit_id, execution_typeカラムを追加';
+    RAISE NOTICE 'habitsテーブル: all_time_total, today_total, last_execution_dateカラムを追加';
     RAISE NOTICE '制約とインデックスを追加してデータ整合性を確保';
     RAISE NOTICE '既存データの移行が完了しました';
 END $$; 

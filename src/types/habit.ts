@@ -20,6 +20,10 @@ export interface StreakData {
 export interface Habit extends BaseItem, StreakData {
   habit_status: 'active' | 'paused' | 'stopped';
   frequency: 'daily';
+  // 実行時間関連フィールド
+  all_time_total?: number; // 全期間累計時間（秒）
+  today_total?: number; // 今日の累計時間（秒）
+  last_execution_date?: string; // 最終実行日（YYYY-MM-DD）
 }
 
 export interface HabitCompletion {

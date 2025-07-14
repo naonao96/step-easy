@@ -7,9 +7,10 @@ import { Character } from './Character';
 import { useAuth } from '@/contexts/AuthContext';
 import { MobileTaskTimer } from './MobileTaskTimer';
 import { MobileTaskHistory } from './MobileTaskHistory';
-import { PremiumComingSoonBanner } from './PremiumComingSoonBanner';
-import { useEmotionLog } from '@/hooks/useEmotionLog';
-import ReactMarkdown from 'react-markdown';
+  import { PremiumComingSoonBanner } from './PremiumComingSoonBanner';
+  import { useEmotionLog } from '@/hooks/useEmotionLog';
+  import { useMessageDisplay } from '@/hooks/useMessageDisplay';
+  import ReactMarkdown from 'react-markdown';
 import { MobileTaskCarousel } from './MobileTaskCarousel';
 import { TaskPreviewModal } from './TaskPreviewModal';
 import { TaskEditModal } from './TaskEditModal';
@@ -46,14 +47,15 @@ interface ModernMobileHomeProps {
     todayTotalTasks: number;
     todayPercentage: number;
   };
-  characterMood: 'happy' | 'normal' | 'sad';
   characterMessage: string;
+  messageParts?: string[];
   onCompleteTask: (id: string) => void;
   onDeleteTask: (id: string) => void;
   onEditTask?: (task: Task) => void;
   onDateSelect: (date: Date) => void;
   onTabChange?: (tab: 'tasks' | 'habits') => void;
   onTaskUpdate?: () => Promise<void>; // データ更新関数を追加
+  onMessageClick?: () => void; // メッセージクリック用
 }
 
 type TabType = 'tasks' | 'habits';
@@ -63,14 +65,15 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   selectedDateTasks,
   tasks,
   statistics,
-  characterMood,
   characterMessage,
+  messageParts = [],
   onCompleteTask,
   onDeleteTask,
   onEditTask,
   onDateSelect,
   onTabChange,
-  onTaskUpdate
+  onTaskUpdate,
+  onMessageClick
 }) => {
   const router = useRouter();
   const { isGuest, isPremium, planType, canAddTaskOnDate, user } = useAuth();
@@ -109,10 +112,25 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   
   const showEmotionMenu = showEmotionMenuRef.current;
   
-  // メッセージ表示関連の状態（デスクトップ版と同じ仕様）
-  const [showMessage, setShowMessage] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
-  const [displayedMessage, setDisplayedMessage] = useState('');
+  // 統一されたメッセージ表示状態管理（デスクトップ版と同じ）
+  const {
+    showMessage,
+    isTyping,
+    displayedMessage,
+    isShowingParts,
+    currentPartIndex,
+    handleAutoDisplay,
+    handleManualDisplay,
+    handleMessageClick,
+    handleCharacterClick,
+    clearMessage
+  } = useMessageDisplay({
+    characterMessage,
+    messageParts,
+    isGuest,
+    user,
+    mounted: true
+  });
 
   // 今日かどうかの判定
   const today = new Date();
@@ -250,42 +268,14 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
     router.push('/progress');
   };
 
-  const typewriterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // キャラクタークリック処理（デスクトップ版と同じ）
-  const handleCharacterClick = () => {
-    if (characterMessage && !isTyping) {
-      setShowMessage(true);
-      setIsTyping(true);
-      let i = 0;
-      const type = () => {
-        setDisplayedMessage(characterMessage.slice(0, i));
-        if (i < characterMessage.length) {
-          i++;
-          typewriterTimeoutRef.current = setTimeout(type, 30);
-        } else {
-          setIsTyping(false);
-          typewriterTimeoutRef.current = setTimeout(() => {
-            setShowMessage(false);
-            setDisplayedMessage('');
-            setIsTyping(false);
-            if (typewriterTimeoutRef.current) {
-              clearTimeout(typewriterTimeoutRef.current);
-              typewriterTimeoutRef.current = null;
-            }
-          }, 5000);
-        }
-      };
-      type();
-    }
-  };
 
   // 感情記録メニューを閉じる
   const handleCloseEmotionMenu = () => {
     setShowEmotionMenu(false);
   };
 
-  // 外部クリックでメッセージと感情メニューを消す機能（キャラクター画像のみ除外）
+  // 感情メニューの外部クリック処理
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -300,65 +290,45 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
       // ハートボタンかどうかを判定
       const isEmotionButton = target.closest('[data-emotion-button]') !== null;
       
-      if (showMessage && !isCharacterImage) {
-        setShowMessage(false);
-        setDisplayedMessage('');
-        setIsTyping(false);
-        if (typewriterTimeoutRef.current) {
-          clearTimeout(typewriterTimeoutRef.current);
-          typewriterTimeoutRef.current = null;
-        }
-      }
       if (showEmotionMenu && !isCharacterImage && !isEmotionMenuElement && !isEmotionButton) {
         setShowEmotionMenu(false);
       }
     };
-    if (showMessage || showEmotionMenu) {
+    
+    if (showEmotionMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showEmotionMenu]);
+
+  // メッセージの外部クリック処理（デスクトップ版と同じ）
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showMessage) {
+        const target = event.target as HTMLElement;
+        
+        if (!target.closest('.character-container')) {
+          clearMessage();
+        }
+      }
+    };
+    if (showMessage) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showMessage, showEmotionMenu]);
+  }, [showMessage, clearMessage]);
 
-  // 初回表示（リロード・ログイン時は毎回実行）
+  // 自動表示の実行
   useEffect(() => {
-    if (characterMessage && !showMessage && (isGuest || user?.displayName || user?.email)) {
-      setShowMessage(true);
-      setIsTyping(true);
-      let i = 0;
-      const type = () => {
-        setDisplayedMessage(characterMessage.slice(0, i));
-        if (i < characterMessage.length) {
-          i++;
-          typewriterTimeoutRef.current = setTimeout(type, 30);
-        } else {
-          setIsTyping(false);
-          typewriterTimeoutRef.current = setTimeout(() => {
-            setShowMessage(false);
-            setDisplayedMessage('');
-            setIsTyping(false);
-            if (typewriterTimeoutRef.current) {
-              clearTimeout(typewriterTimeoutRef.current);
-              typewriterTimeoutRef.current = null;
-            }
-          }, 5000);
-        }
-      };
-      type();
-    }
-    // クリーンアップでタイマーを必ず解除
-    return () => {
-      if (typewriterTimeoutRef.current) {
-        clearTimeout(typewriterTimeoutRef.current);
-        typewriterTimeoutRef.current = null;
-      }
-      // 画面切り替え時に状態をリセット
-      setIsTyping(false);
-      setDisplayedMessage('');
-      setShowMessage(false);
-    };
-  }, [characterMessage, isGuest, user]);
+    handleAutoDisplay();
+  }, [handleAutoDisplay]);
+
+
 
   // タスクカードのレンダリング関数
   const renderTaskCard = (task: Task, isHabit: boolean) => (
@@ -569,9 +539,9 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
         <div className="character-container relative flex justify-center">
           {/* メッセージバブル（キャラクターの上に配置） */}
           {showMessage && (
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-4 w-80 max-w-sm pointer-events-none">
-              <div className="bg-gradient-to-br from-blue-50/95 to-indigo-100/95 backdrop-blur-md rounded-2xl border border-blue-200/50 shadow-2xl transition-all duration-300 p-4 w-80 pointer-events-none">
-                <div className="text-gray-800 font-medium leading-relaxed text-xs">
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-4 w-80 max-w-sm">
+              <div className="bg-gradient-to-br from-blue-50/95 to-indigo-100/95 backdrop-blur-md rounded-2xl border border-blue-200/50 shadow-2xl transition-all duration-300 p-4 w-80">
+                <div className={`text-gray-800 font-medium leading-relaxed text-xs ${!isTyping ? 'cursor-pointer' : 'cursor-default'}`} onClick={!isTyping ? onMessageClick : undefined}>
                   <span>{displayedMessage}</span>
                   {isTyping && <span className="animate-blink ml-1">|</span>}
                 </div>
@@ -586,7 +556,10 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
             <div 
               className="cursor-pointer flex-shrink-0 relative" 
               style={{ height: '3cm', width: 'auto', display: 'flex', alignItems: 'center', zIndex: 40 }} 
-              onClick={handleCharacterClick}
+              onClick={(e) => {
+                e.stopPropagation(); // イベント伝播を停止
+                handleMessageClick();
+              }}
             >
               {/* 半透明の円（半径2cm）- 背面に配置 */}
               <div className={`
@@ -596,7 +569,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
               
               <Image
                 ref={characterRef}
-                src={characterMood === 'happy' ? '/TalkToTheBird.png' : characterMood === 'sad' ? '/SilentBird.png' : '/TalkToTheBird.png'}
+                src={showMessage ? '/TalkToTheBird.png' : '/SilentBird.png'}
                 alt="StepEasy Bird Character"
                 width={120}
                 height={120}

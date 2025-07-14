@@ -80,9 +80,12 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
     }
   };
 
-  // 今日の日付を取得（YYYY-MM-DD形式）
+  // 今日の日付を取得（YYYY-MM-DD形式、日本時間）
   const getTodayString = () => {
-    return new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const jstOffset = 9 * 60; // 分単位
+    const jstTime = new Date(now.getTime() + (jstOffset * 60 * 1000));
+    return jstTime.toISOString().split('T')[0];
   };
 
   // 今日の累積時間を計算
@@ -94,15 +97,40 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
 
       const today = getTodayString();
       
+      // 習慣かどうかを判定
+      const { data: habitData } = await supabase
+        .from('habits')
+        .select('id')
+        .eq('id', taskId)
+        .single();
+
+      const isHabit = !!habitData;
+      
       // 今日の実行履歴を取得
-      const { data: todayLogs } = await supabase
-        .from('execution_logs')
-        .select('duration')
-        .eq('task_id', taskId)
-        .eq('user_id', user.id)
-        .gte('start_time', `${today}T00:00:00.000Z`)
-        .lt('start_time', `${today}T23:59:59.999Z`)
-        .eq('is_completed', true);
+      let todayLogs;
+      if (isHabit) {
+        // 習慣の場合はhabit_idで検索
+        const { data } = await supabase
+          .from('execution_logs')
+          .select('duration')
+          .eq('habit_id', taskId)
+          .eq('user_id', user.id)
+          .gte('start_time', `${today}T00:00:00.000Z`)
+          .lt('start_time', `${today}T23:59:59.999Z`)
+          .eq('is_completed', true);
+        todayLogs = data;
+      } else {
+        // 通常タスクの場合はtask_idで検索
+        const { data } = await supabase
+          .from('execution_logs')
+          .select('duration')
+          .eq('task_id', taskId)
+          .eq('user_id', user.id)
+          .gte('start_time', `${today}T00:00:00.000Z`)
+          .lt('start_time', `${today}T23:59:59.999Z`)
+          .eq('is_completed', true);
+        todayLogs = data;
+      }
 
       const todayTotal = (todayLogs || []).reduce((sum, log) => sum + (log.duration as number), 0);
       return todayTotal + newDuration;
@@ -126,10 +154,12 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
         
         if (!user) return;
 
+        // ユーザーのアクティブな実行を取得（task_idまたはhabit_idのいずれかが存在する）
         const { data: activeExec } = await supabase
           .from('active_executions')
           .select('*')
           .eq('user_id', user.id)
+          .or('task_id.not.is.null,habit_id.not.is.null')
           .single();
 
         if (activeExec && !get().activeExecution) {
@@ -279,12 +309,34 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
         
         // データベース状態確認：他デバイスで強制クリーンアップされていないかチェック
         if (user) {
-          const { data: existingExec } = await supabase
-            .from('active_executions')
-            .select('*')
-            .eq('user_id', user.id)
-            .eq('task_id', state.activeExecution.task_id)
+          // 習慣かどうかを判定
+          const { data: habitData } = await supabase
+            .from('habits')
+            .select('id')
+            .eq('id', state.activeExecution.task_id)
             .single();
+
+          const isHabit = !!habitData;
+
+          // 適切なフィールドで検索
+          let existingExec;
+          if (isHabit) {
+            const { data } = await supabase
+              .from('active_executions')
+              .select('*')
+              .eq('user_id', user.id)
+              .eq('habit_id', state.activeExecution.task_id)
+              .single();
+            existingExec = data;
+          } else {
+            const { data } = await supabase
+              .from('active_executions')
+              .select('*')
+              .eq('user_id', user.id)
+              .eq('task_id', state.activeExecution.task_id)
+              .single();
+            existingExec = data;
+          }
 
           if (!existingExec) {
             // 他デバイスで強制クリーンアップされている場合
@@ -345,17 +397,33 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
             // 習慣の場合はhabitsテーブルを更新
             const { data: habitData } = await supabase
               .from('habits')
-              .select('current_streak, longest_streak')
+              .select('all_time_total, today_total')
               .eq('id', state.activeExecution.task_id)
               .eq('user_id', user.id)
               .single();
 
-            // 習慣の完了処理（必要に応じて）
-            // ここでは実行時間の記録のみ行い、習慣の完了処理は別途実装
+            const newAllTimeTotal = ((habitData?.all_time_total as number) || 0) + sessionDuration;
+            const newTodayTotal = todayTotal;
+
+            // habitsテーブルに累計時間を更新
+            const { error: habitUpdateError } = await supabase
+              .from('habits')
+              .update({ 
+                all_time_total: newAllTimeTotal,
+                today_total: newTodayTotal,
+                last_execution_date: getTodayString(),
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', state.activeExecution.task_id)
+              .eq('user_id', user.id);
+
+            if (habitUpdateError) throw habitUpdateError;
+
             console.log('習慣の実行時間を記録しました:', {
               habit_id: state.activeExecution.task_id,
               duration: sessionDuration,
-              today_total: todayTotal
+              today_total: newTodayTotal,
+              all_time_total: newAllTimeTotal
             });
           } else {
             // 通常タスクの場合はtasksテーブルを更新

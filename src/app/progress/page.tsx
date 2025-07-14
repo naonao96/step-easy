@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTaskStore } from '@/stores/taskStore';
+import { useHabitStore } from '@/stores/habitStore';
 import { AppLayout } from '@/components/templates/AppLayout';
 import { ProgressCard } from '@/components/molecules/ProgressCard';
 import { CategoryBadge } from '@/components/atoms/CategoryBadge';
@@ -17,6 +18,7 @@ type TabType = 'today' | 'category' | 'heatmap' | 'overall';
 
 export default function ProgressPage() {
   const { tasks: storeTasks, fetchTasks } = useTaskStore();
+  const { habits, habitCompletions, fetchHabits } = useHabitStore();
   const tasks = storeTasks as Task[]; // Type cast to use the Task type with category
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>('overall');
@@ -24,7 +26,8 @@ export default function ProgressPage() {
 
   useEffect(() => {
     fetchTasks();
-  }, [fetchTasks]);
+    fetchHabits();
+  }, [fetchTasks, fetchHabits]);
 
   // クエリパラメータからデフォルトタブを設定
   useEffect(() => {
@@ -38,6 +41,10 @@ export default function ProgressPage() {
   const todayStats = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    
+    // 今日の日付文字列を取得（日本時間）
+    const japanTime = new Date(today.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+    const todayString = japanTime.toISOString().split('T')[0];
     
     // 今日のタスクを取得
     const todayTasks = tasks.filter(task => {
@@ -119,7 +126,13 @@ export default function ProgressPage() {
       return false;
     });
 
-    // カテゴリ別統計
+    // 今日の習慣を取得
+    const todayHabits = habits.filter(habit => habit.habit_status === 'active');
+    const completedHabits = habitCompletions.filter(completion => 
+      completion.completed_date === todayString
+    ).length;
+
+    // カテゴリ別統計（タスクのみ）
     const categoryStats = DEFAULT_CATEGORIES.map(category => {
       const categoryTasks = todayTasks.filter(task => task.category === category.id);
       const completed = categoryTasks.filter(task => task.status === 'done').length;
@@ -134,10 +147,12 @@ export default function ProgressPage() {
     return {
       totalTasks: todayTasks.length,
       completedTasks: todayTasks.filter(task => task.status === 'done').length,
+      totalHabits: todayHabits.length,
+      completedHabits,
       categoryStats,
       tasks: todayTasks
     };
-  }, [tasks]);
+  }, [tasks, habits, habitCompletions]);
 
   // カテゴリ別詳細統計
   const categoryStats = useMemo(() => {
@@ -175,6 +190,8 @@ export default function ProgressPage() {
           return sum + (task.actual_duration || task.estimated_duration || 0);
         }, 0) / categoryCompletedTasks.length : 0;
 
+
+
       return {
         ...category,
         totalTasks: categoryTasks.length,
@@ -195,8 +212,42 @@ export default function ProgressPage() {
     const completedTasks = tasks.filter(task => task.status === 'done').length;
     const inProgressTasks = tasks.filter(task => task.status === 'doing').length;
     const pendingTasks = tasks.filter(task => task.status === 'todo').length;
-    const habitTasks = tasks.filter(task => task.is_habit).length;
-    const completedHabits = tasks.filter(task => task.is_habit && task.status === 'done').length;
+    
+    // 新しい習慣システムのデータを使用
+    const activeHabits = habits.filter(habit => habit.habit_status === 'active');
+    const habitTasks = activeHabits.length;
+
+    // 習慣の詳細分析（新しい習慣システム）
+    const habitStats = activeHabits.map(habit => {
+      // 習慣の完了回数を計算
+      const habitCompletionsCount = habitCompletions.filter(completion => 
+        completion.habit_id === habit.id
+      ).length;
+      
+      // 習慣作成からの日数を計算
+      const createdDate = new Date(habit.created_at);
+      const daysSinceCreation = Math.max(1, Math.floor((Date.now() - createdDate.getTime()) / (1000 * 60 * 60 * 24)));
+      
+      // 完了率を計算
+      const completionRate = Math.round((habitCompletionsCount / daysSinceCreation) * 100);
+      
+      return {
+        id: habit.id,
+        title: habit.title,
+        currentStreak: habit.current_streak || 0,
+        longestStreak: habit.longest_streak || 0,
+        completionRate
+      };
+    });
+
+    const averageHabitStreak = habitStats.length > 0 ? 
+      Math.round(habitStats.reduce((sum, habit) => sum + habit.currentStreak, 0) / habitStats.length) : 0;
+    
+    const longestHabitStreak = habitStats.length > 0 ? 
+      Math.max(...habitStats.map(habit => habit.longestStreak)) : 0;
+
+    const averageHabitCompletionRate = habitStats.length > 0 ? 
+      Math.round(habitStats.reduce((sum, habit) => sum + habit.completionRate, 0) / habitStats.length) : 0;
 
     return {
       totalTasks,
@@ -204,9 +255,12 @@ export default function ProgressPage() {
       inProgressTasks,
       pendingTasks,
       habitTasks,
-      completedHabits,
+      habitStats,
+      averageHabitStreak,
+      longestHabitStreak,
+      averageHabitCompletionRate
     };
-  }, [tasks]);
+  }, [tasks, habits, habitCompletions]);
 
   const tabs = [
     { id: 'today', label: '今日の詳細', icon: FaChartBar },
@@ -260,12 +314,14 @@ export default function ProgressPage() {
                   <div className="grid grid-cols-1 gap-6 mb-8">
                     <ProgressCard
                       title="今日の達成率"
-                      value={todayStats.completedTasks}
-                      total={todayStats.totalTasks}
-                      icon={<span className="text-2xl">✅</span>}
+                      value={todayStats.completedTasks + todayStats.completedHabits}
+                      total={todayStats.totalTasks + todayStats.totalHabits}
+                      icon={<></>}
                       color="text-[#7c5a2a]"
-                      description="今日予定されたタスクの完了状況"
+                      description={`タスク: ${todayStats.completedTasks}/${todayStats.totalTasks}, 習慣: ${todayStats.completedHabits}/${todayStats.totalHabits}`}
                     />
+                    
+
                   </div>
 
                   {/* カテゴリ別詳細 */}
@@ -301,6 +357,68 @@ export default function ProgressPage() {
                       </div>
                     </div>
                   )}
+
+                  {/* 今日のタスク一覧 */}
+                  {todayStats.tasks.length > 0 && (
+                    <div className="wood-frame rounded-xl p-6">
+                      <h3 className="text-lg font-semibold text-[#8b4513] mb-4">今日のタスク</h3>
+                      <div className="space-y-2">
+                        {todayStats.tasks.map(task => (
+                          <div key={task.id} className="flex items-center justify-between p-3 bg-[#f5f5dc] rounded-lg border border-[#deb887]">
+                            <div className="flex items-center gap-3">
+                              <CategoryBadge category={task.category} size="sm" showText={false} />
+                              <span className={`${task.status === 'done' ? 'line-through text-[#7c5a2a]' : 'text-[#8b4513]'}`}>
+                                {task.title}
+                              </span>
+                            </div>
+                            <span className={`px-4 py-1 rounded-full text-xs font-medium min-w-[70px] text-center ${
+                              task.status === 'done' ? 'bg-[#f5f5dc] text-[#8b4513] border border-[#deb887]' :
+                              task.status === 'doing' ? 'bg-[#f5f5dc] text-[#7c5a2a] border border-[#deb887]' :
+                              'bg-[#f5f5dc] text-[#7c5a2a] border border-[#deb887]'
+                            }`}>
+                              {task.status === 'done' ? '完了' : task.status === 'doing' ? '進行中' : '未着手'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 今日の習慣一覧 */}
+                  {todayStats.totalHabits > 0 && (
+                    <div className="wood-frame rounded-xl p-6">
+                      <h3 className="text-lg font-semibold text-[#8b4513] mb-4">今日の習慣</h3>
+                      <div className="space-y-2">
+                        {habits.filter(habit => habit.habit_status === 'active').map(habit => {
+                          const isCompleted = habitCompletions.some(completion => 
+                            completion.habit_id === habit.id && 
+                            completion.completed_date === (() => {
+                              const today = new Date();
+                              const japanTime = new Date(today.getTime() + (9 * 60 * 60 * 1000));
+                              return japanTime.toISOString().split('T')[0];
+                            })()
+                          );
+                          
+                          return (
+                            <div key={habit.id} className="flex items-center justify-between p-3 bg-[#f5f5dc] rounded-lg border border-[#deb887]">
+                              <div className="flex items-center gap-3">
+                                <span className="text-sm">🔄</span>
+                                <span className={`${isCompleted ? 'line-through text-[#7c5a2a]' : 'text-[#8b4513]'}`}>
+                                  {habit.title}
+                                </span>
+                              </div>
+                              <span className={`px-4 py-1 rounded-full text-xs font-medium min-w-[70px] text-center ${
+                                isCompleted ? 'bg-[#f5f5dc] text-[#8b4513] border border-[#deb887]' :
+                                'bg-[#f5f5dc] text-[#7c5a2a] border border-[#deb887]'
+                              }`}>
+                                {isCompleted ? '完了' : '未完了'}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -330,6 +448,7 @@ export default function ProgressPage() {
                                   平均 {category.avgCompletionTime}分
                                 </span>
                               )}
+
                               <span className={`font-bold text-lg ${
                                 category.percentage === 100 ? 'text-[#8b4513]' :
                                 category.percentage >= 75 ? 'text-[#7c5a2a]' :
@@ -355,6 +474,32 @@ export default function ProgressPage() {
                       ))}
                     </div>
                   </div>
+
+                  {/* 分析サマリー */}
+                  <div className="wood-frame rounded-xl p-6">
+                    <h3 className="text-lg font-semibold text-[#8b4513] mb-4">分析サマリー</h3>
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="p-4 bg-[#f5f5dc] rounded-lg border border-[#deb887]">
+                        <h4 className="font-medium text-[#8b4513] mb-2">最も生産的なカテゴリ</h4>
+                        <p className="text-[#7c5a2a]">
+                          {categoryStats[0]?.name || '該当なし'}
+                          {categoryStats[0] && ` (${categoryStats[0].percentage}%)`}
+                        </p>
+                      </div>
+                      <div className="p-4 bg-[#f5f5dc] rounded-lg border border-[#deb887]">
+                        <h4 className="font-medium text-[#8b4513] mb-2">活動カテゴリ数</h4>
+                        <p className="text-[#7c5a2a]">
+                          {categoryStats.length}/{DEFAULT_CATEGORIES.length} カテゴリ
+                        </p>
+                      </div>
+                      <div className="p-4 bg-[#f5f5dc] rounded-lg border border-[#deb887]">
+                        <h4 className="font-medium text-[#8b4513] mb-2">総完了タスク</h4>
+                        <p className="text-[#7c5a2a]">
+                          {categoryStats.reduce((sum, cat) => sum + cat.completedTasks, 0)}件
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -378,8 +523,16 @@ export default function ProgressPage() {
                           <span className="font-medium text-[#8b4513]">{overallStats.habitTasks}</span>
                         </li>
                         <li className="flex justify-between">
-                          <span className="text-[#7c5a2a]">完了した習慣</span>
-                          <span className="font-medium text-[#8b4513]">{overallStats.completedHabits}</span>
+                          <span className="text-[#7c5a2a]">平均継続日数</span>
+                          <span className="font-medium text-[#8b4513]">{overallStats.averageHabitStreak}日</span>
+                        </li>
+                        <li className="flex justify-between">
+                          <span className="text-[#7c5a2a]">最長継続記録</span>
+                          <span className="font-medium text-[#8b4513]">{overallStats.longestHabitStreak}日</span>
+                        </li>
+                        <li className="flex justify-between">
+                          <span className="text-[#7c5a2a]">平均達成率</span>
+                          <span className="font-medium text-[#8b4513]">{overallStats.averageHabitCompletionRate}%</span>
                         </li>
                       </ul>
                     </div>
@@ -447,12 +600,12 @@ export default function ProgressPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <ProgressCard
                   title="今日の達成率"
-                  value={todayStats.completedTasks}
-                  total={todayStats.totalTasks}
-                  icon={<span className="text-2xl">✅</span>}
+                  value={todayStats.completedTasks + todayStats.completedHabits}
+                  total={todayStats.totalTasks + todayStats.totalHabits}
+                  icon={<></>}
                   color="text-[#7c5a2a]"
                   progressColor="bg-[#7c5a2a]"
-                  description="今日予定されたタスクの完了状況"
+                  description={`タスク: ${todayStats.completedTasks}/${todayStats.totalTasks}, 習慣: ${todayStats.completedHabits}/${todayStats.totalHabits}`}
                 />
               </div>
 
@@ -512,6 +665,42 @@ export default function ProgressPage() {
                         </span>
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 今日の習慣一覧 */}
+              {todayStats.totalHabits > 0 && (
+                <div className="wood-frame rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-[#8b4513] mb-4">今日の習慣</h3>
+                  <div className="space-y-2">
+                    {habits.filter(habit => habit.habit_status === 'active').map(habit => {
+                      const isCompleted = habitCompletions.some(completion => 
+                        completion.habit_id === habit.id && 
+                        completion.completed_date === (() => {
+                          const today = new Date();
+                          const japanTime = new Date(today.getTime() + (9 * 60 * 60 * 1000));
+                          return japanTime.toISOString().split('T')[0];
+                        })()
+                      );
+                      
+                      return (
+                        <div key={habit.id} className="flex items-center justify-between p-3 bg-[#f5f5dc] rounded-lg border border-[#deb887]">
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm">🔄</span>
+                            <span className={`${isCompleted ? 'line-through text-[#7c5a2a]' : 'text-[#8b4513]'}`}>
+                              {habit.title}
+                            </span>
+                          </div>
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            isCompleted ? 'bg-[#f5f5dc] text-[#8b4513] border border-[#deb887]' :
+                            'bg-[#f5f5dc] text-[#7c5a2a] border border-[#deb887]'
+                          }`}>
+                            {isCompleted ? '完了' : '未完了'}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -628,12 +817,8 @@ export default function ProgressPage() {
                   <h4 className="text-lg font-medium text-[#8b4513] mb-2">習慣の記録</h4>
                   <ul className="space-y-2">
                     <li className="flex justify-between">
-                      <span className="text-[#7c5a2a]">習慣タスク数</span>
+                      <span className="text-[#7c5a2a]">習慣数</span>
                       <span className="font-medium text-[#8b4513]">{overallStats.habitTasks}</span>
-                    </li>
-                    <li className="flex justify-between">
-                      <span className="text-[#7c5a2a]">完了した習慣</span>
-                      <span className="font-medium text-[#8b4513]">{overallStats.completedHabits}</span>
                     </li>
                   </ul>
               </div>

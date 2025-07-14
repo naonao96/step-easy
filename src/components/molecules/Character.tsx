@@ -4,8 +4,8 @@ import { EmotionHoverMenu } from './EmotionHoverMenu';
 import { EmotionRecord, TimePeriod } from '@/types/emotion';
 
 interface CharacterProps {
-  mood: 'happy' | 'normal' | 'sad';
   message?: string;
+  messageParts?: string[];
   layout?: 'vertical' | 'horizontal';
   isInteractive?: boolean;
   onOptionSelect?: (option: any) => void;
@@ -19,10 +19,13 @@ interface CharacterProps {
   // デスクトップ用追加props
   showMessage?: boolean;
   isTyping?: boolean;
+  displayedMessage?: string;
   bubblePosition?: 'left' | 'bottom';
   size?: string | number;
   onClick?: () => void;
-  isDesktop?: boolean;
+  // モバイル版対応追加props
+  isMobile?: boolean;
+  onMessageClick?: () => void; // モバイル版用
   // 感情記録促進用props
   recordStatus?: {
     morning: EmotionRecord | null;
@@ -33,27 +36,43 @@ interface CharacterProps {
 }
 
 export const Character: React.FC<CharacterProps> = ({ 
-  mood, 
   message, 
+  messageParts = [],
   layout = 'vertical',
   isInteractive = false,
   onOptionSelect,
   options = [],
   showMessage,
   isTyping,
+  displayedMessage,
   bubblePosition = 'bottom',
   size,
   onClick,
-  isDesktop,
+  isMobile,
+  onMessageClick,
   recordStatus,
   currentTimePeriod
 }) => {
   const [showEmotionMenu, setShowEmotionMenu] = useState(false);
   const characterRef = useRef<HTMLDivElement>(null);
   
+  // メッセージが変更された時にリセット
+  const prevMessage = useRef<string>('');
+  useEffect(() => {
+    if (prevMessage.current !== message) {
+      prevMessage.current = message || '';
+    }
+  }, [message]);
+  
   // 感情記録促進のロジック
   const shouldBlink = recordStatus && currentTimePeriod && recordStatus[currentTimePeriod] === null;
   
+  // クリックハンドラー（useMessageDisplay.tsに統一）
+  const handleMessageClick = () => {
+    // 親コンポーネントのonMessageClickを使用
+    onMessageClick?.();
+  };
+
   // 時間帯ラベル取得
   const getTimePeriodLabel = () => {
     if (currentTimePeriod) {
@@ -68,28 +87,9 @@ export const Character: React.FC<CharacterProps> = ({
     return '晩';
   };
 
-  // デバッグ用：メッセージの更新を監視
-  useEffect(() => {
-    if (message) {
-      console.log('Character component received new message:', {
-        message: message.substring(0, 50) + (message.length > 50 ? '...' : ''),
-        messageLength: message.length,
-        timestamp: new Date().toISOString(),
-        mood
-      });
-    }
-  }, [message, mood]);
 
-  const getMoodImage = () => {
-    switch (mood) {
-      case 'happy':
-        return '/TalkToTheBird.png';
-      case 'sad':
-        return '/SilentBird.png';
-      default:
-        return '/TalkToTheBird.png';
-    }
-  };
+
+
 
   // ハイブリッドアプローチ: テキスト最適化関数群
   const optimizeText = (text: string, maxLength: number) => {
@@ -157,18 +157,92 @@ export const Character: React.FC<CharacterProps> = ({
   const optimizedText = optimizeText(processedMessage, maxLength);
   const textStyles = getTextStyles(optimizedText, layout);
 
-  if (isDesktop && bubblePosition === 'left') {
+  // モバイル版の吹き出し表示
+  if (isMobile && bubblePosition === 'bottom' && showMessage) {
+    return (
+      <div className="character-container relative flex justify-center">
+        {/* メッセージバブル（キャラクターの上に配置） */}
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-4 w-80 max-w-sm pointer-events-none">
+          <div className="bg-gradient-to-br from-blue-50/95 to-indigo-100/95 backdrop-blur-md rounded-2xl border border-blue-200/50 shadow-2xl transition-all duration-300 p-4 w-80 pointer-events-none">
+            <div className={`text-gray-800 font-medium leading-relaxed text-xs ${!isTyping ? 'cursor-pointer' : 'cursor-default'}`} onClick={!isTyping ? onMessageClick : undefined}>
+              {displayedMessage || message}
+              {isTyping && <span className="animate-blink ml-1">|</span>}
+            </div>
+            {/* 尻尾部分（下向き） */}
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gradient-to-br from-blue-50/95 to-indigo-100/95 border-r border-b border-blue-200/50 transform rotate-45 -translate-y-1/2 pointer-events-none"></div>
+          </div>
+        </div>
+        
+        {/* キャラクター（感情メニュー付き）- モバイル版専用デザイン */}
+        <div className="relative">
+          <div 
+            className="cursor-pointer flex-shrink-0 relative" 
+            style={{ height: '3cm', width: 'auto', display: 'flex', alignItems: 'center', zIndex: 40 }} 
+            onClick={onClick}
+          >
+            {/* 半透明の円（半径2cm）- 背面に配置 */}
+            <div className={`
+              absolute inset-0 w-32 h-32 rounded-full border-2 transform -translate-x-1/2 -translate-y-1/2
+              ${shouldBlink ? 'background-circle-unrecorded' : 'bg-blue-200/20 border-blue-300/30'}
+            `} style={{ left: '50%', top: '50%', zIndex: -1 }}></div>
+            
+            <Image
+              src={showMessage ? '/TalkToTheBird.png' : '/SilentBird.png'}
+              alt="StepEasy Bird Character"
+              width={120}
+              height={120}
+              priority={true}
+              style={{ height: '3cm', width: 'auto', objectFit: 'contain', display: 'block' }}
+              className={`
+                transition-transform transition-shadow duration-200 active:scale-110
+                ${shouldBlink ? 'character-unrecorded' : ''}
+              `}
+            />
+            
+            {/* 朝昼晩（統合型ヘッダー）をキャラクターの足元にabsolute配置：感情メニュー表示時のみ表示 */}
+            {showEmotionMenu && (
+              <div className="absolute left-1/2 -translate-x-1/2 -bottom-8 z-30 w-auto min-w-fit max-w-md flex justify-center pointer-events-none">
+                <span className={`
+                  bg-white/90 border border-gray-200 rounded-full px-4 py-1 text-sm font-bold text-gray-800 shadow-md pointer-events-none select-none
+                  ${shouldBlink ? 'border-blue-400 bg-blue-50' : ''}
+                `}>
+                  {getTimePeriodLabel()}
+                </span>
+              </div>
+            )}
+            
+            {/* 感情記録メニュー - キャラクター画像の中心に配置 */}
+            {showEmotionMenu && (
+              <div className="absolute inset-0 z-[50]">
+                <EmotionHoverMenu
+                  isVisible={showEmotionMenu}
+                  onClose={() => setShowEmotionMenu(false)}
+                  characterRef={characterRef}
+                  isMessageDisplaying={showMessage}
+                  isTyping={isTyping}
+                  isMobile={true}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // デスクトップ版の吹き出し表示
+  if (bubblePosition === 'left') {
     return (
       <div className="flex items-end gap-4">
         {/* モダンなスピーチバルーン（Radial Menu表示時は左にスライド） */}
         {showMessage && (
-          <div className="mb-4 transition-all duration-300 pointer-events-none" style={{ minHeight: '3cm', height: 'auto', transform: showEmotionMenu ? 'translateX(-120px)' : 'translateX(0px)', marginTop: '40px', zIndex: 50, right: 'calc(50% + 2cm)' }}>
+          <div className="mb-4 transition-all duration-300 pointer-events-auto" style={{ minHeight: '3cm', height: 'auto', transform: showEmotionMenu ? 'translateX(-120px)' : 'translateX(0px)', marginTop: '40px', zIndex: 50, right: 'calc(50% + 2cm)' }}>
             <div className="relative">
               <div
-                className="bg-gradient-to-br from-blue-50/95 to-indigo-100/95 backdrop-blur-md rounded-2xl border border-blue-200/50 shadow-2xl transition-all duration-300 p-4 w-80 pointer-events-none"
+                className="bg-gradient-to-br from-blue-50/95 to-indigo-100/95 backdrop-blur-md rounded-2xl border border-blue-200/50 shadow-2xl transition-all duration-300 p-4 w-80 pointer-events-auto"
               >
-                <div className="text-gray-800 font-medium leading-relaxed text-xs">
-                  <span>{message}</span>
+                <div className={`text-gray-800 font-medium leading-relaxed text-xs ${!isTyping ? 'cursor-pointer' : 'cursor-default'}`} onClick={!isTyping ? handleMessageClick : undefined}>
+                  {displayedMessage || message}
                   {isTyping && <span className="animate-blink ml-1">|</span>}
                 </div>
               </div>
@@ -193,7 +267,7 @@ export const Character: React.FC<CharacterProps> = ({
           `} style={{ left: '50%', top: '50%', zIndex: -1 }}></div>
           
           <Image
-            src={mood === 'happy' ? '/TalkToTheBird.png' : mood === 'sad' ? '/SilentBird.png' : '/TalkToTheBird.png'}
+            src={showMessage ? '/TalkToTheBird.png' : '/SilentBird.png'}
             alt="StepEasy Bird Character"
             width={120}
             height={120}
@@ -242,7 +316,7 @@ export const Character: React.FC<CharacterProps> = ({
         onMouseLeave={() => setShowEmotionMenu(false)}
       >
         <Image
-          src={getMoodImage()}
+          src={showMessage ? '/TalkToTheBird.png' : '/SilentBird.png'}
           alt="Character"
           fill
           sizes="(max-width: 640px) 160px, 192px"
@@ -286,7 +360,7 @@ export const Character: React.FC<CharacterProps> = ({
           {/* テキストオーバーレイ */}
           <div className="absolute left-[6.7%] right-[6.7%] top-[20%] bottom-[20%] flex items-center justify-center z-50">
             <p className={`text-gray-900 text-center ${textStyles.fontSize} font-medium leading-tight ${textStyles.lineClamp} overflow-hidden w-full h-full flex items-center justify-center`}>
-              {optimizedText}
+              {displayedMessage || optimizedText}
             </p>
           </div>
         </div>

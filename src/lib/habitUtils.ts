@@ -122,13 +122,61 @@ export const convertHabitsToTasks = (habits: Habit[], selectedDate?: Date, habit
         streak_start_date: habit.streak_start_date,
         category: habit.category || 'other',
         estimated_duration: undefined,
-        actual_duration: undefined,
+        actual_duration: habit.all_time_total ? Math.floor(habit.all_time_total / 60) : undefined, // 秒を分に変換
         streak_count: habit.current_streak,
         session_time: undefined,
-        today_total: undefined,
-        all_time_total: undefined,
-        last_execution_date: undefined,
+        today_total: habit.today_total,
+        all_time_total: habit.all_time_total,
+        last_execution_date: habit.last_execution_date,
         execution_count: undefined
       };
     });
+}; 
+
+/**
+ * 習慣のその日の実行時間を計算
+ */
+export const getHabitDailyExecutionTime = async (habitId: string, targetDate?: Date): Promise<number> => {
+  try {
+    const { createClientComponentClient } = await import('@supabase/auth-helpers-nextjs');
+    const supabase = createClientComponentClient();
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return 0;
+
+    // 対象日付を取得（指定がない場合は今日）
+    const date = targetDate || new Date();
+    
+    // 日本時間（JST）で日付文字列を取得
+    const jstOffset = 9 * 60; // 分単位
+    const jstTime = new Date(date.getTime() + (jstOffset * 60 * 1000));
+    const dateString = jstTime.toISOString().split('T')[0];
+    
+    // その日の実行ログを取得（日本時間の日付範囲で検索）
+    const { data: logs } = await supabase
+      .from('execution_logs')
+      .select('duration')
+      .eq('habit_id', habitId)
+      .eq('user_id', user.id)
+      .gte('start_time', `${dateString}T00:00:00.000Z`)
+      .lt('start_time', `${dateString}T23:59:59.999Z`)
+      .eq('is_completed', true);
+
+    // 実行時間を合計（秒）
+    const totalDuration = (logs || []).reduce((sum, log) => sum + (log.duration as number), 0);
+    
+    return totalDuration;
+  } catch (error) {
+    console.error('習慣の実行時間計算エラー:', error);
+    return 0;
+  }
+};
+
+/**
+ * 習慣の実行時間を分単位でフォーマット
+ */
+export const formatHabitExecutionTime = (seconds: number): string => {
+  if (seconds === 0) return '0分';
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}分`;
 }; 

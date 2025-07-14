@@ -4,6 +4,7 @@ import { formatDurationShort } from '@/lib/timeUtils';
 import { useExecutionStore } from '@/stores/executionStore';
 import { handleTimerError, getTimerErrorMessage } from '@/lib/timerUtils';
 import { FaClock, FaPlay, FaPause, FaStop, FaUndo } from 'react-icons/fa';
+import { getHabitDailyExecutionTime, formatHabitExecutionTime } from '@/lib/habitUtils';
 
 interface MobileTaskTimerProps {
   task: Task;
@@ -30,9 +31,36 @@ export const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
   const [showResetPopover, setShowResetPopover] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
+  // 習慣の実行時間状態
+  const [habitExecutionTime, setHabitExecutionTime] = useState<number>(0);
+  const [isLoadingHabitTime, setIsLoadingHabitTime] = useState(false);
+
   const isCurrentTaskActive = activeExecution?.task_id === task.id;
   const isOtherTaskRunning = Boolean(activeExecution && !isCurrentTaskActive);
   const isHabitTask = task.is_habit;
+
+  // 習慣の実行時間を取得
+  useEffect(() => {
+    const fetchHabitExecutionTime = async () => {
+      if (isHabitTask) {
+        setIsLoadingHabitTime(true);
+        try {
+          // 今日の日付を日本時間で取得
+          const today = new Date();
+          const jstOffset = 9 * 60; // 分単位
+          const jstTime = new Date(today.getTime() + (jstOffset * 60 * 1000));
+          const executionTime = await getHabitDailyExecutionTime(task.id, jstTime);
+          setHabitExecutionTime(executionTime);
+        } catch (error) {
+          console.error('習慣の実行時間取得エラー:', error);
+        } finally {
+          setIsLoadingHabitTime(false);
+        }
+      }
+    };
+
+    fetchHabitExecutionTime();
+  }, [task.id, isHabitTask]);
 
   const formatTime = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
@@ -88,6 +116,15 @@ export const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
 
   const handleStop = async () => {
     await stopExecution();
+    // 習慣の場合は実行時間を再取得
+    if (isHabitTask) {
+      // 今日の日付を日本時間で取得
+      const today = new Date();
+      const jstOffset = 9 * 60; // 分単位
+      const jstTime = new Date(today.getTime() + (jstOffset * 60 * 1000));
+      const executionTime = await getHabitDailyExecutionTime(task.id, jstTime);
+      setHabitExecutionTime(executionTime);
+    }
     if (onExecutionComplete) {
       onExecutionComplete();
     }
@@ -193,7 +230,7 @@ export const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
         {isHabitTask ? (
           // 習慣タスクの場合
           <>
-            <span>今日累計: {task.today_total ? `${Math.floor(task.today_total / 60)}分` : (task.actual_duration && task.actual_duration > 0) ? `${task.actual_duration}分` : '0分'}</span>
+            <span>今日: {isLoadingHabitTime ? '読み込み中...' : formatHabitExecutionTime(habitExecutionTime)}</span>
             <span className="text-[#8b4513]">🔥 継続中</span>
           </>
         ) : (

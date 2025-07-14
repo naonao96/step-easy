@@ -435,7 +435,7 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
   if (isPreviewMode && initialData) {
     return (
       <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 ${overlayClassName}`}>
-        <div className={`bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden ${contentClassName} ${isFullScreen ? 'max-w-none max-h-none rounded-none' : ''}`}>
+        <div className={`bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[calc(80vh-120px)] overflow-hidden flex flex-col ${contentClassName} ${isFullScreen ? 'max-w-none max-h-none rounded-none' : ''}`}>
           {/* ヘッダー */}
           <div className={`bg-[#f5f5dc] border-b border-[#deb887] px-4 sm:px-6 ${isMobile ? 'py-3 pt-safe' : 'py-4'}`}>
             {/* モバイル版：3行レイアウト */}
@@ -588,7 +588,7 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
           </div>
           
           {/* メインコンテンツ */}
-            <div className={`overflow-y-auto ${isMobile ? 'max-h-[calc(100vh-320px)]' : 'max-h-[calc(90vh-120px)]'}`}>
+            <div className={`overflow-y-auto`}>
               <div className={`p-4 sm:p-6 ${isMobile ? 'pb-12' : ''}`}>
               {/* タスクタイトル */}
               <div className="mb-4 sm:mb-6">
@@ -646,7 +646,9 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
                   )}
                   
                   <div className="border-t border-[#deb887] pt-3 sm:pt-4">
-                    <TaskExecutionHistory task={initialData as Task} />
+                    <div className="max-h-[150px] overflow-y-auto">
+                      <TaskExecutionHistory task={initialData as Task} selectedDate={selectedDate} />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -659,7 +661,7 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
 
   return (
     <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 ${overlayClassName}`}>
-      <div className={`bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden ${contentClassName} ${isFullScreen ? 'max-w-none max-h-none rounded-none' : ''}`}>
+      <div className={`bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[calc(80vh-120px)] overflow-hidden flex flex-col ${contentClassName} ${isFullScreen ? 'max-w-none max-h-none rounded-none' : ''}`}>
         {/* ヘッダー */}
         <div className={`bg-[#f5f5dc] border-b border-[#deb887] px-4 sm:px-6 ${isMobile ? 'py-3 pt-safe' : 'py-4'}`}>
           {/* モバイル版：3行レイアウト */}
@@ -801,7 +803,7 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
         </div>
         
         {/* メインコンテンツ */}
-        <div className={`overflow-y-auto ${isMobile ? 'max-h-[calc(100vh-320px)]' : 'max-h-[calc(90vh-120px)]'}`}>
+        <div className={`overflow-y-auto`}>
           <div className={`p-4 sm:p-6 ${isMobile ? 'pb-12' : ''}`}>
             <div className="space-y-4 sm:space-y-6">
               {/* 基本情報 */}
