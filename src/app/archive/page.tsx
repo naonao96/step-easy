@@ -174,7 +174,7 @@ export default function ArchivePage() {
       backLabel="メニューに戻る"
       tasks={tasks as any}
     >
-      <div className="px-4 sm:px-6 py-4 sm:py-6">
+      <div className="px-4 sm:px-6 py-4 sm:py-6 mt-4">
         <div className="max-w-7xl mx-auto">
           {/* ヘッダー */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">

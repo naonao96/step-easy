@@ -117,7 +117,7 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
       {/* ボトムナビゲーション - モバイルのみ表示 */}
       <div className={`md:hidden fixed bottom-0 left-0 right-0 z-50 ${className}`}>
         {/* セーフエリア対応の背景 */}
-        <div className="wood-frame-sidebar border-t border-[#deb887] shadow-lg">
+        <div className="bg-gradient-to-b from-[#f7ecd7] to-[#f5e9da] border-t border-[#deb887] shadow-lg">
           <div className="flex items-center justify-around py-2 pb-safe">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -127,23 +127,21 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
                 <button
                   key={item.href}
                   onClick={() => handleNavigate(item.href)}
-                  className={`flex flex-col items-center gap-1 px-3 py-2 min-h-[52px] transition-colors ${
-                    isActive 
-                      ? 'text-[#7c5a2a]' 
-                      : 'text-gray-700 hover:text-[#7c5a2a]'
-                  }`}
+                  className={`flex flex-col items-center gap-1 px-3 py-2 min-h-[52px] transition-all
+                    ${isActive ? 'text-[#7c5a2a]' : 'text-[#7c5a2a] hover:text-[#5a3310] hover:bg-[#f5e9da] active:text-[#3e220a] active:bg-[#ecd9c6] active:scale-95'}
+                  `}
                 >
                   <div className="relative">
-                    {React.createElement(Icon as React.ComponentType<any>, { className: "w-5 h-5" })}
+                    {React.createElement(Icon as React.ComponentType<any>, {
+                      className: `w-5 h-5 transition-colors ${isActive ? 'text-[#7c5a2a]' : ''}`
+                    })}
                     {item.badge && (
                       <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
                         {item.badge > 99 ? '99+' : item.badge}
                       </span>
                     )}
                   </div>
-                  <span className={`text-xs font-medium ${
-                    isActive ? 'text-[#7c5a2a]' : 'text-gray-700'
-                  }`}>
+                  <span className={`text-xs font-medium transition-colors ${isActive ? 'text-[#7c5a2a]' : ''}`}>
                     {item.label}
                   </span>
                 </button>

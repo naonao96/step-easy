@@ -3,15 +3,15 @@
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { Input } from '@/components/atoms/Input';
-import { FaUser, FaBell, FaLock, FaSignOutAlt, FaInfoCircle, FaGem, FaFileContract, FaShieldAlt, FaTrash, FaSave, FaKey, FaCrown, FaCreditCard, FaQuestionCircle, FaHeart } from 'react-icons/fa';
+import { FaUser, FaBell, FaLock, FaSignOutAlt, FaInfoCircle, FaGem, FaFileContract, FaShieldAlt, FaTrash, FaSave, FaKey, FaCrown, FaCreditCard, FaQuestionCircle, FaHeart, FaTasks, FaFire, FaRobot } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/templates/AppLayout';
 import { useTaskStore } from '@/stores/taskStore';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { PremiumComingSoonBanner } from '@/components/molecules/PremiumComingSoonBanner';
 import { TrialStatusBanner } from '@/components/molecules/TrialStatusBanner';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 // AuthContextと同じSupabaseクライアント作成方法を使用して認証状態を統一
 const supabase = createClientComponentClient();
@@ -38,14 +38,47 @@ export default function SettingsPage() {
     bio: '',
   });
 
-  const [notificationSettings, setNotificationSettings] = useState({
-    email_notifications: true,
-    push_notifications: true,
-    task_reminders: true,
-    habit_reminders: true,
-    ai_suggestions: true,
-    premium_updates: false,
+  const [notificationSettings, setNotificationSettings] = useState<{ [key: string]: boolean }>({
+    task: true,
+    habit: true,
+    subscription: true,
+    system: true,
+    ai: true,
   });
+
+  // 通知カテゴリ定義
+  const notificationCategories = [
+    {
+      key: 'task',
+      label: 'タスク通知',
+      icon: FaTasks,
+      description: 'タスクの完了や期限に関する通知'
+    },
+    {
+      key: 'habit',
+      label: '習慣通知',
+      icon: FaFire,
+      description: '習慣の継続や達成に関する通知'
+    },
+    {
+      key: 'subscription',
+      label: 'サブスクリプション通知',
+      icon: FaCrown,
+      description: 'プレミアム・支払い・体験期間などの通知'
+    },
+    {
+      key: 'system',
+      label: 'システム通知',
+      icon: FaShieldAlt,
+      description: 'メンテナンスや重要なお知らせ'
+    },
+    {
+      key: 'ai',
+      label: 'AI通知',
+      icon: FaRobot,
+      description: 'AIメッセージや分析結果の通知'
+    },
+  ];
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -69,6 +102,19 @@ export default function SettingsPage() {
         email: user.email || '',
         bio: '', // bio情報は後で実装予定
       });
+    }
+  }, [user]);
+
+  useEffect(() => {
+    console.log('🔄 通知設定初期化チェック');
+    console.log('👤 ユーザー:', user);
+    console.log('📊 ユーザーの通知設定:', (user as any)?.notification_settings);
+    
+    if (user && (user as any).notification_settings) {
+      console.log('✅ 通知設定を初期化:', (user as any).notification_settings);
+      setNotificationSettings({ ...(user as any).notification_settings });
+    } else {
+      console.log('⚠️ 通知設定が見つからない、デフォルト値を使用');
     }
   }, [user]);
 
@@ -119,12 +165,55 @@ export default function SettingsPage() {
   };
 
   const handleNotificationUpdate = async () => {
+    console.log('🔔 通知設定更新開始');
+    console.log('📊 現在の通知設定:', notificationSettings);
+    console.log('👤 ユーザーID:', user?.id);
+    
     setIsLoading(true);
     try {
+      console.log('💾 データベース更新リクエスト送信...');
+      const { error } = await supabase
+        .from('users')
+        .update({ notification_settings: notificationSettings, updated_at: new Date().toISOString() })
+        .eq('id', user?.id);
+      
+      console.log('📡 データベースレスポンス:', { error });
+      
+      if (error) {
+        console.error('❌ データベースエラー:', error);
+        throw error;
+      }
+      
+      console.log('✅ 通知設定更新成功');
       toast.success('通知設定を更新しました');
+      
+      // AuthContextのユーザー情報を更新
+      console.log('🔄 AuthContextのユーザー情報を更新中...');
+      const { data: updatedUser, error: fetchError } = await supabase
+        .from('users')
+        .select(`
+          id,
+          email,
+          display_name,
+          plan_type,
+          notification_settings
+        `)
+        .eq('id', user?.id)
+        .single();
+      
+      if (fetchError) {
+        console.error('❌ 更新されたユーザー情報の取得エラー:', fetchError);
+      } else {
+        console.log('✅ 更新されたユーザー情報:', updatedUser);
+        // ユーザー情報を更新（AuthContextの再取得をトリガー）
+        window.location.reload();
+      }
+      
     } catch (error) {
+      console.error('❌ 通知設定更新エラー:', error);
       toast.error('通知設定の更新に失敗しました');
     } finally {
+      console.log('🏁 通知設定更新処理完了');
       setIsLoading(false);
     }
   };
@@ -357,7 +446,7 @@ export default function SettingsPage() {
       backLabel="メニューに戻る"
       tasks={tasks as any}
     >
-      <div className="px-4 sm:px-6 py-4 sm:py-6">
+      <div className="px-4 sm:px-6 py-4 sm:py-6 mt-4">
         <div className="max-w-7xl mx-auto">
                     {/* モバイル用タブナビゲーション（上部固定） */}
           <div className="md:hidden mb-6">
@@ -516,47 +605,137 @@ export default function SettingsPage() {
                 {activeTab === 'notifications' && (
                   <div className="space-y-6">
                     <div className="mb-4">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">🐦</span>
                       <h2 className="text-xl font-semibold text-[#8b4513]">通知設定</h2>
                     </div>
-                    
-                    <div className="bg-[#f5f5dc] border border-[#deb887] rounded-lg p-6 text-center">
-                      <div className="flex items-center justify-center gap-2 mb-3">
-                        <div className="w-6 h-6 bg-[#7c5a2a] rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs font-bold">!</span>
-                        </div>
-                        <h3 className="text-lg font-semibold text-[#8b4513]">準備中</h3>
-                      </div>
-                      <p className="text-[#7c5a2a] mb-4">
-                        通知設定機能は現在準備中です。<br />
-                        リリース後に実装予定です。
+                      <p className="text-[#7c5a2a] text-sm mt-2">
+                        通知の種類と表示方法をカスタマイズできます
                       </p>
-                      <div className="space-y-2 text-sm text-[#7c5a2a]">
-                        <div className="flex items-center gap-2 justify-center">
-                          <div className="w-2 h-2 bg-[#7c5a2a] rounded-full"></div>
-                          <span>メール通知</span>
+                    </div>
+
+                    {/* 通知表示方法 */}
+                    <div className="bg-[#f5f5dc] border border-[#deb887] rounded-lg p-4">
+                      <h3 className="text-lg font-medium text-[#8b4513] mb-3">通知表示方法</h3>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span className="text-lg">🔔</span>
+                            <div>
+                              <div className="font-medium text-[#8b4513]">トースト通知</div>
+                              <div className="text-xs text-[#7c5a2a]">右下から表示される通知</div>
+                            </div>
+                          </div>
+                          <span className="text-xs text-[#7c5a2a] bg-[#f0e8d8] px-2 py-1 rounded">有効</span>
                         </div>
-                        <div className="flex items-center gap-2 justify-center">
-                          <div className="w-2 h-2 bg-[#7c5a2a] rounded-full"></div>
-                          <span>プッシュ通知</span>
-                        </div>
-                        <div className="flex items-center gap-2 justify-center">
-                          <div className="w-2 h-2 bg-[#7c5a2a] rounded-full"></div>
-                          <span>タスクリマインダー</span>
-                        </div>
-                        <div className="flex items-center gap-2 justify-center">
-                          <div className="w-2 h-2 bg-[#7c5a2a] rounded-full"></div>
-                          <span>習慣リマインダー</span>
-                        </div>
-                        <div className="flex items-center gap-2 justify-center">
-                          <div className="w-2 h-2 bg-[#7c5a2a] rounded-full"></div>
-                          <span>AI提案通知</span>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span className="text-lg">📱</span>
+                            <div>
+                              <div className="font-medium text-[#8b4513]">ドロップダウン通知</div>
+                              <div className="text-xs text-[#7c5a2a]">ヘッダーの通知ベルから表示</div>
+                            </div>
+                          </div>
+                          <span className="text-xs text-[#7c5a2a] bg-[#f0e8d8] px-2 py-1 rounded">有効</span>
                         </div>
                       </div>
                     </div>
-                    
-                    <button disabled className="flex items-center gap-2 px-4 py-2 bg-[#deb887] text-[#7c5a2a] rounded-lg opacity-50 cursor-not-allowed transition-colors text-sm">
-                      準備中
-                    </button>
+
+                    {/* 通知カテゴリ設定 */}
+                    <div className="bg-[#f5f5dc] border border-[#deb887] rounded-lg p-4">
+                      <h3 className="text-lg font-medium text-[#8b4513] mb-3">通知カテゴリ</h3>
+                    <form
+                      onSubmit={e => { 
+                        console.log('📝 フォーム送信開始');
+                        e.preventDefault(); 
+                        console.log('🔄 handleNotificationUpdate呼び出し');
+                        handleNotificationUpdate(); 
+                      }}
+                        className="space-y-3"
+                    >
+                      {notificationCategories.map(cat => (
+                        <div
+                          key={cat.key}
+                            className="flex items-center justify-between bg-[#faf8f0] border border-[#deb887]/50 rounded-lg px-4 py-3 shadow-sm hover:bg-[#f0e8d8] transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            {cat.icon({ className: 'w-5 h-5 text-[#8b4513]' })}
+                            <div>
+                              <div className="font-medium text-[#8b4513]">{cat.label}</div>
+                              <div className="text-xs text-[#7c5a2a]">{cat.description}</div>
+                            </div>
+                          </div>
+                          <label className="inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={!!notificationSettings[cat.key]}
+                              onChange={e => {
+                                console.log(`🔄 トグル変更: ${cat.key} = ${e.target.checked}`);
+                                console.log('📊 変更前の設定:', notificationSettings);
+                                setNotificationSettings(ns => {
+                                  const newSettings = { ...ns, [cat.key]: e.target.checked };
+                                  console.log('📊 変更後の設定:', newSettings);
+                                  return newSettings;
+                                });
+                              }}
+                              className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-[#deb887] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#8b4513] rounded-full peer peer-checked:bg-[#8b4513] transition-colors relative">
+                              <div className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${notificationSettings[cat.key] ? 'translate-x-5' : ''}`}></div>
+                            </div>
+                          </label>
+                        </div>
+                      ))}
+                      <button
+                        type="submit"
+                        disabled={isLoading}
+                        onClick={() => console.log('🔘 保存ボタンクリック')}
+                          className="flex items-center gap-2 px-4 py-2 bg-[#7c5a2a] text-white rounded-lg hover:bg-[#8b4513] transition-colors text-sm disabled:opacity-50 w-full sm:w-auto"
+                      >
+                        {isLoading ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        ) : (
+                          FaSave({ className: "w-4 h-4" })
+                        )}
+                          {isLoading ? '保存中...' : '設定を保存'}
+                      </button>
+                    </form>
+                    </div>
+
+                    {/* 通知の説明 */}
+                    <div className="bg-[#f0e8d8] border border-[#deb887]/50 rounded-lg p-4">
+                      <h3 className="text-lg font-medium text-[#8b4513] mb-3">通知について</h3>
+                      <div className="space-y-2 text-sm text-[#7c5a2a]">
+                        <div className="flex items-start gap-2">
+                          <span className="text-lg">📝</span>
+                          <div>
+                            <div className="font-medium">タスク通知</div>
+                            <div>期限が近いタスクや完了したタスクのお知らせ</div>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="text-lg">🔥</span>
+                          <div>
+                            <div className="font-medium">習慣通知</div>
+                            <div>習慣の継続状況や途切れの警告</div>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="text-lg">🛡️</span>
+                          <div>
+                            <div className="font-medium">システム通知</div>
+                            <div>アプリの更新やメンテナンス情報</div>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="text-lg">🤖</span>
+                          <div>
+                            <div className="font-medium">AI通知</div>
+                            <div>AI分析の完了やメッセージ生成</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
 

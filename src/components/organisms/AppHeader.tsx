@@ -93,16 +93,16 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   const getHeaderStyles = () => {
     switch (variant) {
       case 'minimal':
-        return 'wood-frame wood-frame-header';
+        return '';
       case 'transparent':
         return 'bg-transparent';
       default:
-        return 'wood-frame wood-frame-header';
+        return '';
     }
   };
 
   return (
-    <header className={`h-16 md:h-20 flex justify-between items-center px-4 sm:px-6 flex-shrink-0 woodgrain-header-bg ${getHeaderStyles()} ${className} md:relative md:top-auto md:left-auto md:right-auto fixed top-0 left-0 right-0 z-40 md:relative md:z-auto pt-safe md:pt-0`}>
+    <header className={`h-16 md:h-20 flex justify-between items-center px-4 sm:px-6 flex-shrink-0 bg-gradient-to-b from-[#f7ecd7] to-[#f5e9da] border-b border-[#deb887]/30 backdrop-blur-sm shadow-none ${getHeaderStyles()} ${className} fixed top-0 left-0 right-0 z-40 pt-safe`}>
       {/* 左側：モバイルハンバーガー + 戻るボタン + タイトル/ロゴ */}
       <div className="flex items-center gap-3">
         {/* ハンバーガーボタンを削除 - ボトムナビゲーションを使用 */}
@@ -114,7 +114,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             size="sm"
             onClick={onBackClick || handleBack}
             leftIcon={FaArrowLeft}
-            className="hidden md:flex text-gray-600 hover:text-gray-800"
+            className="hidden md:flex text-[#7c5a2a] hover:text-[#8b4513]"
           >
             <span className="text-sm">{backLabel}</span>
           </Button>
@@ -145,7 +145,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
       <div className="flex items-center gap-2 sm:gap-3">
         {/* 通知ドロップダウン */}
         {showNotifications && (
-          <div className="text-[#7c5a2a] hover:text-yellow-900">
+          <div className="text-[#7c5a2a] hover:text-[#8b4513] transition-colors duration-200">
             <NotificationDropdown tasks={tasks} />
           </div>
         )}
@@ -161,20 +161,18 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         <div className="relative hidden lg:block" ref={accountMenuRef}>
           <button
             onClick={() => setShowAccountMenu(!showAccountMenu)}
-            className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="flex items-center gap-2 p-2 text-[#7c5a2a] hover:text-[#8b4513] transition-colors duration-200 font-medium bg-transparent border-none shadow-none group"
           >
-            <div className="w-8 h-8 bg-gradient-to-br from-[#7c5a2a] to-[#4b2e0e] rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">
-          {user?.isGuest ? 'G' : (user?.displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U')}
-        </span>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7c5a2a] to-[#4b2e0e] flex items-center justify-center text-white text-sm font-medium transition-colors duration-200 group-hover:from-[#a67c52] group-hover:to-[#c9b29b]">
+              {user?.isGuest ? 'G' : (user?.displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U')}
             </div>
-            <span className="text-sm text-gray-700 hidden xl:block">
+            <span className="text-sm hidden xl:block">
               {user?.isGuest ? 'ゲスト' : (user?.displayName || user?.email?.split('@')[0] || 'ユーザー')}
             </span>
           </button>
 
           {showAccountMenu && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50">
+            <div className="absolute right-0 top-full mt-2 w-48 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-[#deb887]/20 py-1 z-50">
               {user?.isGuest ? (
                 <>
                   <button
@@ -182,7 +180,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                       setShowAccountMenu(false);
                       router.push('/register');
                     }}
-                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-[#7c5a2a] hover:bg-[#deb887]/10 transition-all duration-200"
                   >
                     {FaUserPlus({ className: "w-4 h-4 flex-shrink-0" })}
                     <span>新規登録</span>
@@ -192,7 +190,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                       setShowAccountMenu(false);
                       router.push('/login');
                     }}
-                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-[#7c5a2a] hover:bg-[#deb887]/10 transition-all duration-200"
                   >
                     {FaSignInAlt({ className: "w-4 h-4 flex-shrink-0" })}
                     <span>ログイン</span>
@@ -204,7 +202,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                     setShowAccountMenu(false);
                     handleSignOut();
                   }}
-                  className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="flex items-center gap-3 w-full px-4 py-2 text-sm text-[#7c5a2a] hover:bg-[#deb887]/10 transition-all duration-200"
                 >
                   {FaSignOutAlt({ className: "w-4 h-4 flex-shrink-0" })}
                   <span>ログアウト</span>
@@ -217,7 +215,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         {/* モバイル用アカウントボタン */}
         <button
           onClick={() => setShowAccountMenu(!showAccountMenu)}
-          className="lg:hidden p-1 w-10 h-10 bg-gradient-to-br from-[#7c5a2a] to-[#4b2e0e] rounded-full flex items-center justify-center hover:shadow-md transition-all"
+          className="lg:hidden p-1 w-10 h-10 bg-gradient-to-br from-[#7c5a2a] to-[#4b2e0e] rounded-full flex items-center justify-center hover:shadow-lg transition-all duration-200 hover:scale-105"
           title="アカウントメニュー"
         >
           <span className="text-white text-sm font-medium">
@@ -227,7 +225,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
         {/* モバイル用ドロップダウンメニュー */}
         {showAccountMenu && (
-          <div className="absolute lg:hidden right-2 top-16 w-44 sm:w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-[9999]" ref={mobileAccountMenuRef}>
+          <div className="absolute lg:hidden right-2 top-16 w-44 sm:w-48 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-[#deb887]/20 py-1 z-[9999]" ref={mobileAccountMenuRef}>
             {user?.isGuest ? (
               <>
                 <button
@@ -235,7 +233,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                     setShowAccountMenu(false);
                     router.push('/register');
                   }}
-                  className="flex items-center gap-3 w-full px-3 sm:px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="flex items-center gap-3 w-full px-3 sm:px-4 py-2 text-sm text-[#7c5a2a] hover:bg-[#deb887]/10 transition-all duration-200"
                 >
                   {FaUserPlus({ className: "w-4 h-4 flex-shrink-0" })}
                   <span>新規登録</span>
@@ -245,7 +243,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                     setShowAccountMenu(false);
                     router.push('/login');
                   }}
-                  className="flex items-center gap-3 w-full px-3 sm:px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="flex items-center gap-3 w-full px-3 sm:px-4 py-2 text-sm text-[#7c5a2a] hover:bg-[#deb887]/10 transition-all duration-200"
                 >
                   {FaSignInAlt({ className: "w-4 h-4 flex-shrink-0" })}
                   <span>ログイン</span>
@@ -257,7 +255,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                   setShowAccountMenu(false);
                   handleSignOut();
                 }}
-                className="flex items-center gap-3 w-full px-3 sm:px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-3 w-full px-3 sm:px-4 py-2 text-sm text-[#7c5a2a] hover:bg-[#deb887]/10 transition-all duration-200"
               >
                 {FaSignOutAlt({ className: "w-4 h-4 flex-shrink-0" })}
                 <span>ログアウト</span>

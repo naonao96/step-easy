@@ -162,22 +162,22 @@ export const Character: React.FC<CharacterProps> = ({
     return (
       <div className="character-container relative flex justify-center">
         {/* メッセージバブル（キャラクターの上に配置） */}
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-4 w-80 max-w-sm pointer-events-none">
-          <div className="bg-gradient-to-br from-blue-50/95 to-indigo-100/95 backdrop-blur-md rounded-2xl border border-blue-200/50 shadow-2xl transition-all duration-300 p-4 w-80 pointer-events-none">
-            <div className={`text-gray-800 font-medium leading-relaxed text-xs ${!isTyping ? 'cursor-pointer' : 'cursor-default'}`} onClick={!isTyping ? onMessageClick : undefined}>
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-4 w-72 max-w-sm pointer-events-none">
+          <div className="bg-gradient-to-br from-[#f7ecd7] to-[#f5e9da] rounded-2xl border border-[#deb887] shadow-2xl transition-all duration-300 p-4 w-72 pointer-events-none">
+            <div className={`text-[#7c5a2a] font-medium leading-relaxed text-sm sm:text-base text-center ${!isTyping ? 'cursor-pointer' : 'cursor-default'}`} onClick={!isTyping ? onMessageClick : undefined}>
               {displayedMessage || message}
               {isTyping && <span className="animate-blink ml-1">|</span>}
             </div>
             {/* 尻尾部分（下向き） */}
-            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gradient-to-br from-blue-50/95 to-indigo-100/95 border-r border-b border-blue-200/50 transform rotate-45 -translate-y-1/2 pointer-events-none"></div>
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gradient-to-br from-[#f7ecd7] to-[#f5e9da] border-r border-b border-[#deb887] rotate-45 -translate-y-1/2 pointer-events-none"></div>
           </div>
         </div>
         
         {/* キャラクター（感情メニュー付き）- モバイル版専用デザイン */}
         <div className="relative">
           <div 
-            className="cursor-pointer flex-shrink-0 relative" 
-            style={{ height: '3cm', width: 'auto', display: 'flex', alignItems: 'center', zIndex: 40 }} 
+            className="cursor-pointer flex-shrink-0 relative z-40" 
+            style={{ height: '3cm', width: 'auto', display: 'flex', alignItems: 'center' }} 
             onClick={onClick}
           >
             {/* 半透明の円（半径2cm）- 背面に配置 */}
@@ -213,7 +213,7 @@ export const Character: React.FC<CharacterProps> = ({
             
             {/* 感情記録メニュー - キャラクター画像の中心に配置 */}
             {showEmotionMenu && (
-              <div className="absolute inset-0 z-[50]">
+              <div className="absolute inset-0 z-40">
                 <EmotionHoverMenu
                   isVisible={showEmotionMenu}
                   onClose={() => setShowEmotionMenu(false)}
@@ -233,29 +233,25 @@ export const Character: React.FC<CharacterProps> = ({
   // デスクトップ版の吹き出し表示
   if (bubblePosition === 'left') {
     return (
-      <div className="flex items-end gap-4">
-        {/* モダンなスピーチバルーン（Radial Menu表示時は左にスライド） */}
+      <div className="character-container relative flex justify-center">
+        {/* メッセージバブル（キャラクターの上に配置） */}
         {showMessage && (
-          <div className="mb-4 transition-all duration-300 pointer-events-auto" style={{ minHeight: '3cm', height: 'auto', transform: showEmotionMenu ? 'translateX(-120px)' : 'translateX(0px)', marginTop: '40px', zIndex: 50, right: 'calc(50% + 2cm)' }}>
-            <div className="relative">
-              <div
-                className="bg-gradient-to-br from-blue-50/95 to-indigo-100/95 backdrop-blur-md rounded-2xl border border-blue-200/50 shadow-2xl transition-all duration-300 p-4 w-80 pointer-events-auto"
-              >
-                <div className={`text-gray-800 font-medium leading-relaxed text-xs ${!isTyping ? 'cursor-pointer' : 'cursor-default'}`} onClick={!isTyping ? handleMessageClick : undefined}>
-                  {displayedMessage || message}
-                  {isTyping && <span className="animate-blink ml-1">|</span>}
-                </div>
+          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-4 w-72 max-w-sm pointer-events-auto">
+            <div className="bg-gradient-to-br from-[#f7ecd7] to-[#f5e9da] rounded-2xl border border-[#deb887] shadow-2xl transition-all duration-300 p-4 w-72 pointer-events-auto">
+              <div className={`text-[#7c5a2a] font-medium leading-relaxed text-sm sm:text-base text-center ${!isTyping ? 'cursor-pointer' : 'cursor-default'}`} onClick={!isTyping ? handleMessageClick : undefined}>
+                {displayedMessage || message}
+                {isTyping && <span className="animate-blink ml-1">|</span>}
               </div>
-              {/* 尻尾部分（右辺に取り付け） */}
-              <div className="absolute top-1/2 -right-2 w-4 h-4 bg-gradient-to-br from-blue-50/95 to-indigo-100/95 border-r border-b border-blue-200/50 transform rotate-45 -translate-y-1/2 pointer-events-none"></div>
+              {/* 尻尾部分（下向き） */}
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gradient-to-br from-[#f7ecd7] to-[#f5e9da] border-r border-b border-[#deb887] rotate-45 -translate-y-1/2 pointer-events-none"></div>
             </div>
           </div>
         )}
         {/* キャラクター */}
         <div 
           ref={characterRef}
-          className="cursor-pointer flex-shrink-0 relative" 
-          style={{ height: '3cm', width: 'auto', display: 'flex', alignItems: 'center', zIndex: 40 }} 
+          className="cursor-pointer flex-shrink-0 relative z-40" 
+          style={{ height: '3cm', width: 'auto', display: 'flex', alignItems: 'center' }} 
           onClick={onClick}
           onMouseEnter={() => setShowEmotionMenu(true)}
           onMouseLeave={() => setShowEmotionMenu(false)}
@@ -291,7 +287,6 @@ export const Character: React.FC<CharacterProps> = ({
             </div>
           )}
           
-
           
           {/* 感情ログホバーメニュー（Radial Menu） */}
           <EmotionHoverMenu

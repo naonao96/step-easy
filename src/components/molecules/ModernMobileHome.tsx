@@ -419,7 +419,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   );
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen mt-4">
       {/* Header */}
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="px-4 py-3">
@@ -539,14 +539,14 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
         <div className="character-container relative flex justify-center">
           {/* メッセージバブル（キャラクターの上に配置） */}
           {showMessage && (
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-4 w-80 max-w-sm">
-              <div className="bg-gradient-to-br from-blue-50/95 to-indigo-100/95 backdrop-blur-md rounded-2xl border border-blue-200/50 shadow-2xl transition-all duration-300 p-4 w-80">
-                <div className={`text-gray-800 font-medium leading-relaxed text-xs ${!isTyping ? 'cursor-pointer' : 'cursor-default'}`} onClick={!isTyping ? onMessageClick : undefined}>
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-4 w-72 max-w-sm">
+              {/* 尻尾を背面に配置（z-index指定なし、枠・影なし、グラデ一致） */}
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gradient-to-br from-[#fff8f0]/95 to-[#f5e6d3]/95 rotate-45 -translate-y-1/2 pointer-events-none"></div>
+              <div className="relative z-10 bg-gradient-to-br from-[#fff8f0]/95 to-[#f5e6d3]/95 backdrop-blur-md rounded-2xl shadow-2xl transition-all duration-300 p-4 w-72">
+                <div className={`text-[#8b4513] font-medium leading-relaxed text-sm text-center ${!isTyping ? 'cursor-pointer' : 'cursor-default'}`} onClick={!isTyping ? onMessageClick : undefined}>
                   <span>{displayedMessage}</span>
                   {isTyping && <span className="animate-blink ml-1">|</span>}
                 </div>
-                {/* 尻尾部分（下向き） */}
-                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gradient-to-br from-blue-50/95 to-indigo-100/95 border-r border-b border-blue-200/50 transform rotate-45 -translate-y-1/2 pointer-events-none"></div>
               </div>
             </div>
           )}
@@ -554,8 +554,8 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
           {/* キャラクター（感情メニュー付き）- モバイル版専用デザイン */}
           <div className="relative">
             <div 
-              className="cursor-pointer flex-shrink-0 relative" 
-              style={{ height: '3cm', width: 'auto', display: 'flex', alignItems: 'center', zIndex: 40 }} 
+              className="cursor-pointer flex-shrink-0 z-30"
+              style={{ height: '3cm', width: 'auto', display: 'flex', alignItems: 'center' }} 
               onClick={(e) => {
                 e.stopPropagation(); // イベント伝播を停止
                 handleMessageClick();
@@ -599,11 +599,9 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
                 </div>
               )}
               
-
-              
               {/* 感情記録メニュー - キャラクター画像の中心に配置 */}
               {showEmotionMenu && (
-                <div className="absolute inset-0 z-[50]">
+                <div className="absolute inset-0 z-40">
                   <EmotionHoverMenu
                     isVisible={showEmotionMenu}
                     onClose={handleCloseEmotionMenu}
@@ -619,7 +617,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
             {/* 感情記録ボタン（モバイル版専用） */}
             <button
               onClick={() => setShowEmotionMenu(!showEmotionMenu)}
-              className="absolute -bottom-8 -right-8 w-14 h-14 bg-pink-400/30 backdrop-blur-sm rounded-full shadow-lg border-2 border-white flex items-center justify-center text-white hover:bg-pink-500/30 active:scale-95 transition-all duration-200 z-[50]"
+              className="absolute -bottom-8 -right-8 w-14 h-14 bg-pink-400/30 backdrop-blur-sm rounded-full shadow-lg border-2 border-white flex items-center justify-center text-white hover:bg-pink-500/30 active:scale-95 transition-all duration-200 z-40"
               title="感情を記録"
               data-emotion-button="true"
             >

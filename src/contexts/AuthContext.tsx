@@ -15,6 +15,7 @@ interface AuthUser {
   isGuest?: boolean;
   isPremium?: boolean;
   planType?: 'guest' | 'free' | 'premium';
+  notification_settings?: { [key: string]: boolean };
 }
 
 interface AuthContextType {
@@ -59,7 +60,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           id,
           email,
           display_name,
-          plan_type
+          plan_type,
+          notification_settings
         `)
         .eq('id', userId)
         .single();
@@ -74,6 +76,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: userData.email as string,
         displayName: userData.display_name as string,
         planType: (userData.plan_type as 'guest' | 'free' | 'premium') || 'free',
+        notification_settings: userData.notification_settings as { [key: string]: boolean } || {
+          task: true,
+          habit: true,
+          subscription: true,
+          system: true,
+          ai: true,
+        },
       };
     } catch (error) {
       console.error('Error in fetchUserFromDatabase:', error);

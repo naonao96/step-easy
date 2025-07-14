@@ -18,7 +18,7 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
   isLoading
 }) => {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col pt-24">
       {/* ヒーローセクション */}
       <section className="flex-1 flex flex-col justify-center px-6 py-8 relative overflow-hidden">
         {/* 背景装飾 */}

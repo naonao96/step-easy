@@ -565,7 +565,7 @@ export default function ProgressPage() {
       )}
 
       {/* デスクトップ版（従来の表示） */}
-      <div className="hidden md:block px-4 sm:px-6 py-4 sm:py-6">
+      <div className="hidden md:block px-4 sm:px-6 py-4 sm:py-6 mt-4">
         <div className="max-w-7xl mx-auto">
           {/* タブナビゲーション */}
           <div className="border-b border-[#deb887] mb-6">

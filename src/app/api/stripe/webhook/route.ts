@@ -3,6 +3,7 @@ import { stripe } from '@/lib/stripe';
 import { createClient } from '@supabase/supabase-js';
 import { headers } from 'next/headers';
 import type Stripe from 'stripe';
+import { createSubscriptionNotification } from '@/lib/notifications';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -88,7 +89,12 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
 
   // 体験期間開始の通知
   if (subscription.status === 'trialing') {
-    await createNotification(userId, 'trial_started', '無料体験期間が開始されました', '7日間、すべてのプレミアム機能をお試しいただけます。');
+    await createSubscriptionNotification(
+      userId, 
+      'trial_started', 
+      '無料体験期間が開始されました', 
+      '7日間、すべてのプレミアム機能をお試しいただけます。'
+    );
   }
 }
 
@@ -128,48 +134,78 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
+  console.log('🔄 handleSubscriptionDeleted 開始');
+  console.log('📊 サブスクリプション情報:', {
+    id: subscription.id,
+    status: subscription.status,
+    cancel_at_period_end: subscription.cancel_at_period_end,
+    metadata: subscription.metadata
+  });
+
   const userId = subscription.metadata?.userId;
-  if (!userId) return;
+  if (!userId) {
+    console.log('❌ userIdが見つかりません');
+    return;
+  }
+
+  console.log('👤 ユーザーID:', userId);
 
   const item = subscription.items.data[0];
   const currentPeriodEnd = item?.current_period_end;
 
-  await supabase
-    .from('subscriptions')
-    .update({
-      status: 'canceled',
-      cancel_at_period_end: true,
-      updated_at: new Date(),
-    })
-    .eq('user_id', userId);
+  console.log('📅 期間終了日:', currentPeriodEnd ? new Date(currentPeriodEnd * 1000) : 'なし');
 
-  // サブスクリプションがキャンセルされた場合のplan_type更新
-  if (subscription.status === 'canceled') {
-    if (subscription.cancel_at_period_end && currentPeriodEnd) {
-      // 期間終了キャンセルの場合：期間終了日をチェック
-      const periodEndDate = new Date(currentPeriodEnd * 1000);
-      const now = new Date();
-      
-      if (now >= periodEndDate) {
-        console.log(`Period ended for user ${userId}, updating plan_type to free`);
+  try {
+    await supabase
+      .from('subscriptions')
+      .update({
+        status: 'canceled',
+        cancel_at_period_end: true,
+        updated_at: new Date(),
+      })
+      .eq('user_id', userId);
+
+    console.log('✅ サブスクリプション情報を更新しました');
+
+    // サブスクリプションがキャンセルされた場合のplan_type更新
+    if (subscription.status === 'canceled') {
+      if (subscription.cancel_at_period_end && currentPeriodEnd) {
+        // 期間終了キャンセルの場合：期間終了日をチェック
+        const periodEndDate = new Date(currentPeriodEnd * 1000);
+        const now = new Date();
+        
+        if (now >= periodEndDate) {
+          console.log(`Period ended for user ${userId}, updating plan_type to free`);
+          await supabase
+            .from('users')
+            .update({ plan_type: 'free' })
+            .eq('id', userId);
+        } else {
+          console.log(`Period not ended yet for user ${userId}, keeping premium until ${periodEndDate}`);
+        }
+      } else {
+        // 強制キャンセルの場合：即座にfreeに更新
+        console.log(`Forced cancellation for user ${userId}, updating plan_type to free immediately`);
         await supabase
           .from('users')
           .update({ plan_type: 'free' })
           .eq('id', userId);
-      } else {
-        console.log(`Period not ended yet for user ${userId}, keeping premium until ${periodEndDate}`);
       }
-    } else {
-      // 強制キャンセルの場合：即座にfreeに更新
-      console.log(`Forced cancellation for user ${userId}, updating plan_type to free immediately`);
-      await supabase
-        .from('users')
-        .update({ plan_type: 'free' })
-        .eq('id', userId);
     }
-  }
 
-  await createNotification(userId, 'subscription_canceled', 'サブスクリプションが解約されました', '現在の期間終了までプレミアム機能をご利用いただけます。');
+    console.log('🔔 サブスクリプションキャンセル通知を作成中...');
+    const notificationResult = await createSubscriptionNotification(
+      userId, 
+      'subscription_canceled', 
+      'サブスクリプションが解約されました', 
+      '現在の期間終了までプレミアム機能をご利用いただけます。'
+    );
+
+    console.log('📋 通知作成結果:', notificationResult);
+
+  } catch (error) {
+    console.error('❌ handleSubscriptionDeleted エラー:', error);
+  }
 }
 
 async function handleTrialWillEnd(subscription: Stripe.Subscription) {
@@ -177,7 +213,7 @@ async function handleTrialWillEnd(subscription: Stripe.Subscription) {
   if (!userId) return;
 
   // 体験期間終了3日前の通知
-  await createNotification(
+  await createSubscriptionNotification(
     userId, 
     'trial_ending', 
     '無料体験期間が終了します', 
@@ -199,7 +235,12 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
       status: 'succeeded',
     });
 
-  await createNotification(userId, 'payment_succeeded', '支払いが完了しました', 'プレミアム機能をご利用いただけます。');
+  await createSubscriptionNotification(
+    userId, 
+    'subscription_payment_success', 
+    '支払いが完了しました', 
+    'プレミアム機能をご利用いただけます。'
+  );
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
@@ -216,17 +257,12 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
       status: 'failed',
     });
 
-  await createNotification(userId, 'payment_failed', '支払いに失敗しました', 'お支払い方法をご確認ください。');
+  await createSubscriptionNotification(
+    userId, 
+    'subscription_payment_failed', 
+    '支払いに失敗しました', 
+    'お支払い方法をご確認ください。'
+  );
 }
 
-async function createNotification(userId: string, type: string, title: string, message: string) {
-  await supabase
-    .from('notifications')
-    .insert({
-      user_id: userId,
-      type,
-      title,
-      message,
-      created_at: new Date(),
-    });
-} 
+ 

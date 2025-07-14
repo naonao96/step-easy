@@ -30,9 +30,9 @@ export function LeftSidebar({ className = '' }: LeftSidebarProps) {
 
   // タイマーアイコンの色を決定
   const getTimerIconColor = () => {
-    if (!activeExecution) return 'text-gray-400 hover:text-gray-500'
-    if (isRunning) return 'text-[#7c5a2a] animate-pulse'
-    return 'text-[#7c5a2a]' // 一時停止中
+    if (!activeExecution) return 'text-[#7c5a2a]/60 hover:text-[#7c5a2a]'
+    if (isRunning) return 'text-[#8b4513] animate-pulse'
+    return 'text-[#8b4513]' // 一時停止中
   }
 
   // タイマーアイコンクリック時の動作
@@ -46,7 +46,7 @@ export function LeftSidebar({ className = '' }: LeftSidebarProps) {
   const getAvailableActionItems = () => {
     const baseItems = [
       {
-        icon: () => FaChartBar({ className: 'w-6 h-6 shrink-0 text-[#7c5a2a] hover:text-yellow-900' }),
+        icon: () => FaChartBar({ className: 'w-6 h-6 shrink-0 text-[#7c5a2a] hover:text-[#8b4513] transition-colors' }),
         label: '統計情報',
         href: '/progress'
       }
@@ -56,12 +56,12 @@ export function LeftSidebar({ className = '' }: LeftSidebarProps) {
     if (!isGuest) {
       baseItems.push(
         {
-          icon: () => FaArchive({ className: 'w-6 h-6 shrink-0 text-[#7c5a2a] hover:text-yellow-900' }),
+          icon: () => FaArchive({ className: 'w-6 h-6 shrink-0 text-[#7c5a2a] hover:text-[#8b4513] transition-colors' }),
           label: 'アーカイブ',
           href: '/archive'
         },
         {
-          icon: () => FaCog({ className: 'w-6 h-6 shrink-0 text-[#7c5a2a] hover:text-yellow-900' }),
+          icon: () => FaCog({ className: 'w-6 h-6 shrink-0 text-[#7c5a2a] hover:text-[#8b4513] transition-colors' }),
           label: '設定',
           href: '/settings'
         }
@@ -79,26 +79,26 @@ export function LeftSidebar({ className = '' }: LeftSidebarProps) {
 
   return (
     <div 
-      className={`absolute left-0 top-0 h-screen wood-frame wood-frame-sidebar transition-all duration-200 ease-out ${
+      className={`fixed left-0 top-16 md:top-20 h-screen z-30 bg-gradient-to-b from-[#f7ecd7] to-[#f5e9da] backdrop-blur-sm border-r border-[#deb887]/30 shadow-lg transition-all duration-200 ease-out ${
         isExpanded ? 'w-60' : 'w-16'
       } ${className}`}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
-      style={{height: '100vh'}}
+      style={{height: 'calc(100vh - 4rem)'}}
     >
-      <div className="wood-content p-2  h-full flex flex-col">
+      <div className="p-2 h-full flex flex-col">
         {/* タスク実行エリア（境界線で区別） */}
-        <div className="mb-6 pb-4 border-b border-gray-100">
+        <div className="mb-6 pb-4 border-b border-[#deb887]/40">
           <button
             onClick={handleTimerClick}
-            className={`flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors w-full ${
+            className={`flex items-center p-3 rounded-lg hover:bg-[#f5f5dc]/80 transition-colors w-full ${
               isExpanded ? 'justify-start' : 'justify-center'
             }`}
             title={!isExpanded ? (runningTask ? `実行中: ${runningTask.title}` : 'タスク実行') : undefined}
           >
             {FaClock({ className: `w-6 h-6 shrink-0 ${getTimerIconColor()}` })}
             {isExpanded && (
-              <span className="ml-3 text-sm font-medium text-gray-700">
+              <span className="ml-3 text-sm font-medium text-[#8b4513]">
                 タスク実行
               </span>
             )}
@@ -120,14 +120,14 @@ export function LeftSidebar({ className = '' }: LeftSidebarProps) {
             <button
               key={index}
               onClick={() => handleActionClick(item.href)}
-              className={`flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors ${
+              className={`flex items-center p-3 rounded-lg hover:bg-[#f5f5dc]/80 transition-colors ${
                 isExpanded ? 'justify-start' : 'justify-center'
               }`}
               title={!isExpanded ? item.label : undefined}
             >
               {item.icon()}
               {isExpanded && (
-                <span className="ml-3 text-sm font-medium text-gray-700">
+                <span className="ml-3 text-sm font-medium text-[#8b4513]">
                   {item.label}
                 </span>
               )}
@@ -137,10 +137,10 @@ export function LeftSidebar({ className = '' }: LeftSidebarProps) {
 
         {/* ゲストユーザー向けメッセージ（展開時のみ表示） */}
         {isExpanded && isGuest && (
-          <div className="mt-auto pt-4 border-t border-gray-100">
-            <div className="bg-blue-50 rounded-lg p-3">
-              <p className="text-xs text-blue-700 text-center">
-                📚 アーカイブと設定は<br/>
+          <div className="mt-auto pt-4 border-t border-[#deb887]/40">
+            <div className="bg-[#f0e8d8]/80 rounded-lg p-3 border border-[#deb887]/30">
+              <p className="text-xs text-[#7c5a2a] text-center">
+                アーカイブと設定は<br/>
                 ログイン後に利用可能
               </p>
             </div>

@@ -544,7 +544,7 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], habits = [], sel
             return (
               <div
                 key={i}
-                className={`relative p-3 text-center cursor-pointer rounded-xl transition-all duration-200 flex flex-col items-center justify-between h-20 ${
+                className={`p-3 text-center cursor-pointer rounded-xl transition-all duration-200 flex flex-col items-center justify-between h-20 ${
                   isTodayDate 
                     ? 'bg-green-100/50 ring-2 ring-green-300 shadow-sm' 
                     : isClickedDate

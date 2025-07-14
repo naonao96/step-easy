@@ -66,14 +66,14 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           showNotifications={showNotifications}
           showMobileMenu={false}
           onMobileMenuToggle={undefined}
-          className="h-20 flex-shrink-0 wood-frame wood-frame-header"
+          className="h-20 flex-shrink-0"
         />
         {/* メインエリア（ヘッダー下の残りスペース） */}
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1">
           {/* サイドバー（固定幅・非縮小） */}
           <LeftSidebar className="hidden lg:block w-16 flex-shrink-0" />
           {/* メインコンテンツ（残りスペース・スクロール可能） */}
-          <main className="flex-1 overflow-y-auto md:pb-0 pb-20">
+          <main className="flex-1 overflow-y-auto md:pb-0 pb-20 pt-16 md:pt-20">
           {children}
         </main>
         </div>
@@ -103,11 +103,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         showNotifications={showNotifications}
         showMobileMenu={false}
         onMobileMenuToggle={undefined}
-        className="h-20 flex-shrink-0 wood-frame wood-frame-header"
+        className="h-20 flex-shrink-0"
       />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1">
         <LeftSidebar className="hidden md:block w-16 flex-shrink-0" />
-        <main className="flex-1 overflow-y-auto md:pb-0 pb-20">
+        <main className="flex-1 overflow-y-auto md:pb-0 pb-20 pt-16 md:pt-20">
         {children}
       </main>
       </div>
