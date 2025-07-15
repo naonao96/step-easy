@@ -82,11 +82,11 @@ export const useEmotionLog = (): UseEmotionLogReturn => {
 
   // 感情記録を保存
   const recordEmotion = useCallback(async (emotionType: EmotionType, timePeriod?: TimePeriod): Promise<boolean> => {
+    // 現在の時間帯を取得（サーバー側と同期）
+    const currentPeriod = getCurrentTimePeriod();
+    
     try {
       setError(null);
-
-      // 現在の時間帯を取得（サーバー側と同期）
-      const currentPeriod = getCurrentTimePeriod();
 
       // 即座に楽観的更新（視覚的フィードバックを即座に消すため）
       const optimisticRecord = {

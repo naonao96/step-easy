@@ -103,9 +103,10 @@ export const useEmotionStore = create<EmotionStore>((set, get) => ({
 
   // 感情記録を保存
   recordEmotion: async (emotionType, timePeriod) => {
+    const currentPeriod = timePeriod || getEmotionTimePeriod();
+    
     try {
       set({ error: null });
-      const currentPeriod = timePeriod || getEmotionTimePeriod();
 
       // 楽観的更新
       get().setOptimisticRecord(currentPeriod, emotionType);
