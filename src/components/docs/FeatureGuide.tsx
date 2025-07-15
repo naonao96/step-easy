@@ -459,9 +459,9 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
   };
 
   return (
-    <div className={`bg-[#f5f5dc] rounded-lg shadow-md ${className} relative`}>
+    <div className={`bg-transparent rounded-lg shadow-md ${className} relative h-screen flex flex-col`}>
       {/* ヘッダー */}
-      <div className="border-b border-[#deb887] p-6 sticky top-0 bg-[#f5f5dc]/95 backdrop-blur z-10">
+      <div className="border-b border-[#deb887] p-6 bg-white/90 backdrop-blur-sm z-10 flex-shrink-0">
         <div className="flex items-center gap-4 mb-4">
           {isMobile && (
             <button
@@ -494,10 +494,10 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
         </div>
       </div>
 
-      <div className="flex">
+      <div className="flex flex-1 overflow-hidden">
         {/* デスクトップサイドバー */}
         {!isMobile && (
-          <div className="w-64 border-r border-[#deb887] p-4">
+          <div className="w-64 border-r border-[#deb887] p-4 flex-shrink-0 overflow-y-auto bg-white/90 backdrop-blur-sm">
             <nav className="space-y-2">
               {featureSections.map((section) => {
                 const IconComponent = section.icon;
@@ -529,27 +529,20 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
         )}
 
         {/* メインコンテンツ */}
-        <div className="flex-1 p-6">
+        <div className="flex-1 p-6 overflow-y-auto bg-transparent">
           {filteredSections.map((section) => {
             if (section.id !== activeSection) return null;
             
-            const IconComponent = section.icon;
-            
             return (
               <div key={section.id}>
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 bg-[#deb887] rounded-2xl flex items-center justify-center">
-                    {(IconComponent as any)({ className: "w-6 h-6 text-[#8b4513]" })}
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-[#8b4513]">{section.title}</h2>
-                    <p className="text-[#7c5a2a]">{section.description}</p>
-                  </div>
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold text-[#8b4513] mb-2">{section.title}</h2>
+                  <p className="text-[#7c5a2a]">{section.description}</p>
                 </div>
                 
                 <div className="space-y-4">
                   {section.features.map((feature, index) => (
-                    <div key={index} className="border border-[#deb887] rounded-2xl p-6 hover:shadow-lg transition-shadow">
+                    <div key={index} className="border border-[#deb887] rounded-2xl p-6 hover:shadow-lg transition-shadow bg-white/80 backdrop-blur">
                       <div className="flex items-start justify-between mb-3">
                         <h3 className="text-lg font-bold text-[#8b4513]">{feature.name}</h3>
                         {getStatusBadge(feature.status)}
@@ -558,7 +551,7 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
                       <p className="text-[#7c5a2a] mb-4 leading-relaxed">{feature.description}</p>
                       
                       {feature.howToUse && (
-                        <div className="bg-[#deb887] rounded-xl p-4">
+                        <div className="bg-[#deb887]/80 backdrop-blur rounded-xl p-4">
                           <h4 className="text-sm font-bold text-[#8b4513] mb-2">使い方</h4>
                           <p className="text-sm text-[#7c5a2a] leading-relaxed">{feature.howToUse}</p>
                         </div>
@@ -582,7 +575,7 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
           />
           
           {/* サイドバー */}
-          <div className="w-80 bg-[#f5f5dc]/95 backdrop-blur border-l border-[#deb887] shadow-2xl overflow-y-auto">
+          <div className="w-80 bg-white/95 backdrop-blur border-l border-[#deb887] shadow-2xl overflow-y-auto">
             <div className="p-6 border-b border-[#deb887]">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold text-[#8b4513]">機能一覧</h3>

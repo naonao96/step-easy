@@ -73,7 +73,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           {/* サイドバー（固定幅・非縮小） */}
           <LeftSidebar className="hidden lg:block w-16 flex-shrink-0" />
           {/* メインコンテンツ（残りスペース・スクロール可能） */}
-          <main className="flex-1 overflow-y-auto md:pb-0 pb-20 pt-16 md:pt-20">
+          <main className="flex-1 overflow-y-auto md:pb-0 pb-20 pt-16 md:pt-20 lg:pl-16">
           {children}
         </main>
         </div>
@@ -107,7 +107,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       />
       <div className="flex flex-1">
         <LeftSidebar className="hidden md:block w-16 flex-shrink-0" />
-        <main className="flex-1 overflow-y-auto md:pb-0 pb-20 pt-16 md:pt-20">
+        <main className="flex-1 overflow-y-auto md:pb-0 pb-20 pt-16 md:pt-20 md:pl-16">
         {children}
       </main>
       </div>

@@ -174,7 +174,7 @@ export const PlansContent: React.FC<PlansContentProps> = ({ onLogin, onRegister,
                 </div>
                 <div className="flex items-center gap-3">
                   {(FaStar as any)({ className: "w-4 h-4 text-[#8b4513]" })}
-                  <span className="text-[#8b4513]">タスクや感情の歩みを、いつまでも振り返れる</span>
+                  <span className="text-[#8b4513]">習慣の記録を"人生の記憶"として残せる</span>
                 </div>
                 
                 {/* 詳細プレビューボタン */}

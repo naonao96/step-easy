@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { FaBook, FaShieldAlt, FaFileContract, FaQuestionCircle, FaHome, FaTasks, FaGem, FaSignInAlt, FaUserPlus, FaEye, FaDownload, FaTimes } from 'react-icons/fa';
+import { FaBook, FaShieldAlt, FaFileContract, FaQuestionCircle, FaHome, FaGem, FaSignInAlt, FaUserPlus, FaEye, FaDownload, FaTimes } from 'react-icons/fa';
 
-export type ContentSection = 'home' | 'features' | 'plans' | 'guide' | 'privacy' | 'terms' | 'faq';
+export type ContentSection = 'home' | 'plans' | 'guide' | 'privacy' | 'terms' | 'faq';
 
 interface MobileLPLayoutProps {
   activeSection: ContentSection;
@@ -64,7 +64,6 @@ export const MobileLPLayout: React.FC<MobileLPLayoutProps> = ({
 
   const bottomNavItems = [
     { id: 'home' as ContentSection, label: 'ホーム', icon: FaHome },
-    { id: 'features' as ContentSection, label: '機能', icon: FaTasks },
     { id: 'plans' as ContentSection, label: 'プラン', icon: FaGem },
     { id: 'guide' as ContentSection, label: 'ガイド', icon: FaBook },
     { id: 'faq' as ContentSection, label: 'その他', icon: FaQuestionCircle },
@@ -76,23 +75,21 @@ export const MobileLPLayout: React.FC<MobileLPLayoutProps> = ({
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f5f5dc] via-[#deb887] to-[#f5f5dc] flex flex-col">
+    <div className="min-h-screen flex flex-col">
       {/* ヘッダー */}
-      <header className="bg-[#f5f5dc] shadow-sm border-b border-[#deb887] sticky top-0 z-40">
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between">
+      <header className="h-16 md:h-20 bg-gradient-to-b from-[#f7ecd7] to-[#f5e9da] backdrop-blur-sm shadow-lg border-b border-[#deb887]/30 sticky top-0 z-40">
+        <div className="px-4 sm:px-6 h-full flex items-center">
+          <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
               <Image
                 src="/logo.png"
                 alt="StepEasy"
-                width={32}
-                height={32}
-                className="drop-shadow-lg"
+                width={80}
+                height={80}
+                className="h-8 sm:h-10 w-auto drop-shadow-lg"
+                priority
+                quality={100}
               />
-              <div>
-                <h1 className="text-lg font-bold text-[#8b4513]">StepEasy</h1>
-                <p className="text-xs text-[#7c5a2a]">習慣を育てる、成長を実感する</p>
-              </div>
             </div>
             
             {/* ヘッダーアクション */}
@@ -143,43 +140,11 @@ export const MobileLPLayout: React.FC<MobileLPLayoutProps> = ({
         {children}
       </main>
 
-      {/* アクションボタンエリア（プランページ以外で表示） */}
-      {activeSection !== 'plans' && (
-        <div className="fixed bottom-20 left-4 right-4 z-30">
-          <div className="bg-[#f5f5dc] rounded-2xl shadow-xl border border-[#deb887] p-4">
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                onClick={onLogin}
-                disabled={isLoading}
-                className="flex flex-col items-center gap-1 px-4 py-3 bg-[#8b4513] hover:bg-[#7c5a2a] text-white rounded-xl font-medium transition-colors disabled:opacity-50"
-              >
-                {(FaSignInAlt as any)({ className: "w-4 h-4" })}
-                <span className="text-xs">ログイン</span>
-              </button>
-              <button
-                onClick={onRegister}
-                disabled={isLoading}
-                className="flex flex-col items-center gap-1 px-4 py-3 bg-[#7c5a2a] hover:bg-[#8b4513] text-white rounded-xl font-medium transition-colors disabled:opacity-50"
-              >
-                {(FaUserPlus as any)({ className: "w-4 h-4" })}
-                <span className="text-xs">新規登録</span>
-              </button>
-              <button
-                onClick={onGuest}
-                disabled={isLoading}
-                className="flex flex-col items-center gap-1 px-4 py-3 bg-[#deb887] hover:bg-[#8b4513] text-[#8b4513] hover:text-white rounded-xl font-medium transition-colors disabled:opacity-50"
-              >
-                {(FaEye as any)({ className: "w-4 h-4" })}
-                <span className="text-xs">ゲスト</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* ボトムナビゲーション */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-[#f5f5dc] border-t border-[#deb887] shadow-lg z-40">
-        <div className="grid grid-cols-5 h-16">
+      <nav className="fixed bottom-0 left-0 right-0 bg-gradient-to-b from-[#f7ecd7] to-[#f5e9da] backdrop-blur-sm border-t border-[#deb887]/30 shadow-lg z-40">
+        <div className="grid grid-cols-4 h-16">
           {bottomNavItems.map((item) => {
             const IconComponent = item.icon;
             const isActive = activeSection === item.id;
@@ -190,8 +155,8 @@ export const MobileLPLayout: React.FC<MobileLPLayoutProps> = ({
                 onClick={() => onSectionChange(item.id)}
                 className={`flex flex-col items-center justify-center gap-1 transition-colors ${
                   isActive
-                    ? 'text-[#8b4513] bg-[#deb887]'
-                    : 'text-[#7c5a2a] hover:text-[#8b4513]'
+                    ? 'text-[#8b4513] bg-[#f5f5dc]/80'
+                    : 'text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc]/80'
                 }`}
               >
                 {(IconComponent as any)({ className: `w-5 h-5 ${isActive ? 'text-[#8b4513]' : ''}` })}

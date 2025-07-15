@@ -167,23 +167,23 @@ export const MobilePlansContent: React.FC<MobilePlansContentProps> = ({
                 </div>
                 <div className="flex items-center gap-3">
                   {(FaStar as any)({ className: "w-4 h-4 text-[#8b4513]" })}
-                  <span className="text-[#8b4513]">週次・月次詳細レポート</span>
+                  <span className="text-[#8b4513]">データ保存期間：無制限</span>
                 </div>
                 <div className="flex items-center gap-3">
                   {(FaStar as any)({ className: "w-4 h-4 text-[#8b4513]" })}
-                  <span className="text-[#8b4513]">性格タイプ分析</span>
+                  <span className="text-[#8b4513]">新規タスク作成：無制限の日付指定</span>
                 </div>
                 <div className="flex items-center gap-3">
                   {(FaStar as any)({ className: "w-4 h-4 text-[#8b4513]" })}
-                  <span className="text-[#8b4513]">AI専属コーチ強化</span>
+                  <span className="text-[#8b4513]">既存タスク編集：過去・未来すべて編集可能</span>
                 </div>
                 <div className="flex items-center gap-3">
                   {(FaStar as any)({ className: "w-4 h-4 text-[#8b4513]" })}
-                  <span className="text-[#8b4513]">習慣最適化提案</span>
+                  <span className="text-[#8b4513]">習慣機能：登録数無制限</span>
                 </div>
                 <div className="flex items-center gap-3">
                   {(FaStar as any)({ className: "w-4 h-4 text-[#8b4513]" })}
-                  <span className="text-[#8b4513]">感情パターン解析</span>
+                  <span className="text-[#8b4513]">習慣の記録を"人生の記憶"として残せる</span>
                 </div>
                 
                 {/* 詳細プレビューボタン */}

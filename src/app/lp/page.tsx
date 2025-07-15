@@ -7,8 +7,7 @@ import { ModernLPLayout, ContentSection } from '@/components/lp/ModernLPLayout';
 import { MobileLPLayout } from '@/components/lp/MobileLPLayout';
 import { HomeContent } from '@/components/lp/HomeContent';
 import { MobileHomeContent } from '@/components/lp/MobileHomeContent';
-import { FeaturesContent } from '@/components/lp/FeaturesContent';
-import { MobileFeaturesContent } from '@/components/lp/MobileFeaturesContent';
+
 import { PlansContent } from '@/components/lp/PlansContent';
 import { MobilePlansContent } from '@/components/lp/MobilePlansContent';
 import { FeatureGuide } from '@/components/docs/FeatureGuide';
@@ -77,8 +76,7 @@ export default function ModernLandingPage() {
       switch (activeSection) {
         case 'home':
           return <MobileHomeContent onLogin={handleLogin} onRegister={handleRegister} onGuest={handleGuest} isLoading={isLoading} />;
-        case 'features':
-          return <MobileFeaturesContent onLogin={handleLogin} onRegister={handleRegister} onGuest={handleGuest} isLoading={isLoading} />;
+
         case 'plans':
           return <MobilePlansContent onLogin={handleLogin} onRegister={handleRegister} onGuest={handleGuest} isLoading={isLoading} />;
         case 'guide':
@@ -100,8 +98,7 @@ export default function ModernLandingPage() {
       switch (activeSection) {
         case 'home':
           return <HomeContent onLogin={handleLogin} onRegister={handleRegister} onGuest={handleGuest} isLoading={isLoading} />;
-        case 'features':
-          return <FeaturesContent />;
+
         case 'plans':
           return <PlansContent onLogin={handleLogin} onRegister={handleRegister} onGuest={handleGuest} isLoading={isLoading} />;
         case 'guide':
