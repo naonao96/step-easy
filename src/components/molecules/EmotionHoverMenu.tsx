@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { EmotionType, TimePeriod, EMOTION_ICONS, TIME_PERIOD_LABELS } from '@/types/emotion';
-import { useEmotionLog } from '@/hooks/useEmotionLog';
+import { useEmotionStore } from '@/stores/emotionStore';
 
 interface EmotionHoverMenuProps {
   isVisible: boolean;
@@ -25,7 +25,15 @@ export const EmotionHoverMenu: React.FC<EmotionHoverMenuProps> = ({
   onPositionChange,
   isMobile
 }) => {
-  const { recordStatus, currentTimePeriod, recordEmotion, isLoading } = useEmotionLog();
+  // onClose プロパティのデバッグ
+  console.log('🔍 EmotionHoverMenu onClose プロパティ:', { 
+    onClose: typeof onClose, 
+    isFunction: typeof onClose === 'function',
+    onCloseToString: onClose.toString(),
+    onCloseLength: onClose.toString().length,
+    onCloseFirst50: onClose.toString().substring(0, 50)
+  });
+  const { recordStatus, currentTimePeriod, recordEmotion, isLoading } = useEmotionStore();
   const [isRecording, setIsRecording] = useState(false);
   const [selectedEmotion, setSelectedEmotion] = useState<EmotionType | null>(null);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
@@ -107,27 +115,28 @@ export const EmotionHoverMenu: React.FC<EmotionHoverMenuProps> = ({
     // 即座に視覚的フィードバック
     setSelectedEmotion(emotionType);
     setIsRecording(true);
-    console.log('感情記録開始:', { emotionType, timePeriod: currentTimePeriod });
+    console.log('🔍 感情記録開始:', { emotionType, timePeriod: currentTimePeriod, isVisible });
 
     // API呼び出しを非同期で実行（ブロッキングしない）
     recordEmotion(emotionType, currentTimePeriod)
       .then(success => {
         if (success) {
-          console.log('感情記録完了:', { emotionType, timePeriod: currentTimePeriod });
-          // 成功アニメーション（短縮）
-          setTimeout(() => {
-            setSelectedEmotion(null);
-            setIsRecording(false);
-            onClose();
-          }, 100);
+          console.log('🔍 感情記録完了:', { emotionType, timePeriod: currentTimePeriod });
+          console.log('🔍 メニューを閉じる前の isVisible:', isVisible);
+          // 成功アニメーション（即座にメニューを閉じる）
+          setSelectedEmotion(null);
+          setIsRecording(false);
+          console.log('🔍 onClose 実行前:', { onClose: typeof onClose });
+          onClose();
+          console.log('🔍 onClose 実行完了');
         } else {
-          console.error('感情記録失敗');
+          console.error('🔍 感情記録失敗');
           setSelectedEmotion(null);
           setIsRecording(false);
         }
       })
       .catch(error => {
-        console.error('感情記録エラー:', error);
+        console.error('🔍 感情記録エラー:', error);
         setSelectedEmotion(null);
         setIsRecording(false);
       });
@@ -164,7 +173,11 @@ export const EmotionHoverMenu: React.FC<EmotionHoverMenuProps> = ({
     return colorMap[color as keyof typeof colorMap] || colorMap.blue;
   };
 
-  if (!isVisible) return null;
+  console.log('🔍 EmotionHoverMenu レンダリング:', { isVisible, isDisabled });
+  if (!isVisible) {
+    console.log('🔍 EmotionHoverMenu 非表示のため return null');
+    return null;
+  }
 
   const radius = (menuSize * 0.4);
   const startAngle = -180; // 左（上向き）
@@ -177,7 +190,10 @@ export const EmotionHoverMenu: React.FC<EmotionHoverMenuProps> = ({
         className={`absolute inset-0 bg-black transition-opacity duration-200 pointer-events-auto ${
           animationPhase === 'visible' ? 'bg-opacity-20' : 'bg-opacity-0'
         }`}
-        onClick={onClose}
+        onClick={() => {
+          console.log('🔍 EmotionHoverMenu 背景クリック onClose 実行');
+          onClose();
+        }}
         data-emotion-menu
         style={{
           clipPath: `path('M ${menuPosition.x} ${menuPosition.y} A ${menuSize * 0.3} ${menuSize * 0.3} 0 0 1 ${menuPosition.x - menuSize * 0.3} ${menuPosition.y} A ${menuSize * 0.3} ${menuSize * 0.3} 0 0 1 ${menuPosition.x} ${menuPosition.y} Z')`

@@ -3,12 +3,13 @@ import { useRouter } from 'next/navigation';
 import { Task } from '@/types/task';
 import { CategoryBadge } from '@/components/atoms/CategoryBadge';
 import { Character } from './Character';
+import { getEmotionTimePeriodLabel } from '@/lib/timeUtils';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { MobileTaskTimer } from './MobileTaskTimer';
 import { MobileTaskHistory } from './MobileTaskHistory';
 
-  import { useEmotionLog } from '@/hooks/useEmotionLog';
+  import { useEmotionStore } from '@/stores/emotionStore';
   import { useMessageDisplay } from '@/hooks/useMessageDisplay';
   import ReactMarkdown from 'react-markdown';
 import { MobileTaskCarousel } from './MobileTaskCarousel';
@@ -56,6 +57,20 @@ interface ModernMobileHomeProps {
   onTabChange?: (tab: 'tasks' | 'habits') => void;
   onTaskUpdate?: () => Promise<void>; // データ更新関数を追加
   onMessageClick?: () => void; // メッセージクリック用
+  emotionLog: {
+    todayEmotions: any[];
+    recordStatus: {
+      morning: any | null;
+      afternoon: any | null;
+      evening: any | null;
+    };
+    currentTimePeriod: 'morning' | 'afternoon' | 'evening';
+    isComplete: boolean;
+    isLoading: boolean;
+    error: string | null;
+    recordEmotion: (emotionType: any, timePeriod?: any) => Promise<boolean>;
+    refreshTodayEmotions: () => Promise<void>;
+  }; // 感情記録の状態をpropsで受け取る
 }
 
 type TabType = 'tasks' | 'habits';
@@ -73,7 +88,8 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   onDateSelect,
   onTabChange,
   onTaskUpdate,
-  onMessageClick
+  onMessageClick,
+  emotionLog
 }) => {
   const router = useRouter();
   const { isGuest, isPremium, planType, canAddTaskOnDate, user } = useAuth();
@@ -89,10 +105,15 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   };
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   
-  // 感情記録の状態を取得（UIに影響しない独立したデータ取得）
-  const emotionLogData = useEmotionLog();
-  const recordStatus = useMemo(() => emotionLogData.recordStatus, [emotionLogData.recordStatus]);
-  const currentTimePeriod = useMemo(() => emotionLogData.currentTimePeriod, [emotionLogData.currentTimePeriod]);
+  // 感情記録の状態をpropsから取得（一元管理）
+  const recordStatus = useMemo(() => {
+    console.log('🔍 ModernMobileHome recordStatus 更新:', emotionLog.recordStatus);
+    return emotionLog.recordStatus;
+  }, [emotionLog.recordStatus]);
+  const currentTimePeriod = useMemo(() => {
+    console.log('🔍 ModernMobileHome currentTimePeriod 更新:', emotionLog.currentTimePeriod);
+    return emotionLog.currentTimePeriod;
+  }, [emotionLog.currentTimePeriod]);
   
   // タスクプレビュー・編集モーダル関連の状態
   const [selectedTask, setSelectedTask] = useState<any>(null);
@@ -106,6 +127,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   
   // 感情メニューの開閉状態を管理
   const setShowEmotionMenu = (value: boolean) => {
+    console.log('🔍 setShowEmotionMenu 実行:', { 前の値: showEmotionMenuRef.current, 新しい値: value });
     showEmotionMenuRef.current = value;
     forceUpdate({});
   };
@@ -272,7 +294,10 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
 
   // 感情記録メニューを閉じる
   const handleCloseEmotionMenu = () => {
+    console.log('🔍 handleCloseEmotionMenu 実行前:', showEmotionMenu);
+    console.log('🔍 handleCloseEmotionMenu 関数ID:', Date.now());
     setShowEmotionMenu(false);
+    console.log('🔍 handleCloseEmotionMenu 実行後:', showEmotionMenu);
   };
 
   // 感情メニューの外部クリック処理
@@ -564,7 +589,10 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
               {/* 半透明の円（半径2cm）- 背面に配置 */}
               <div className={`
                 absolute inset-0 w-32 h-32 rounded-full border-2 transform -translate-x-1/2 -translate-y-1/2
-                ${recordStatus && currentTimePeriod && recordStatus[currentTimePeriod] === null ? 'background-circle-unrecorded' : 'bg-blue-200/20 border-blue-300/30'}
+                ${recordStatus && currentTimePeriod && (
+                  recordStatus[currentTimePeriod] === null || 
+                  (recordStatus[currentTimePeriod] && recordStatus[currentTimePeriod].id?.toString().startsWith('temp-'))
+                ) ? 'background-circle-unrecorded' : 'bg-blue-200/20 border-blue-300/30'}
               `} style={{ left: '50%', top: '50%', zIndex: -1 }}></div>
               
               <Image
@@ -577,7 +605,10 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
                 style={{ height: '3cm', width: 'auto', objectFit: 'contain', display: 'block' }}
                 className={`
                   transition-transform transition-shadow duration-200 active:scale-110
-                  ${recordStatus && currentTimePeriod && recordStatus[currentTimePeriod] === null ? 'character-unrecorded' : ''}
+                  ${recordStatus && currentTimePeriod && (
+                    recordStatus[currentTimePeriod] === null || 
+                    (recordStatus[currentTimePeriod] && recordStatus[currentTimePeriod].id?.toString().startsWith('temp-'))
+                  ) ? 'character-unrecorded' : ''}
                 `}
               />
               
@@ -586,25 +617,31 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
                 <div className="absolute left-1/2 -translate-x-1/2 -bottom-8 z-30 w-auto min-w-fit max-w-md flex justify-center pointer-events-none">
                   <span className={`
                     bg-white/90 border border-gray-200 rounded-full px-4 py-1 text-sm font-bold text-gray-800 shadow-md pointer-events-none select-none
-                    ${recordStatus && currentTimePeriod && recordStatus[currentTimePeriod] === null ? 'border-blue-400 bg-blue-50' : ''}
+                    ${recordStatus && currentTimePeriod && (
+                      recordStatus[currentTimePeriod] === null || 
+                      (recordStatus[currentTimePeriod] && recordStatus[currentTimePeriod].id?.toString().startsWith('temp-'))
+                    ) ? 'border-blue-400 bg-blue-50' : ''}
                   `}>
-                    {(() => {
-                      const now = new Date();
-                      const hour = now.getHours();
-                      if (hour >= 6 && hour < 12) return '朝';
-                      if (hour >= 12 && hour < 18) return '昼';
-                      return '晩';
-                    })()}
+                    {getEmotionTimePeriodLabel()}
                   </span>
                 </div>
               )}
               
               {/* 感情記録メニュー - キャラクター画像の中心に配置 */}
+              {(() => { console.log('🔍 ModernMobileHome レンダリング:', { showEmotionMenu, showMessage, isTyping }); return null; })()}
               {showEmotionMenu && (
                 <div className="absolute inset-0 z-40">
+                  {(() => { console.log('🔍 ModernMobileHome EmotionHoverMenu onClose:', { 
+                    handleCloseEmotionMenu: typeof handleCloseEmotionMenu,
+                    handleCloseEmotionMenuToString: handleCloseEmotionMenu.toString()
+                  }); return null; })()}
                   <EmotionHoverMenu
                     isVisible={showEmotionMenu}
-                    onClose={handleCloseEmotionMenu}
+                    onClose={() => {
+                      console.log('🔍 ModernMobileHome EmotionHoverMenu onClose 実行');
+                      console.log('🔍 handleCloseEmotionMenu 関数:', handleCloseEmotionMenu.toString());
+                      handleCloseEmotionMenu();
+                    }}
                     characterRef={characterRef}
                     isMessageDisplaying={showMessage}
                     isTyping={isTyping}
@@ -616,7 +653,11 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
             
             {/* 感情記録ボタン（モバイル版専用） */}
             <button
-              onClick={() => setShowEmotionMenu(!showEmotionMenu)}
+              onClick={() => {
+                console.log('🔍 感情記録ボタンクリック前:', showEmotionMenu);
+                setShowEmotionMenu(!showEmotionMenu);
+                console.log('🔍 感情記録ボタンクリック後:', showEmotionMenu);
+              }}
               className="absolute -bottom-8 -right-8 w-14 h-14 bg-pink-400/30 backdrop-blur-sm rounded-full shadow-lg border-2 border-white flex items-center justify-center text-white hover:bg-pink-500/30 active:scale-95 transition-all duration-200 z-40"
               title="感情を記録"
               data-emotion-button="true"

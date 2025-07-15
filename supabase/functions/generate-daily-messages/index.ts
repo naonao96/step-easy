@@ -274,13 +274,14 @@ async function generateMessage(genAI: GoogleGenerativeAI, userName?: string, tas
   // 前日データを取得
   const yesterdayData = getYesterdayData(tasks || [], emotions || []);
 
-  // 時間帯と曜日の取得
+  // 時間帯と曜日の取得（日本時間）
   const getTimeBasedGreeting = (): string => {
-    const hour = new Date().getHours();
-    if (hour >= 6 && hour < 10) return 'morning';
-    if (hour >= 11 && hour < 15) return 'afternoon';
-    if (hour >= 16 && hour < 20) return 'evening';
-    return 'night';
+    const now = new Date();
+    const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+    const hour = japanTime.getHours();
+    if (hour >= 6 && hour < 12) return 'morning';
+    if (hour >= 12 && hour < 18) return 'afternoon';
+    return 'evening'; // 18:00-6:00（18:00-24:00 + 0:00-6:00）
   };
 
   const getDayOfWeek = (): string => {

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { EmotionType, TimePeriod, EmotionRecord, TodayEmotionsData } from '@/types/emotion';
+import { getEmotionTimePeriod, getJapanTimeNow } from '@/lib/timeUtils';
 
 interface UseEmotionLogReturn {
   todayEmotions: EmotionRecord[];
@@ -28,16 +29,24 @@ export const useEmotionLog = (): UseEmotionLogReturn => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 現在の時間帯を判定
+  // 現在の時間帯を判定（共通関数を使用）
   const getCurrentTimePeriod = (): TimePeriod => {
-    const now = new Date();
-    const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
-    const hour = japanTime.getHours();
-    
-    if (hour >= 6 && hour < 12) return 'morning';
-    if (hour >= 12 && hour < 18) return 'afternoon';
-    return 'evening';
+    return getEmotionTimePeriod();
   };
+
+  // デバッグ用：現在の時間帯をログ出力（開発環境のみ）
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      const debugTimePeriod = getCurrentTimePeriod();
+      const { date: japanTime, hour } = getJapanTimeNow();
+      console.log('useEmotionLog - 現在の時間帯デバッグ:', {
+        utcTime: new Date().toISOString(),
+        japanTime: japanTime.toISOString(),
+        hour: hour,
+        timePeriod: debugTimePeriod
+      });
+    }
+  }, []);
 
   // 今日の感情記録を取得
   const fetchTodayEmotions = useCallback(async () => {
@@ -72,9 +81,37 @@ export const useEmotionLog = (): UseEmotionLogReturn => {
   }, []);
 
   // 感情記録を保存
-  const recordEmotion = useCallback(async (emotionType: EmotionType, timePeriod: TimePeriod): Promise<boolean> => {
+  const recordEmotion = useCallback(async (emotionType: EmotionType, timePeriod?: TimePeriod): Promise<boolean> => {
     try {
       setError(null);
+
+      // 現在の時間帯を取得（サーバー側と同期）
+      const currentPeriod = getCurrentTimePeriod();
+
+      // 即座に楽観的更新（視覚的フィードバックを即座に消すため）
+      const optimisticRecord = {
+        id: `temp-${Date.now()}`,
+        user_id: 'temp',
+        emotion_type: emotionType,
+        time_period: currentPeriod,
+        intensity: 3,
+        note: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      setRecordStatus(prev => {
+        const newRecordStatus = {
+          ...prev,
+          [currentPeriod]: optimisticRecord
+        };
+        
+        // isCompleteの状態も更新
+        const newIsComplete = Object.values(newRecordStatus).every(record => record !== null);
+        setIsComplete(newIsComplete);
+        
+        return newRecordStatus;
+      });
 
       const response = await fetch('/api/emotions/record', {
         method: 'POST',
@@ -82,8 +119,8 @@ export const useEmotionLog = (): UseEmotionLogReturn => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          emotion_type: emotionType,
-          time_period: timePeriod
+          emotion_type: emotionType
+          // time_periodはサーバー側で現在時刻から判定
         }),
       });
 
@@ -99,27 +136,47 @@ export const useEmotionLog = (): UseEmotionLogReturn => {
 
       console.log('感情記録保存完了:', {
         emotionType,
-        timePeriod,
+        timePeriod: result.data.time_period,
         recordId: result.data.id
       });
 
-      // 記録後に部分更新のみ実行
+      // サーバーからの実際のデータで更新
       setRecordStatus(prev => {
+        console.log('🔍 楽観的更新を実際のデータで置換:', {
+          optimisticPeriod: currentPeriod,
+          serverPeriod: result.data.time_period,
+          optimisticId: prev[currentPeriod]?.id,
+          serverId: result.data.id
+        });
+        
         const newRecordStatus = {
           ...prev,
-          [timePeriod]: result.data
+          [result.data.time_period]: result.data
         };
+        
+        // 楽観的更新の一時的なデータを削除
+        if (newRecordStatus[currentPeriod]?.id?.toString().startsWith('temp-')) {
+          delete newRecordStatus[currentPeriod];
+        }
         
         // isCompleteの状態も更新
         const newIsComplete = Object.values(newRecordStatus).every(record => record !== null);
         setIsComplete(newIsComplete);
+        
+        console.log('🔍 useEmotionLog setRecordStatus 更新後:', {
+          newRecordStatus,
+          newIsComplete,
+          eveningRecord: newRecordStatus.evening,
+          eveningId: newRecordStatus.evening?.id,
+          currentPeriod: result.data.time_period
+        });
         
         return newRecordStatus;
       });
 
       // todayEmotionsも部分更新
       setTodayEmotions(prev => {
-        const existingIndex = prev.findIndex(e => e.time_period === timePeriod);
+        const existingIndex = prev.findIndex(e => e.time_period === result.data.time_period);
         if (existingIndex >= 0) {
           // 既存の記録を更新
           const updated = [...prev];
@@ -136,6 +193,26 @@ export const useEmotionLog = (): UseEmotionLogReturn => {
     } catch (err) {
       console.error('感情記録保存エラー:', err);
       setError(err instanceof Error ? err.message : '感情記録の保存に失敗しました');
+      
+      // エラー時は楽観的更新を元に戻す
+      setRecordStatus(prev => {
+        console.log('🔍 エラー時: 楽観的更新を元に戻す:', {
+          currentPeriod,
+          optimisticId: prev[currentPeriod]?.id
+        });
+        
+        const newRecordStatus = {
+          ...prev,
+          [currentPeriod]: null
+        };
+        
+        // isCompleteの状態も更新
+        const newIsComplete = Object.values(newRecordStatus).every(record => record !== null);
+        setIsComplete(newIsComplete);
+        
+        return newRecordStatus;
+      });
+      
       return false;
     }
   }, []);
@@ -158,7 +235,23 @@ export const useEmotionLog = (): UseEmotionLogReturn => {
     }, 300000); // 5分
 
     return () => clearInterval(interval);
-  }, []); // 依存配列を空にして無限ループを防ぐ
+  }, [fetchTodayEmotions]); // fetchTodayEmotionsを依存配列に追加
+
+  // recordStatusの変更を監視（開発環境のみ）
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 useEmotionLog recordStatus 変更:', {
+        recordStatus,
+        currentTimePeriod,
+        recordStatusKeys: recordStatus ? Object.keys(recordStatus) : [],
+        allRecordIds: recordStatus ? {
+          morning: recordStatus.morning?.id,
+          afternoon: recordStatus.afternoon?.id,
+          evening: recordStatus.evening?.id
+        } : {}
+      });
+    }
+  }, [recordStatus, currentTimePeriod]);
 
   return {
     todayEmotions,

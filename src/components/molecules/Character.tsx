@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import { EmotionHoverMenu } from './EmotionHoverMenu';
 import { EmotionRecord, TimePeriod } from '@/types/emotion';
+import { getEmotionTimePeriodLabel } from '@/lib/timeUtils';
+import { useEmotionStore } from '@/stores/emotionStore';
 
 interface CharacterProps {
   message?: string;
@@ -33,6 +35,21 @@ interface CharacterProps {
     evening: EmotionRecord | null;
   };
   currentTimePeriod?: TimePeriod;
+  // 感情記録の状態をpropsで受け取る（一元管理）
+  emotionLog?: {
+    todayEmotions: any[];
+    recordStatus: {
+      morning: any | null;
+      afternoon: any | null;
+      evening: any | null;
+    };
+    currentTimePeriod: 'morning' | 'afternoon' | 'evening';
+    isComplete: boolean;
+    isLoading: boolean;
+    error: string | null;
+    recordEmotion: (emotionType: any, timePeriod?: any) => Promise<boolean>;
+    refreshTodayEmotions: () => Promise<void>;
+  };
 }
 
 export const Character: React.FC<CharacterProps> = ({ 
@@ -51,7 +68,8 @@ export const Character: React.FC<CharacterProps> = ({
   isMobile,
   onMessageClick,
   recordStatus,
-  currentTimePeriod
+  currentTimePeriod,
+  emotionLog
 }) => {
   const [showEmotionMenu, setShowEmotionMenu] = useState(false);
   const characterRef = useRef<HTMLDivElement>(null);
@@ -64,8 +82,48 @@ export const Character: React.FC<CharacterProps> = ({
     }
   }, [message]);
   
-  // 感情記録促進のロジック
-  const shouldBlink = recordStatus && currentTimePeriod && recordStatus[currentTimePeriod] === null;
+  // 感情記録促進のロジック（emotionLogを優先、フォールバックとしてrecordStatusを使用）
+  const effectiveRecordStatus = emotionLog?.recordStatus || recordStatus;
+  const effectiveCurrentTimePeriod = emotionLog?.currentTimePeriod || currentTimePeriod;
+  
+  const shouldBlink = effectiveRecordStatus && effectiveCurrentTimePeriod && (
+    effectiveRecordStatus[effectiveCurrentTimePeriod] === null || 
+    (effectiveRecordStatus[effectiveCurrentTimePeriod] && effectiveRecordStatus[effectiveCurrentTimePeriod].id?.toString().startsWith('temp-'))
+  );
+
+  // shouldBlinkの詳細デバッグ（開発環境のみ）
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 Character shouldBlink 詳細計算:', {
+      effectiveRecordStatus: !!effectiveRecordStatus,
+      effectiveCurrentTimePeriod,
+      currentPeriodRecord: effectiveCurrentTimePeriod ? effectiveRecordStatus?.[effectiveCurrentTimePeriod] : null,
+      isNull: effectiveCurrentTimePeriod ? effectiveRecordStatus?.[effectiveCurrentTimePeriod] === null : false,
+      hasId: effectiveCurrentTimePeriod ? !!effectiveRecordStatus?.[effectiveCurrentTimePeriod]?.id : false,
+      idValue: effectiveCurrentTimePeriod ? effectiveRecordStatus?.[effectiveCurrentTimePeriod]?.id : null,
+      isTempId: effectiveCurrentTimePeriod ? effectiveRecordStatus?.[effectiveCurrentTimePeriod]?.id?.toString().startsWith('temp-') : false,
+      shouldBlink,
+      emotionLogProvided: !!emotionLog
+    });
+  }
+  
+  // デバッグログ（開発環境のみ）
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 Character shouldBlink 更新:', {
+        shouldBlink,
+        effectiveCurrentTimePeriod,
+        recordStatus: effectiveCurrentTimePeriod ? effectiveRecordStatus?.[effectiveCurrentTimePeriod] : null,
+        recordId: effectiveCurrentTimePeriod ? effectiveRecordStatus?.[effectiveCurrentTimePeriod]?.id : null,
+        recordStatusKeys: effectiveRecordStatus ? Object.keys(effectiveRecordStatus) : [],
+        allRecordIds: effectiveRecordStatus ? {
+          morning: effectiveRecordStatus.morning?.id,
+          afternoon: effectiveRecordStatus.afternoon?.id,
+          evening: effectiveRecordStatus.evening?.id
+        } : {},
+        emotionLogProvided: !!emotionLog
+      });
+    }
+  }, [shouldBlink, effectiveCurrentTimePeriod, effectiveRecordStatus, emotionLog]);
   
   // クリックハンドラー（useMessageDisplay.tsに統一）
   const handleMessageClick = () => {
@@ -73,18 +131,27 @@ export const Character: React.FC<CharacterProps> = ({
     onMessageClick?.();
   };
 
-  // 時間帯ラベル取得
+  // 感情メニューを閉じるハンドラー
+  const handleCloseEmotionMenu = () => {
+    console.log('🔍 Character handleCloseEmotionMenu 実行');
+    console.log('🔍 メニューを閉じる前の状態:', {
+      showEmotionMenu,
+      shouldBlink,
+      effectiveCurrentTimePeriod,
+      recordStatus: effectiveCurrentTimePeriod ? effectiveRecordStatus?.[effectiveCurrentTimePeriod] : null
+    });
+    setShowEmotionMenu(false);
+  };
+
+  // 時間帯ラベル取得（共通関数を使用）
   const getTimePeriodLabel = () => {
-    if (currentTimePeriod) {
+    const timePeriod = effectiveCurrentTimePeriod;
+    if (timePeriod) {
       const labels = { morning: '朝', afternoon: '昼', evening: '晩' };
-      return labels[currentTimePeriod];
+      return labels[timePeriod];
     }
-    // フォールバック: 現在時刻から判定
-    const now = new Date();
-    const hour = now.getHours();
-    if (hour >= 6 && hour < 12) return '朝';
-    if (hour >= 12 && hour < 18) return '昼';
-    return '晩';
+    // フォールバック: 現在時刻から判定（共通関数を使用）
+    return getEmotionTimePeriodLabel();
   };
 
 
@@ -216,7 +283,7 @@ export const Character: React.FC<CharacterProps> = ({
               <div className="absolute inset-0 z-40">
                 <EmotionHoverMenu
                   isVisible={showEmotionMenu}
-                  onClose={() => setShowEmotionMenu(false)}
+                  onClose={handleCloseEmotionMenu}
                   characterRef={characterRef}
                   isMessageDisplaying={showMessage}
                   isTyping={isTyping}
@@ -291,7 +358,7 @@ export const Character: React.FC<CharacterProps> = ({
           {/* 感情ログホバーメニュー（Radial Menu） */}
           <EmotionHoverMenu
             isVisible={showEmotionMenu}
-            onClose={() => setShowEmotionMenu(false)}
+            onClose={handleCloseEmotionMenu}
             isMessageDisplaying={false} // メッセージ表示中でもRadial Menu有効
             isTyping={false}
             characterRef={characterRef}
@@ -383,7 +450,7 @@ export const Character: React.FC<CharacterProps> = ({
       {/* 感情ログホバーメニュー */}
       <EmotionHoverMenu 
         isVisible={showEmotionMenu}
-        onClose={() => setShowEmotionMenu(false)}
+        onClose={handleCloseEmotionMenu}
         isMessageDisplaying={showMessage}
         isTyping={isTyping}
         characterRef={characterRef}

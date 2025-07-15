@@ -53,9 +53,10 @@ const getJSTDateString = (date?: Date): string => {
 const fetchDailyMessage = async (userId: string): Promise<string | null> => {
   try {
     const now = new Date();
-    const hour = now.getHours();
+    const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+    const hour = japanTime.getHours();
     
-    // 0-9時の場合は前日のメッセージを取得
+    // 0-9時の場合は前日のメッセージを取得（日本時間）
     let targetDate: string;
     if (hour >= 0 && hour < 9) {
       const yesterday = new Date(now);
@@ -148,9 +149,11 @@ const generatePersonalizedMessage = async (
   targetDate.setHours(0, 0, 0, 0);
   const isToday = targetDate.getTime() === today.getTime();
 
-  // 時間帯の判定
-  const hour = new Date().getHours();
-  const timeOfDay = hour < 12 ? '朝' : hour < 18 ? '昼' : '夜';
+  // 時間帯の判定（日本時間）
+  const now = new Date();
+  const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+  const hour = japanTime.getHours();
+  const timeOfDay = hour >= 6 && hour < 12 ? '朝' : hour >= 12 && hour < 18 ? '昼' : '晩';
   
   // ユーザー名の処理
   const displayName = userName || 'あなた';

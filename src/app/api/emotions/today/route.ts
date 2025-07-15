@@ -1,6 +1,7 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
+import { getEmotionTimePeriod, getJapanTime } from '@/lib/timeUtils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,8 +14,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 今日の日付を取得（日本時間）
-    const now = new Date();
-    const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+    const japanTime = getJapanTime();
     const today = japanTime.toISOString().split('T')[0];
 
     // 今日の感情記録を取得
@@ -38,24 +38,30 @@ export async function GET(request: NextRequest) {
       evening: todayEmotions?.find(e => e.time_period === 'evening') || null
     };
 
-    // 現在の時間帯を判定
-    const currentHour = japanTime.getHours();
-    let currentTimePeriod: 'morning' | 'afternoon' | 'evening';
-    
-    if (currentHour >= 6 && currentHour < 12) {
-      currentTimePeriod = 'morning';
-    } else if (currentHour >= 12 && currentHour < 18) {
-      currentTimePeriod = 'afternoon';
-    } else {
-      currentTimePeriod = 'evening';
+    // 現在の時間帯を判定（共通関数を使用）
+    const currentTimePeriod = getEmotionTimePeriod();
+
+    // 開発環境でのみデバッグログを出力
+    if (process.env.NODE_ENV === 'development') {
+      console.log('今日の感情記録取得 - 時間帯判定デバッグ:', {
+        utcTime: new Date().toISOString(),
+        japanTime: japanTime.toISOString(),
+        currentHour: japanTime.getHours(),
+        currentTimePeriod: currentTimePeriod,
+        recordCount: todayEmotions?.length || 0,
+        recordStatus: recordStatus
+      });
     }
 
-    console.log('今日の感情記録取得完了:', {
-      userId: user.id,
-      recordCount: todayEmotions?.length || 0,
-      currentTimePeriod,
-      recordStatus
-    });
+    // 開発環境でのみログ出力
+    if (process.env.NODE_ENV === 'development') {
+      console.log('今日の感情記録取得完了:', {
+        userId: user.id,
+        recordCount: todayEmotions?.length || 0,
+        currentTimePeriod,
+        recordStatus
+      });
+    }
 
     return NextResponse.json({ 
       success: true, 

@@ -94,5 +94,5 @@ export const TIME_PERIOD_LABELS: Record<TimePeriod, string> = {
 export const TIME_PERIOD_RANGES: Record<TimePeriod, string> = {
   morning: '6:00-12:00',
   afternoon: '12:00-18:00',
-  evening: '18:00-24:00'
+  evening: '18:00-6:00'
 }; 

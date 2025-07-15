@@ -190,12 +190,52 @@ export const formatDateTimeJP = (date: Date | string, options?: Intl.DateTimeFor
   }
 };
 
+/**
+ * 日本時間を取得する共通関数
+ */
+export const getJapanTime = (): Date => {
+  const now = new Date();
+  return new Date(now.toLocaleString("en-US", {timeZone: "Asia/Tokyo"}));
+};
+
+/**
+ * 日本時間での現在時刻を取得する共通関数
+ */
+export const getJapanTimeNow = (): { date: Date; hour: number; minute: number; second: number } => {
+  const japanTime = getJapanTime();
+  return {
+    date: japanTime,
+    hour: japanTime.getHours(),
+    minute: japanTime.getMinutes(),
+    second: japanTime.getSeconds()
+  };
+};
+
+/**
+ * 感情ログ用の統一された時間帯判定関数
+ */
+export const getEmotionTimePeriod = (): 'morning' | 'afternoon' | 'evening' => {
+  const { hour } = getJapanTimeNow();
+  if (hour >= 6 && hour < 12) return 'morning';
+  if (hour >= 12 && hour < 18) return 'afternoon';
+  return 'evening';
+};
+
+/**
+ * 感情ログ用の統一された時間帯ラベル取得関数
+ */
+export const getEmotionTimePeriodLabel = (): string => {
+  const { hour } = getJapanTimeNow();
+  if (hour >= 6 && hour < 12) return '朝';
+  if (hour >= 12 && hour < 18) return '昼';
+  return '晩'; // 18:00-6:00（18:00-24:00 + 0:00-6:00）
+};
+
 export function getTimeBasedGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour >= 6 && hour < 10) return 'morning';
-  if (hour >= 11 && hour < 15) return 'afternoon';
-  if (hour >= 16 && hour < 20) return 'evening';
-  return 'night';
+  const { hour } = getJapanTimeNow();
+  if (hour >= 6 && hour < 12) return 'morning';
+  if (hour >= 12 && hour < 18) return 'afternoon';
+  return 'evening'; // 18:00-6:00（18:00-24:00 + 0:00-6:00）
 }
 
 export function getDayOfWeek(): string {

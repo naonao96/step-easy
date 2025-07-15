@@ -27,6 +27,7 @@ import { useEmotionLog } from '@/hooks/useEmotionLog';
 import { useMessageDisplay } from '@/hooks/useMessageDisplay';
 import { integrateHabitData, convertHabitsToTasks, isNewHabit } from '@/lib/habitUtils';
 import { completeHabit, deleteHabit as deleteHabitOperation, editHabit } from '@/lib/habitOperations';
+import { useEmotionStore } from '@/stores/emotionStore';
 // react-responsiveが未インストールの場合は `npm install react-responsive` を実行してください
 const { useMediaQuery } = require('react-responsive');
 
@@ -36,8 +37,38 @@ export default function MenuPage() {
   const { tasks, fetchTasks, updateTask, deleteTask, resetExpiredStreaks } = useTaskStore();
   const { habits, habitCompletions, fetchHabits, deleteHabit } = useHabitStore();
   
-  // 感情記録の状態を取得
-  const { recordStatus, currentTimePeriod } = useEmotionLog();
+  // 感情記録の状態を取得（一元管理）
+  const emotionStore = useEmotionStore();
+
+  // 感情記録状態のデバッグ（開発環境のみ）
+  useEffect(() => {
+    console.log('🔍 MenuPage useEmotionStore 状態:', {
+      recordStatus: emotionStore.recordStatus,
+      currentTimePeriod: emotionStore.currentTimePeriod,
+      recordStatusKeys: emotionStore.recordStatus ? Object.keys(emotionStore.recordStatus) : [],
+      allRecordIds: emotionStore.recordStatus ? {
+        morning: emotionStore.recordStatus.morning?.id,
+        afternoon: emotionStore.recordStatus.afternoon?.id,
+        evening: emotionStore.recordStatus.evening?.id
+      } : {}
+    });
+  }, [emotionStore.recordStatus, emotionStore.currentTimePeriod]);
+
+  // 感情記録の初期化
+  useEffect(() => {
+    emotionStore.refreshTodayEmotions();
+    
+    // 5分ごとに現在の時間帯を更新
+    const interval = setInterval(() => {
+      const { getEmotionTimePeriod } = require('@/lib/timeUtils');
+      const newTimePeriod = getEmotionTimePeriod();
+      if (newTimePeriod !== emotionStore.currentTimePeriod) {
+        emotionStore.refreshTodayEmotions();
+      }
+    }, 300000); // 5分
+
+    return () => clearInterval(interval);
+  }, []); // emotionStoreを依存配列から削除して無限ループを防ぐ
   
   // 状態管理
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -487,12 +518,14 @@ export default function MenuPage() {
     setMigrationError(null);
   };
 
-  // 時間帯による挨拶の設定
+  // 時間帯による挨拶の設定（日本時間）
   useEffect(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) {
+    const now = new Date();
+    const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+    const hour = japanTime.getHours();
+    if (hour >= 6 && hour < 12) {
       setGreeting('おはようございます');
-    } else if (hour < 18) {
+    } else if (hour >= 12 && hour < 18) {
       setGreeting('こんにちは');
     } else {
       setGreeting('こんばんは');
@@ -570,6 +603,7 @@ export default function MenuPage() {
           onTabChange={handleMobileTabChange}
           onTaskUpdate={fetchTasks} // データ更新関数を追加
           onMessageClick={handleMessageClick} // メッセージクリック用
+          emotionLog={emotionStore}
         />
       </div>
 
@@ -587,8 +621,7 @@ export default function MenuPage() {
               bubblePosition="left"
               size="3cm"
               onClick={handleClick}
-              recordStatus={recordStatus}
-              currentTimePeriod={currentTimePeriod}
+              emotionLog={emotionStore}
             />
           </div>
         )}
