@@ -185,21 +185,24 @@ function getYesterdayData(tasks: Task[], emotions: any[]) {
   const yesterdayPercentage = yesterdayTotal > 0 ? Math.round((yesterdayCompleted / yesterdayTotal) * 100) : 0;
   
   // 前日の感情データ（朝昼晩）
-  const yesterdayEmotions = emotions?.filter((e: any) => e.date === yesterdayStr) || [];
+  const yesterdayEmotions = emotions?.filter((e: any) => {
+    const emotionDate = new Date(e.created_at);
+    const emotionDateStr = emotionDate.toISOString().split('T')[0];
+    return emotionDateStr === yesterdayStr;
+  }) || [];
   const morningEmotion = yesterdayEmotions.find((e: any) => e.time_period === 'morning')?.emotion_type || 'none';
   const afternoonEmotion = yesterdayEmotions.find((e: any) => e.time_period === 'afternoon')?.emotion_type || 'none';
   const eveningEmotion = yesterdayEmotions.find((e: any) => e.time_period === 'evening')?.emotion_type || 'none';
   
-  // 感情分析
+  // 感情分析（データベースの感情タイプに統一）
   const getEmotionAnalysis = (emotion: string) => {
     switch(emotion) {
-      case 'happy': return 'やる気満々';
-      case 'satisfied': return '達成感';
-      case 'relaxed': return 'リラックス';
-      case 'tired': return '疲れ気味';
-      case 'anxious': return '緊張';
-      case 'sad': return '落ち込み';
-      case 'angry': return 'イライラ';
+      case 'joy': return '達成感';
+      case 'calm': return 'リラックス';
+      case 'fear': return '緊張';
+      case 'sadness': return '落ち込み';
+      case 'anger': return 'イライラ';
+      case 'surprise': return '挫折感';
       default: return '記録なし';
     }
   };
@@ -415,21 +418,25 @@ serve(async (_req: any) => {
           .from('emotions')
           .select('*')
           .eq('user_id', user.id)
-          .gte('date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+          .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
 
         // 感情集計（直近3日間のポジティブ/ネガティブ頻度・連続日数）
         let positiveCount = 0, negativeCount = 0, lastEmotion = null, positiveStreak = 0, negativeStreak = 0, currentStreak = 0;
         let streakType = null;
         if (emotions && emotions.length > 0) {
-          // 日付降順で並べ替え
-          const sorted = [...emotions].sort((a, b) => b.date.localeCompare(a.date));
+          // 日付降順で並べ替え（created_atから日付を抽出）
+          const sorted = [...emotions].sort((a, b) => {
+            const dateA = new Date(a.created_at).toISOString().split('T')[0];
+            const dateB = new Date(b.created_at).toISOString().split('T')[0];
+            return dateB.localeCompare(dateA);
+          });
           for (const e of sorted.slice(0, 3)) {
-            if (['happy', 'satisfied', 'relaxed'].includes(e.emotion_type)) positiveCount++;
-            if (['sad', 'angry', 'tired', 'anxious'].includes(e.emotion_type)) negativeCount++;
+            if (['joy', 'calm'].includes(e.emotion_type)) positiveCount++;
+            if (['sadness', 'anger', 'fear'].includes(e.emotion_type)) negativeCount++;
           }
           // 連続日数計算
           for (const e of sorted) {
-            const isPositive = ['happy', 'satisfied', 'relaxed'].includes(e.emotion_type);
+            const isPositive = ['joy', 'calm'].includes(e.emotion_type);
             if (lastEmotion === null) {
               streakType = isPositive ? 'positive' : 'negative';
               currentStreak = 1;

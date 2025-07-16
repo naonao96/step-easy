@@ -264,9 +264,12 @@ export default function TaskEditPage() {
     if (!isExistingTask || !task) return;
     
     try {
+      const newStatus = task.status === 'done' ? 'todo' : 'done';
+      const completedAt = newStatus === 'done' ? new Date().toISOString() : undefined;
+      
       await updateTask(task.id, { 
-        status: task.status === 'done' ? 'todo' : 'done',
-        completed_at: task.status === 'done' ? undefined : new Date().toISOString()
+        status: newStatus,
+        completed_at: completedAt
       });
       // 完了切り替え後もプレビューモードを維持
       router.push(`/tasks?id=${taskId}`);

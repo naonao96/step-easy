@@ -22,7 +22,6 @@ interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
   signInWithGoogle: () => Promise<void>;
-  signInWithEmail: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   signInAsGuest: () => Promise<void>;
   isGuest: boolean;
@@ -250,38 +249,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signInWithEmail = async (email: string, password: string) => {
-    try {
-      console.log('🔐 AuthContext signInWithEmail called');
-      console.log('🔐 Email:', email);
-      console.log('🔐 Password length:', password.length);
-      
-      // 1. 基本的な認証のみ実行
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      console.log('🔐 Supabase auth result:', { 
-        success: !error, 
-        error: error?.message,
-        hasUser: !!data?.user,
-        userId: data?.user?.id 
-      });
-      
-      if (error) {
-        console.error('🔐 Auth error:', error);
-        throw error;
-      }
-      
-      console.log('🔐 Auth successful, redirecting...');
-      router.push('/menu');
-      
-    } catch (error) {
-      console.error('🔐 Error in signInWithEmail:', error);
-      throw error;
-    }
-  };
+
 
   const signInAsGuest = async () => {
     setUser({ 
@@ -535,7 +503,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     isLoading,
     signInWithGoogle,
-    signInWithEmail,
     signOut,
     signInAsGuest,
     isGuest: !!user?.isGuest,

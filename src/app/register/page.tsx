@@ -1,148 +1,17 @@
 'use client';
 
-import React, { useState, useCallback, ChangeEvent } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Layout } from '@/components/templates/Layout';
-import { Button } from '@/components/atoms/Button';
-import { Input } from '@/components/atoms/Input';
 import { useAuth } from '@/contexts/AuthContext';
 import Image from 'next/image';
-import { debounce } from 'lodash';
-import { FaGoogle, FaEnvelope, FaLock, FaUser } from 'react-icons/fa';
+import { FaGoogle } from 'react-icons/fa';
 
 export default function RegisterPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [emailCheckStatus, setEmailCheckStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
   const router = useRouter();
-  const supabase = createClientComponentClient();
   const { signInWithGoogle } = useAuth();
-
-  // メールアドレスの重複チェック（リアルタイムバリデーション）
-  const checkEmailAvailability = useCallback(
-    debounce(async (email: string) => {
-      if (!email || !email.includes('@')) {
-        setEmailCheckStatus('idle');
-        return;
-      }
-
-      setEmailCheckStatus('checking');
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password: 'dummy-password-for-check'
-        });
-        
-        // エラーメッセージで判断
-        if (error?.message?.includes('Invalid login credentials')) {
-          // メールアドレスが存在しない = 利用可能
-          setEmailCheckStatus('available');
-        } else if (error?.message?.includes('Email not confirmed')) {
-          // メールアドレスは存在するが未確認 = 既に登録済み
-          setEmailCheckStatus('taken');
-        } else {
-          // その他のエラーまたは成功（既に登録済み）
-          setEmailCheckStatus('taken');
-        }
-      } catch (error) {
-        console.error('メールアドレスチェックエラー:', error);
-        setEmailCheckStatus('idle');
-      }
-    }, 500),
-    [supabase]
-  );
-
-  const handleEmailChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const newEmail = e.target.value;
-    setEmail(newEmail);
-    setError(null);
-    checkEmailAvailability(newEmail);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (emailCheckStatus === 'taken') {
-      setError('このメールアドレスは既に登録されています。ログイン画面をご利用ください。');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('パスワードが一致しません');
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('パスワードは6文字以上で入力してください');
-      return;
-    }
-
-    if (displayName.trim().length < 1) {
-      setError('ユーザー名を入力してください');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      console.log('📧 Supabase認証開始...');
-      const redirectUrl = `${window.location.origin}/auth/callback`;
-      console.log('🔗 リダイレクトURL:', redirectUrl);
-
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            display_name: displayName.trim(),
-          }
-        },
-      });
-
-      console.log('📊 Supabase認証結果:', { data, error });
-
-      if (error) {
-        console.error('❌ Supabase認証エラー:', error);
-        throw error;
-      }
-
-      if (data.user) {
-        console.log('✅ ユーザー作成成功:', data.user.id);
-        console.log('👤 ユーザー名設定:', displayName);
-        console.log('📧 確認メール送信状況:', data.user.email_confirmed_at ? '確認済み' : '未確認');
-        
-        // メール確認が無効化されている場合、すぐにログイン状態になる
-        if (data.user.email_confirmed_at) {
-          console.log('🎉 即座にログイン状態になりました');
-          alert('登録が完了しました！メニュー画面に移動します。');
-          router.push('/menu');
-          return;
-        }
-      }
-
-      // メール確認が有効な場合のメッセージ
-      alert('確認メールを送信しました。メールをご確認ください。');
-      router.push('/login');
-    } catch (error: any) {
-      console.error('❌ 登録エラー詳細:', {
-        message: error.message,
-        status: error.status,
-        statusText: error.statusText,
-        error: error
-      });
-      setError(`登録に失敗しました: ${error.message || '不明なエラー'}`);
-    } finally {
-      setIsLoading(false);
-      console.log('🏁 登録処理終了');
-    }
-  };
 
   const handleGoogleSignIn = async () => {
     setError(null);
@@ -157,31 +26,10 @@ export default function RegisterPage() {
     }
   };
 
-  const getEmailStatusIcon = () => {
-    switch (emailCheckStatus) {
-      case 'checking':
-        return <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></div>;
-      case 'available':
-        return <div className="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center">
-          <svg className="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        </div>;
-      case 'taken':
-        return <div className="w-4 h-4 rounded-full bg-red-100 flex items-center justify-center">
-          <svg className="w-3 h-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </div>;
-      default:
-        return null;
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f5f5dc] via-[#f0e8d8] to-[#e6d7c3] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-transparent flex items-center justify-center p-4">
       <div className="w-full max-w-md mx-auto">
-        <div className="bg-[#faf8f0]/90 backdrop-blur-sm p-8 rounded-3xl border border-[#deb887]/30 shadow-2xl">
+        <div className="bg-white/90 backdrop-blur-sm p-8 rounded-3xl border border-gray-200 shadow-2xl hover:shadow-3xl transition-shadow duration-300">
           {/* ヘッダー */}
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-[#8b4513] mb-2">StepEasy</h1>
@@ -189,99 +37,19 @@ export default function RegisterPage() {
             <p className="text-sm text-[#a0522d] mt-1">新しいタスク管理体験</p>
           </div>
 
-          {/* フォーム */}
-          <form className="space-y-5" onSubmit={handleSubmit}>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-[#8b4513]">ユーザー名</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={displayName}
-                  onChange={e => setDisplayName(e.target.value)}
-                  className="w-full px-4 py-3 pl-12 bg-[#f5f5dc] border border-[#deb887] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#8b4513] focus:border-[#8b4513] transition-all duration-200"
-                  placeholder="ユーザー名"
-                  required
-                />
-                <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#7c5a2a]" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                </svg>
-              </div>
+          {/* エラーメッセージ */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl">
+              <p className="text-red-600 text-sm">{error}</p>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-[#8b4513]">メールアドレス</label>
-              <div className="relative">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={handleEmailChange}
-                  className="w-full px-4 py-3 pl-12 bg-[#f5f5dc] border border-[#deb887] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#8b4513] focus:border-[#8b4513] transition-all duration-200"
-                  placeholder="your@email.com"
-                  required
-                />
-                <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#7c5a2a]" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                  <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                </svg>
-                <span className="absolute right-4 top-1/2 transform -translate-y-1/2">{getEmailStatusIcon()}</span>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-[#8b4513]">パスワード</label>
-              <div className="relative">
-                <input
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 pl-12 bg-[#f5f5dc] border border-[#deb887] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#8b4513] focus:border-[#8b4513] transition-all duration-200"
-                  placeholder="パスワードを入力"
-                  required
-                />
-                <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#7c5a2a]" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                </svg>
-              </div>
-                </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-[#8b4513]">パスワード（確認）</label>
-              <div className="relative">
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-3 pl-12 bg-[#f5f5dc] border border-[#deb887] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#8b4513] focus:border-[#8b4513] transition-all duration-200"
-                  placeholder="もう一度入力"
-                  required
-                />
-                <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#7c5a2a]" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                </svg>
-              </div>
-            </div>
-            {error && (
-              <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">{error}</div>
-            )}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-gradient-to-r from-[#8b4513] to-[#7c5a2a] hover:from-[#7c5a2a] hover:to-[#8b4513] text-white font-medium py-4 rounded-2xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl border border-[#deb887]/30 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span>作成中...</span>
-          </div>
-              ) : (
-                'アカウントを作成'
-              )}
-            </button>
-          </form>
+          )}
 
           {/* Google新規登録 */}
-          <div className="mt-6">
+          <div className="space-y-6">
             <button
               onClick={handleGoogleSignIn}
-              disabled={isGoogleLoading || isLoading}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-[#deb887] rounded-2xl text-[#8b4513] bg-white/80 hover:bg-white transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isGoogleLoading}
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-[#deb887] rounded-2xl text-[#8b4513] bg-white/80 hover:bg-white hover:shadow-lg hover:-translate-y-1 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isGoogleLoading ? (
                 <div className="w-5 h-5 border-2 border-[#deb887] border-t-[#8b4513] rounded-full animate-spin"></div>
@@ -295,22 +63,18 @@ export default function RegisterPage() {
               )}
               Googleで新規登録
             </button>
-            </div>
 
-          {/* ログインリンク */}
-            <div className="mt-6 text-center">
-            <p className="text-sm text-[#7c5a2a]">
+            <div className="text-center">
+              <p className="text-sm text-[#7c5a2a]">
                 既にアカウントをお持ちですか？{' '}
-                <button
-                  onClick={() => router.push('/login')}
-                className="font-semibold text-[#8b4513] hover:text-[#7c5a2a] transition-colors underline"
-                >
+                <a href="/login" className="text-[#8b4513] hover:underline font-medium">
                   ログイン
-                </button>
+                </a>
               </p>
             </div>
           </div>
         </div>
       </div>
+    </div>
   );
 } 

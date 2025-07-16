@@ -424,7 +424,20 @@ export default function MenuPage() {
     } else if (task && !task.is_habit) {
       // 通常のタスクの場合：直接updateTaskを使用
       const newStatus = task.status === 'done' ? 'todo' : 'done';
-      const completedAt = newStatus === 'done' ? new Date().toISOString() : undefined;
+      
+      // 完了時は選択されている日付をcompleted_atに設定
+      let completedAt: string | undefined;
+      if (newStatus === 'done') {
+        if (selectedDate) {
+          // 選択されている日付がある場合はその日付を使用
+          const selectedDateTime = new Date(selectedDate);
+          selectedDateTime.setHours(12, 0, 0, 0); // 12時を基準に設定
+          completedAt = selectedDateTime.toISOString();
+        } else {
+          // 選択日がない場合は現在時刻を使用
+          completedAt = new Date().toISOString();
+        }
+      }
       
       try {
         await updateTask(id, { status: newStatus, completed_at: completedAt });

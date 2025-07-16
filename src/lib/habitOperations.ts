@@ -45,7 +45,21 @@ export const completeHabit = async (
   const task = tasks.find(t => t.id === id);
   if (task && isLegacyHabit(task)) {
     const newStatus = task.status === 'done' ? 'todo' : 'done';
-    const completedAt = newStatus === 'done' ? new Date().toISOString() : undefined;
+    
+    // 完了時は選択されている日付をcompleted_atに設定
+    let completedAt: string | undefined;
+    if (newStatus === 'done') {
+      if (selectedDate) {
+        // 選択されている日付がある場合はその日付を使用
+        const selectedDateTime = new Date(selectedDate);
+        selectedDateTime.setHours(12, 0, 0, 0); // 12時を基準に設定
+        completedAt = selectedDateTime.toISOString();
+      } else {
+        // 選択日がない場合は現在時刻を使用
+        completedAt = new Date().toISOString();
+      }
+    }
+    
     await updateTaskFn(id, { status: newStatus, completed_at: completedAt });
     return { success: true };
   }

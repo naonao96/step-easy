@@ -46,7 +46,21 @@ export const HabitCard: React.FC<HabitCardProps> = ({
       } else if (isLegacyHabit(habit)) {
         // 既存のタスクテーブルの習慣：従来の切り替え
         const newStatus = habit.status === 'done' ? 'todo' : 'done';
-        const completedAt = newStatus === 'done' ? new Date().toISOString() : undefined;
+        
+        // 完了時は選択されている日付をcompleted_atに設定
+        let completedAt: string | undefined;
+        if (newStatus === 'done') {
+          if (selectedDate) {
+            // 選択されている日付がある場合はその日付を使用
+            const selectedDateTime = new Date(selectedDate);
+            selectedDateTime.setHours(12, 0, 0, 0); // 12時を基準に設定
+            completedAt = selectedDateTime.toISOString();
+          } else {
+            // 選択日がない場合は現在時刻を使用
+            completedAt = new Date().toISOString();
+          }
+        }
+        
         await updateTask(habit.id, { status: newStatus, completed_at: completedAt });
       }
     } catch (error) {
