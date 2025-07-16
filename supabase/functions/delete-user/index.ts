@@ -88,7 +88,14 @@ serve(async (req: Request) => {
       'daily_messages',
       'premium_waitlist',
       'tasks',
-      'user_settings'
+      'user_settings',
+      'emotions',           // 追加：感情記録
+      'subscriptions',      // 追加：サブスクリプション情報
+      'payment_history',    // 追加：支払い履歴
+      'notifications',      // 追加：通知データ
+      'habits',            // 追加：習慣データ
+      'habit_completions',  // 追加：習慣完了履歴
+      'task_categories'     // 追加：タスクカテゴリ
     ];
     for (const table of tables){
       try {

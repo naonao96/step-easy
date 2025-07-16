@@ -1,6 +1,7 @@
 import React, { forwardRef } from 'react';
 import { type Task } from '@/types/task';
 import { BaseTaskModal } from './BaseTaskModal';
+import { toJSTDateString } from '@/lib/timeUtils';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -34,9 +35,10 @@ export const TaskModal = forwardRef<{ closeWithValidation: () => void }, TaskMod
     description: data.content,
     priority: data.priority,
     is_habit: false, // 通常タスクは常にfalse
+    habit_frequency: undefined, // 通常タスクは習慣頻度なし
     status: 'todo' as const,
-    start_date: data.startDate ? data.startDate.toISOString().split('T')[0] : null,
-    due_date: data.dueDate ? data.dueDate.toLocaleDateString('sv-SE') : null,
+    start_date: data.startDate ? toJSTDateString(data.startDate) : null,
+    due_date: data.dueDate ? toJSTDateString(data.dueDate) : null,
     estimated_duration: data.estimatedDuration,
     category: data.category
   });

@@ -34,6 +34,7 @@ interface AppLayoutProps {
   showBottomNav?: boolean;
   showFAB?: boolean;
   onFABClick?: () => void;
+  currentTab?: 'tasks' | 'habits';
 }
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ 
@@ -51,7 +52,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   className = '',
   showBottomNav = true,
   showFAB = false,
-  onFABClick
+  onFABClick,
+  currentTab = 'tasks'
 }) => {
   // モバイルメニュー関連のstateを削除（ボトムナビゲーションを使用）
 
@@ -82,6 +84,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           <MobileBottomNavigation 
             showAddButton={showFAB}
             onAddClick={onFABClick}
+            currentTab={currentTab}
           />
         )}
       </div>
@@ -115,6 +118,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         <MobileBottomNavigation 
           showAddButton={showFAB}
           onAddClick={onFABClick}
+          currentTab={currentTab}
         />
       )}
     </div>

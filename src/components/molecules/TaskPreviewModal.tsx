@@ -1,8 +1,22 @@
 import React, { useState } from 'react';
-import { Task } from '@/types/task';
-import { BaseTaskModal } from './BaseTaskModal';
+import { useTaskStore } from '@/stores/taskStore';
 import { useHabitStore } from '@/stores/habitStore';
-import { isNewHabit, isHabitCompleted } from '@/lib/habitUtils';
+import { type Task } from '@/types/task';
+import { useAuth } from '@/contexts/AuthContext';
+import { Input } from '@/components/atoms/Input';
+import { PrioritySelector } from '@/components/atoms/PrioritySelector';
+import { CategorySelector } from '@/components/atoms/CategorySelector';
+import { DatePicker } from '@/components/atoms/DatePicker';
+import { DurationInput } from '@/components/atoms/DurationInput';
+import { Button } from '@/components/atoms/Button';
+import { TaskTimer } from './TaskTimer';
+import { TaskExecutionHistory } from './TaskExecutionHistory';
+import { FaTimes, FaSave, FaEdit, FaTrash, FaCheck, FaEye, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import ReactMarkdown from 'react-markdown';
+import { TASK_CONSTANTS } from '@/lib/constants';
+import { isNewHabit } from '@/lib/habitUtils';
+import { toJSTDateString } from '@/lib/timeUtils';
+import { BaseTaskModal } from './BaseTaskModal';
 
 interface TaskPreviewModalProps {
   task: Task;
@@ -95,8 +109,8 @@ export const TaskPreviewModal: React.FC<TaskPreviewModalProps> = ({
     is_habit: task.is_habit || false,
     habit_frequency: task.habit_frequency || 'daily',
     status: 'todo' as const,
-    start_date: data.startDate ? data.startDate.toISOString().split('T')[0] : null,
-    due_date: data.dueDate ? data.dueDate.toLocaleDateString('sv-SE') : null,
+    start_date: data.startDate ? toJSTDateString(data.startDate) : null,
+    due_date: data.dueDate ? toJSTDateString(data.dueDate) : null,
     estimated_duration: data.estimatedDuration,
     category: data.category
   });

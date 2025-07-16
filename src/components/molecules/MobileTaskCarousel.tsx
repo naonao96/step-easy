@@ -11,6 +11,7 @@ interface MobileTaskCarouselProps {
   onEditTask?: (task: Task) => void;
   onTaskClick?: (task: Task) => void;
   isHabit?: boolean;
+  selectedDate?: Date; // 選択日付を追加
 }
 
 /**
@@ -28,7 +29,8 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
   onDeleteTask,
   onEditTask,
   onTaskClick,
-  isHabit = false
+  isHabit = false,
+  selectedDate
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -411,19 +413,30 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
                   <div className="p-3 pb-2">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3 flex-1 min-w-0">
+                        {(() => {
+                          // 未来日判定（習慣のみ）
+                          const isFutureDate = isHabit && selectedDate && selectedDate > new Date();
+                          
+                          return (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             onCompleteTask(task.id);
                           }}
+                              disabled={isFutureDate}
                           className={`mt-1 flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                            task.status === 'done'
+                                isFutureDate
+                                  ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed opacity-50'
+                                  : task.status === 'done'
                               ? 'bg-[#7c5a2a] border-[#7c5a2a] text-white'
                               : 'border-[#deb887] hover:border-[#7c5a2a]'
                           }`}
+                              title={isFutureDate ? '未来日は完了できません' : (task.status === 'done' ? '未完了に戻す' : '完了')}
                         >
                           {task.status === 'done' && FaCheck({ className: "w-3 h-3" })}
                         </button>
+                          );
+                        })()}
                         
                         {/* タイトル（チェックボックスの横） */}
                         <h3 className={`font-semibold text-lg line-clamp-2 flex-1 min-w-0 ${
@@ -434,28 +447,50 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
                       </div>
                       
                       <div className="flex gap-1">
-                        {onEditTask && (
+                        {onEditTask && (() => {
+                          // 未来日判定（習慣のみ）
+                          const isFutureDate = isHabit && selectedDate && selectedDate > new Date();
+                          
+                          return (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               onEditTask(task);
                             }}
-                            className="mt-1 p-1 text-[#7c5a2a] hover:text-[#8b4513] transition-colors flex-shrink-0"
-                            title="編集"
+                              disabled={isFutureDate}
+                              className={`mt-1 p-1 transition-colors flex-shrink-0 ${
+                                isFutureDate
+                                  ? 'text-gray-400 cursor-not-allowed opacity-50'
+                                  : 'text-[#7c5a2a] hover:text-[#8b4513]'
+                              }`}
+                              title={isFutureDate ? '未来日は編集できません' : '編集'}
                           >
                             {FaEdit({ className: "w-4 h-4" })}
                           </button>
-                        )}
+                          );
+                        })()}
+                        {(() => {
+                          // 未来日判定（習慣のみ）
+                          const isFutureDate = isHabit && selectedDate && selectedDate > new Date();
+                          
+                          return (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             onDeleteTask(task.id);
                           }}
-                          className="mt-1 p-1 text-[#7c5a2a] hover:text-[#8b4513] transition-colors flex-shrink-0"
-                          title="削除"
+                              disabled={isFutureDate}
+                              className={`mt-1 p-1 transition-colors flex-shrink-0 ${
+                                isFutureDate
+                                  ? 'text-gray-400 cursor-not-allowed opacity-50'
+                                  : 'text-[#7c5a2a] hover:text-[#8b4513]'
+                              }`}
+                              title={isFutureDate ? '未来日は削除できません' : '削除'}
                         >
                           {FaTrash({ className: "w-4 h-4" })}
                         </button>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>

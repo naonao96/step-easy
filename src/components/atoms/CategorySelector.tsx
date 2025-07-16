@@ -18,6 +18,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
 }) => {
   return (
     <div className={`space-y-2 ${className}`}>
+      {/* ラベル - 外部から指定された場合のみ表示 */}
       {label && (
         <label className="block text-sm font-medium text-gray-700">
           {label}

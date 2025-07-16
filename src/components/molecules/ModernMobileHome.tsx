@@ -355,94 +355,6 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
 
 
 
-  // タスクカードのレンダリング関数
-  const renderTaskCard = (task: Task, isHabit: boolean) => (
-    <div
-      key={task.id}
-      className={`bg-white rounded-lg border border-[#8b4513] overflow-hidden ${
-        task.status === 'done' ? 'opacity-75' : ''
-      }`}
-    >
-      {/* Row 1: Checkbox, Title, and Edit Button */}
-      <div className="flex items-start space-x-3 p-4 pb-2">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onCompleteTask(task.id);
-          }}
-          className={`mt-1 flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-            task.status === 'done'
-              ? 'bg-[#7c5a2a] border-[#7c5a2a] text-white'
-              : 'border-[#deb887] hover:border-[#7c5a2a]'
-          }`}
-        >
-          {task.status === 'done' && React.createElement(FaCheck as React.ComponentType<any>, { className: "w-2.5 h-2.5" })}
-        </button>
-        
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center space-x-2 mb-1">
-            <h3 className={`font-medium truncate ${
-              task.status === 'done' ? 'line-through text-gray-500' : 'text-gray-900'
-            }`}>
-              {task.title}
-            </h3>
-            {isHabit && (
-              <span className="text-xs bg-[#deb887] text-[#7c5a2a] px-1.5 sm:px-2 py-1 rounded flex items-center gap-1">
-                {FaFire({ className: "w-2.5 h-2.5" })}
-                {getFrequencyLabel(task.habit_frequency)}
-              </span>
-            )}
-          </div>
-          
-          {task.description && (
-            <p className={`text-sm line-clamp-2 ${
-              task.status === 'done' ? 'line-through text-gray-500' : 'text-gray-600'
-            }`}>
-              {task.description}
-            </p>
-          )}
-          
-          <div className="flex items-center space-x-2 mt-2">
-            {task.category && (
-              <CategoryBadge category={task.category} />
-            )}
-            {task.priority && (
-              <div className={`text-xs px-1.5 sm:px-2 py-1 rounded flex items-center justify-center ${
-                task.priority === 'high' ? 'bg-[#deb887] text-[#8b4513]' :
-                task.priority === 'medium' ? 'bg-[#f5f5dc] text-[#7c5a2a]' :
-                'bg-[#f5f5dc] text-[#7c5a2a]'
-              }`}>
-                {task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}
-              </div>
-            )}
-          </div>
-        </div>
-        
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDeleteTask(task.id);
-          }}
-          className="mt-1 p-1 text-[#7c5a2a] hover:text-[#8b4513] transition-colors"
-        >
-          {FaTrash ({className:"w-4 h-4"})}
-        </button>
-      </div>
-
-      {/* Row 2: Task Timer and History */}
-      <div className="px-4 pb-4">
-        <MobileTaskTimer
-          task={task as any}
-          onExecutionComplete={onTaskUpdate}
-        />
-        
-        {expandedTaskId === task.id && (
-          <MobileTaskHistory task={task as any} />
-        )}
-      </div>
-    </div>
-  );
-
   return (
     <div className="min-h-screen mt-4">
       {/* Header */}
@@ -554,6 +466,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
               onEditTask={onEditTask}
               onTaskClick={handleTaskClick}
               isHabit={activeTab === 'habits'}
+              selectedDate={selectedDate}
             />
           </div>
         )}
@@ -718,6 +631,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
               }
             }}
             isMobile={true}
+            selectedDate={selectedDate}
           />
         </>
       )}

@@ -23,6 +23,27 @@ interface Task {
   [key: string]: any;
 }
 
+// 新しい習慣関連の型定義
+interface Habit {
+  id: string;
+  user_id: string;
+  title: string;
+  habit_status: string;
+  frequency: string;
+  current_streak: number;
+  longest_streak: number;
+  last_completed_date: string | null;
+  created_at: string;
+  [key: string]: any;
+}
+
+interface HabitCompletion {
+  id: string;
+  habit_id: string;
+  completed_date: string;
+  created_at: string;
+}
+
 // 環境判定（SUPABASE_プレフィックスを削除）
 const isDevelopment = Deno.env.get('ENVIRONMENT') === 'development' || 
                      Deno.env.get('NODE_ENV') === 'development' ||
@@ -169,13 +190,46 @@ async function generateWithRetry(model: any, prompt: string, targetLength: numbe
   throw new Error(`Failed to generate message after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`);
 }
 
-// 前日データを取得する関数
-function getYesterdayData(tasks: Task[], emotions: any[]) {
+// 正確な習慣継続日数計算関数（streakUtils.tsのロジックを移植）
+function calculateHabitStreak(completions: HabitCompletion[], isCompletedToday: boolean = false): number {
+  if (completions.length === 0) {
+    return 0;
+  }
+
+  // 日付順でソート（完了順序は無視）
+  const sortedCompletions = completions
+    .sort((a, b) => new Date(a.completed_date).getTime() - new Date(b.completed_date).getTime());
+
+  let streak = 0;
+  let currentDate = new Date();
+  currentDate.setDate(currentDate.getDate() - 1); // 昨日から開始（今日は含めない）
+  
+  // 昨日から過去に向かって連続性をチェック
+  for (let i = sortedCompletions.length - 1; i >= 0; i--) {
+    const completionDate = new Date(sortedCompletions[i].completed_date);
+    
+    // 連続しているかチェック
+    const diffTime = Math.abs(currentDate.getTime() - completionDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) {
+      streak++;
+      currentDate = completionDate;
+    } else {
+      break; // 連続が途切れたら終了
+    }
+  }
+
+  return streak;
+}
+
+// 前日データを取得する関数（既存のタスクベース計算 + 新しい習慣計算）
+function getYesterdayData(tasks: Task[], habits: Habit[], habitCompletions: HabitCompletion[], emotions: any[]) {
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
   const yesterdayStr = yesterday.toISOString().split('T')[0];
   
-  // 前日のタスク統計
+  // 前日のタスク統計（既存の計算を維持）
   const yesterdayTasks = tasks?.filter((t: Task) => 
     t.start_date === yesterdayStr || (t.created_at && t.created_at.startsWith(yesterdayStr))
   ) || [];
@@ -206,41 +260,45 @@ function getYesterdayData(tasks: Task[], emotions: any[]) {
       default: return '記録なし';
     }
   };
-  
-  // 習慣継続性（直近7日間の完了率）
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  const recentTasks = tasks?.filter((t: Task) => 
-    t.created_at && new Date(t.created_at) >= sevenDaysAgo
-  ) || [];
-  
-  const completedInWeek = recentTasks.filter((t: Task) => t.status === 'done').length;
-  const totalInWeek = recentTasks.length;
-  const habitCompletionRate = totalInWeek > 0 ? Math.round((completedInWeek / totalInWeek) * 100) : 0;
-  
-  // 連続日数計算（簡易版）
+
+  // 新しい習慣継続情報の計算（正確な計算）
   let habitStreak = 0;
   let maxStreak = 0;
-  let currentStreak = 0;
+  let habitCompletionRate = 0;
   
-  for (let i = 1; i <= 30; i++) {
-    const checkDate = new Date();
-    checkDate.setDate(checkDate.getDate() - i);
-    const checkDateStr = checkDate.toISOString().split('T')[0];
-    
-    const dayTasks = tasks?.filter((t: Task) => 
-      t.start_date === checkDateStr || (t.created_at && t.created_at.startsWith(checkDateStr))
-    ) || [];
-    
-    const dayCompleted = dayTasks.filter((t: Task) => t.status === 'done').length;
-    
-    if (dayCompleted > 0) {
-      currentStreak++;
-      if (currentStreak > maxStreak) maxStreak = currentStreak;
-    } else {
-      if (habitStreak === 0) habitStreak = currentStreak;
-      currentStreak = 0;
+  try {
+    if (habits && habits.length > 0 && habitCompletions && habitCompletions.length > 0) {
+      // 各習慣の継続日数を計算
+      const habitStreaks = habits.map(habit => {
+        const habitCompletionsForHabit = habitCompletions.filter(c => c.habit_id === habit.id);
+        const currentStreak = calculateHabitStreak(habitCompletionsForHabit, false);
+        return { habit, currentStreak, longestStreak: habit.longest_streak || 0 };
+      });
+      
+      // 全体の継続日数と最長記録を計算
+      habitStreak = habitStreaks.length > 0 ? 
+        Math.round(habitStreaks.reduce((sum, h) => sum + h.currentStreak, 0) / habitStreaks.length) : 0;
+      maxStreak = habitStreaks.length > 0 ? 
+        Math.max(...habitStreaks.map(h => h.longestStreak)) : 0;
+      
+      // 習慣完了率の計算（直近7日間）
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const recentCompletions = habitCompletions.filter(c => 
+        new Date(c.completed_date) >= sevenDaysAgo
+      );
+      const totalPossibleCompletions = habits.length * 7; // 7日間 × 習慣数
+      habitCompletionRate = totalPossibleCompletions > 0 ? 
+        Math.round((recentCompletions.length / totalPossibleCompletions) * 100) : 0;
+      
+      debugLog('習慣継続情報計算完了', { habitStreak, maxStreak, habitCompletionRate, habitsCount: habits.length });
     }
+  } catch (error) {
+    debugLog('習慣継続情報計算エラー', error);
+    // エラーが発生した場合は既存の計算にフォールバック
+    habitStreak = 0;
+    maxStreak = 0;
+    habitCompletionRate = 0;
   }
   
   return {
@@ -265,7 +323,7 @@ function getYesterdayData(tasks: Task[], emotions: any[]) {
 }
 
 // 統合されたメッセージ生成関数（朝9時向け）
-async function generateMessage(genAI: GoogleGenerativeAI, userName?: string, tasks?: Task[], statistics?: any, promptTrends: string = '', emotions?: any[]): Promise<string> {
+async function generateMessage(genAI: GoogleGenerativeAI, userName?: string, tasks?: Task[], habits?: Habit[], habitCompletions?: HabitCompletion[], statistics?: any, promptTrends: string = '', emotions?: any[]): Promise<string> {
   const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
   
   const today = new Date().toLocaleDateString('ja-JP', {
@@ -275,7 +333,7 @@ async function generateMessage(genAI: GoogleGenerativeAI, userName?: string, tas
   });
 
   // 前日データを取得
-  const yesterdayData = getYesterdayData(tasks || [], emotions || []);
+  const yesterdayData = getYesterdayData(tasks || [], habits || [], habitCompletions || [], emotions || []);
 
   // 時間帯と曜日の取得（日本時間）
   const getTimeBasedGreeting = (): string => {
@@ -420,6 +478,18 @@ serve(async (_req: any) => {
           .eq('user_id', user.id)
           .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
 
+        // 習慣データ取得
+        const { data: habits } = await supabase
+          .from('habits')
+          .select('*')
+          .eq('user_id', user.id);
+
+        // 習慣完了データ取得（全期間）
+        const { data: habitCompletions } = await supabase
+          .from('habit_completions')
+          .select('*')
+          .in('habit_id', habits?.map(h => h.id) || []);
+
         // 感情集計（直近3日間のポジティブ/ネガティブ頻度・連続日数）
         let positiveCount = 0, negativeCount = 0, lastEmotion = null, positiveStreak = 0, negativeStreak = 0, currentStreak = 0;
         let streakType = null;
@@ -494,8 +564,8 @@ serve(async (_req: any) => {
         // プロンプトに傾向・変化・成長・弱点を追加
         const promptTrends = `\n【最近の傾向・変化】\n${trendSummary}\n${taskTrend}\n`;
 
-        // 統合されたメッセージ生成関数を呼び出す（感情データも渡す）
-        message = await generateMessage(genAI, userName, tasks || [], statistics, promptTrends, emotions || []);
+        // 統合されたメッセージ生成関数を呼び出す（習慣データも渡す）
+        message = await generateMessage(genAI, userName, tasks || [], habits || [], habitCompletions || [], statistics, promptTrends, emotions || []);
 
         // メッセージ文字数の最終チェック（データベース制約に合わせる）
         const finalMessage = message.length > MESSAGE_LIMITS.database 

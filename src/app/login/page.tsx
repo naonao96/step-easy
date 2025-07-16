@@ -45,12 +45,12 @@ export default function LoginPage() {
 
           {/* Googleログイン */}
           <div className="space-y-6">
-            <button
-              onClick={handleGoogleSignIn}
+          <button
+            onClick={handleGoogleSignIn}
               disabled={isGoogleLoading}
               className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-[#deb887] rounded-2xl text-[#8b4513] bg-white/80 hover:bg-white hover:shadow-lg hover:-translate-y-1 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isGoogleLoading ? (
+          >
+                          {isGoogleLoading ? (
                 <div className="w-5 h-5 border-2 border-[#deb887] border-t-[#8b4513] rounded-full animate-spin"></div>
               ) : (
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -60,16 +60,16 @@ export default function LoginPage() {
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                 </svg>
               )}
-              Googleでログイン
-            </button>
+            Googleでログイン
+          </button>
 
             <div className="text-center">
-              <p className="text-sm text-[#7c5a2a]">
-                アカウントをお持ちでないですか？{' '}
+            <p className="text-sm text-[#7c5a2a]">
+              アカウントをお持ちでないですか？{' '}
                 <a href="/register" className="text-[#8b4513] hover:underline font-medium">
-                  新規登録
+                新規登録
                 </a>
-              </p>
+            </p>
             </div>
           </div>
         </div>

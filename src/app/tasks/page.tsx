@@ -15,7 +15,7 @@ import { FaSave, FaEye, FaEdit, FaTrash, FaArrowLeft } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
 import { TaskTimer } from '@/components/molecules/TaskTimer';
 import { TaskExecutionHistory } from '@/components/molecules/TaskExecutionHistory';
-import { formatDateJP } from '@/lib/timeUtils';
+import { formatDateJP, toJSTDateString } from '@/lib/timeUtils';
 
 // 定数
 const DEFAULT_PRIORITY: 'low' | 'medium' | 'high' = 'medium';
@@ -192,8 +192,8 @@ export default function TaskEditPage() {
     is_habit: isHabit,
     habit_frequency: isHabit ? habitFrequency : undefined,
     status: 'todo',
-    start_date: startDate ? startDate.toISOString().split('T')[0] : null,
-    due_date: dueDate ? dueDate.toLocaleDateString('sv-SE') : null,
+    start_date: startDate ? toJSTDateString(startDate) : null,
+    due_date: dueDate ? toJSTDateString(dueDate) : null,
     estimated_duration: estimatedDuration,
     category
   });
@@ -429,6 +429,7 @@ export default function TaskEditPage() {
                         // 実行完了後にタスクデータを再読み込み
                         fetchTasks();
                       }}
+                      selectedDate={task.start_date ? new Date(task.start_date) : new Date()}
                     />
                     <TaskExecutionHistory task={task} />
                   </div>

@@ -154,6 +154,9 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
   const isPreviewMode = mode === 'preview';
   const isEditMode = mode === 'edit';
   
+  // 未来日判定（習慣のみ）
+  const isFutureDate = initialData?.is_habit && selectedDate && selectedDate > new Date();
+  
   // 習慣の完了状態を正しく判定（リアルタイム + ローカル状態）
   const getTaskStatus = () => {
     // ローカル状態が設定されている場合はそれを優先
@@ -437,7 +440,7 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
       <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 ${overlayClassName}`}>
         <div className={`bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[calc(80vh-120px)] overflow-hidden flex flex-col ${contentClassName} ${isFullScreen ? 'max-w-none max-h-none rounded-none' : ''}`}>
           {/* ヘッダー */}
-          <div className={`bg-[#f5f5dc] border-b border-[#deb887] px-4 sm:px-6 ${isMobile ? 'py-3 pt-safe' : 'py-4'}`}>
+          <div className={`${isHabit ? 'bg-orange-50 border-orange-200' : 'bg-[#f5f5dc] border-[#deb887]'} border-b px-4 sm:px-6 ${isMobile ? 'py-3 pt-safe' : 'py-4'}`}>
             {/* モバイル版：3行レイアウト */}
             {isMobile ? (
               <>
@@ -467,7 +470,13 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
                     <>
                       <button
                         onClick={() => onEdit(initialData as Task)}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200"
+                        disabled={isFutureDate}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg transition-all duration-200 ${
+                          isFutureDate
+                            ? 'text-gray-400 cursor-not-allowed opacity-50'
+                            : 'text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc]'
+                        }`}
+                        title={isFutureDate ? '未来日は編集できません' : '編集'}
                       >
                         {FaEdit({ className: "w-3 h-3" })}
                         編集
@@ -480,11 +489,15 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
                   {onComplete && (
                     <button
                       onClick={handleComplete}
+                      disabled={isFutureDate}
                       className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg transition-all duration-200 ${
-                        getTaskStatus() === 'done' 
+                        isFutureDate
+                          ? 'text-gray-400 cursor-not-allowed opacity-50'
+                          : getTaskStatus() === 'done' 
                           ? 'text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc]' 
                           : 'text-[#8b4513] hover:text-[#7c5a2a] hover:bg-[#f5f5dc]'
                       }`}
+                      title={isFutureDate ? '未来日は完了できません' : (getTaskStatus() === 'done' ? '未完了に戻す' : '完了')}
                     >
                       {FaCheck({ className: "w-3 h-3" })}
                       {getTaskStatus() === 'done' ? '未完了に戻す' : '完了'}
@@ -542,7 +555,13 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
                 {onEdit && (
                   <button
                     onClick={() => onEdit(initialData as Task)}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200"
+                    disabled={isFutureDate}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
+                      isFutureDate
+                        ? 'text-gray-400 bg-gray-100 cursor-not-allowed opacity-50'
+                        : 'text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc]'
+                    }`}
+                    title={isFutureDate ? '未来日は編集できません' : '編集'}
                   >
                     {FaEdit({ className: "w-3 h-3" })}
                     編集
@@ -551,11 +570,15 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
                 {onComplete && (
                   <button
                     onClick={handleComplete}
+                    disabled={isFutureDate}
                     className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
-                      getTaskStatus() === 'done' 
+                      isFutureDate
+                        ? 'text-gray-400 bg-gray-100 cursor-not-allowed opacity-50'
+                        : getTaskStatus() === 'done' 
                         ? 'text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc]' 
                         : 'text-[#8b4513] hover:text-[#7c5a2a] hover:bg-[#f5f5dc]'
                     }`}
+                    title={isFutureDate ? '未来日は完了できません' : (getTaskStatus() === 'done' ? '未完了に戻す' : '完了')}
                   >
                     {FaCheck({ className: "w-3 h-3" })}
                     {getTaskStatus() === 'done' ? '未完了に戻す' : '完了'}
@@ -635,6 +658,7 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
                       onExecutionComplete={() => {
                         if (onRefresh) onRefresh();
                       }}
+                      selectedDate={selectedDate}
                     />
                   ) : (
                     <TaskTimer 
@@ -642,6 +666,7 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
                       onExecutionComplete={() => {
                         if (onRefresh) onRefresh();
                       }}
+                      selectedDate={selectedDate}
                     />
                   )}
                   
@@ -663,7 +688,7 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
     <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 ${overlayClassName}`}>
       <div className={`bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[calc(80vh-120px)] overflow-hidden flex flex-col ${contentClassName} ${isFullScreen ? 'max-w-none max-h-none rounded-none' : ''}`}>
         {/* ヘッダー */}
-        <div className={`bg-[#f5f5dc] border-b border-[#deb887] px-4 sm:px-6 ${isMobile ? 'py-3 pt-safe' : 'py-4'}`}>
+          <div className={`${isHabit ? 'bg-orange-50 border-orange-200' : 'bg-[#f5f5dc] border-[#deb887]'} border-b px-4 sm:px-6 ${isMobile ? 'py-3 pt-safe' : 'py-4'}`}>
           {/* モバイル版：3行レイアウト */}
           {isMobile ? (
             <>
@@ -714,8 +739,13 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
                     <div className="w-px h-3 bg-[#deb887] mx-1"></div>
                     <button
                       onClick={handleDelete}
-                      disabled={isDeleting}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[#8b4513] hover:text-[#7c5a2a] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200 disabled:opacity-50"
+                      disabled={isDeleting || isFutureDate}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg transition-all duration-200 ${
+                        isFutureDate
+                          ? 'text-gray-400 cursor-not-allowed opacity-50'
+                          : 'text-[#8b4513] hover:text-[#7c5a2a] hover:bg-[#f5f5dc] disabled:opacity-50'
+                      }`}
+                      title={isFutureDate ? '未来日は削除できません' : (isDeleting ? '削除中...' : '削除')}
                     >
                       {FaTrash({ className: "w-3 h-3" })}
                       {isDeleting ? '削除中...' : '削除'}
@@ -781,8 +811,13 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
                   <div className="w-px h-3 bg-[#deb887] mx-1"></div>
                   <button
                     onClick={handleDelete}
-                    disabled={isDeleting}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-[#8b4513] hover:text-[#7c5a2a] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200 disabled:opacity-50"
+                    disabled={isDeleting || isFutureDate}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
+                      isFutureDate
+                        ? 'text-gray-400 cursor-not-allowed opacity-50'
+                        : 'text-[#8b4513] hover:text-[#7c5a2a] hover:bg-[#f5f5dc] disabled:opacity-50'
+                    }`}
+                    title={isFutureDate ? '未来日は削除できません' : (isDeleting ? '削除中...' : '削除')}
                   >
                     {FaTrash({ className: "w-3 h-3" })}
                     {isDeleting ? '削除中...' : '削除'}
@@ -805,6 +840,50 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
         {/* メインコンテンツ */}
         <div className={`overflow-y-auto`}>
           <div className={`p-4 sm:p-6 ${isMobile ? 'pb-12' : ''}`}>
+            {/* 習慣とタスクの説明（新規作成時のみ） */}
+            {!isExistingTask && (
+              <div className={`rounded-lg p-4 border ${
+                isHabit 
+                  ? 'bg-orange-50 border-orange-200' 
+                  : 'bg-[#f5f5dc] border-[#deb887]'
+              } mb-4`}>
+                <div className="flex items-start gap-3">
+                  <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                    isHabit ? 'bg-orange-100' : 'bg-[#deb887]'
+                  }`}>
+                    <span className="text-lg">{isHabit ? '🔥' : '📝'}</span>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className={`font-medium mb-2 ${
+                      isHabit ? 'text-orange-800' : 'text-[#8b4513]'
+                    }`}>
+                      {isHabit ? '習慣について' : 'タスクについて'}
+                    </h3>
+                    <div className="text-sm space-y-2">
+                      {isHabit ? (
+                        <>
+                          <p className="text-orange-700">
+                            <strong>毎日くり返して取り組みたいこと。</strong>
+                          </p>
+                          <p className="text-orange-600">
+                            たとえば「朝散歩」「日記を書く」など。完了するたびに記録され、カレンダーにも毎日表示されます。続けた日数がストリークになり、継続の達成感が見える化されます。
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-[#7c5a2a]">
+                            <strong>一度だけ完了すればいいこと。</strong>
+                          </p>
+                          <p className="text-[#7c5a2a]">
+                            たとえば「書類を出す」「予約を取る」など。指定した日にだけ表示され、完了すれば記録に残りますが繰り返されることはありません。
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="space-y-4 sm:space-y-6">
               {/* 基本情報 */}
               <div className="space-y-3 sm:space-y-4">
@@ -879,6 +958,7 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
                         <CategorySelector
                           value={category}
                           onChange={setCategory}
+                          label=""
                         />
                       </div>
                     </div>
@@ -888,11 +968,12 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
                       <label className="block text-sm font-medium text-[#8b4513] mb-2">
                         予想時間
                       </label>
-                      <DurationInput
-                        value={estimatedDuration}
-                        onChange={setEstimatedDuration}
-                        className="w-full border-[#deb887] focus:border-[#7c5a2a] focus:ring-[#7c5a2a] text-sm sm:text-base"
-                      />
+                                              <DurationInput
+                          value={estimatedDuration}
+                          onChange={setEstimatedDuration}
+                          label=""
+                          className="w-full border-[#deb887] focus:border-[#7c5a2a] focus:ring-[#7c5a2a] text-sm sm:text-base"
+                        />
                     </div>
                   </div>
                 )}
@@ -904,11 +985,16 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
                   <Button
                     variant={getTaskStatus() === 'done' ? 'secondary' : 'primary'}
                     onClick={handleComplete}
+                    disabled={isFutureDate}
                     size="sm"
-                    className={`${getTaskStatus() === 'done' 
+                    className={`${
+                      isFutureDate
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-50'
+                        : getTaskStatus() === 'done' 
                       ? 'bg-[#f5f5dc] text-[#8b4513] border border-[#deb887] hover:bg-[#deb887]' 
                       : 'bg-[#7c5a2a] hover:bg-[#8b4513] text-white'
                     } text-sm sm:text-base`}
+                    title={isFutureDate ? '未来日は完了できません' : (getTaskStatus() === 'done' ? '未完了に戻す' : '完了にする')}
                   >
                     {getTaskStatus() === 'done' ? '未完了に戻す' : '完了にする'}
                   </Button>

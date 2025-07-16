@@ -214,21 +214,8 @@ export default function MenuPage() {
     return integrateHabitData(habits, tasks);
   }, [habits, tasks]);
 
-  // 新しい習慣データをTask型に変換（未来日付では表示しない）
+  // 新しい習慣データをTask型に変換（未来日付でも表示する）
   const convertedHabits = useMemo(() => {
-    if (!selectedDate) return convertHabitsToTasks(habits, selectedDate, habitCompletions);
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const selected = new Date(selectedDate);
-    selected.setHours(0, 0, 0, 0);
-    
-    // 未来日付の場合は空配列を返す
-    if (selected.getTime() > today.getTime()) {
-      return [];
-    }
-    
-    // 過去・今日の場合は通常通り
     return convertHabitsToTasks(habits, selectedDate, habitCompletions);
   }, [habits, selectedDate, habitCompletions]);
 
@@ -599,7 +586,7 @@ export default function MenuPage() {
   };
 
   return (
-    <AppLayout variant="home" tasks={tasks as any} showNotifications={true} showFAB={true} onFABClick={handleFABClick}>
+    <AppLayout variant="home" tasks={tasks as any} showNotifications={true} showFAB={true} onFABClick={handleFABClick} currentTab={currentMobileTab}>
       {/* モダンなモバイル専用レイアウト */}
       <div className="lg:hidden">
         <ModernMobileHome

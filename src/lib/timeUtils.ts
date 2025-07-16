@@ -274,3 +274,32 @@ export function getDayBasedMessage(userName?: string): string {
       return `${userGreeting}今日も習慣を頑張りましょう！`;
   }
 } 
+
+/**
+ * 日付をJSTで統一してYYYY-MM-DD形式の文字列に変換
+ * @param date 変換対象の日付
+ * @returns JST基準のYYYY-MM-DD形式文字列
+ */
+export function toJSTDateString(date: Date): string {
+  const jstDate = new Date(date.getTime() + (9 * 60 * 60 * 1000));
+  return jstDate.toISOString().split('T')[0];
+}
+
+/**
+ * 今日の日付をJSTで取得してYYYY-MM-DD形式の文字列に変換
+ * @returns 今日のJST基準YYYY-MM-DD形式文字列
+ */
+export function getTodayJSTString(): string {
+  const today = new Date();
+  return toJSTDateString(today);
+}
+
+/**
+ * 日付文字列をJST基準のDateオブジェクトに変換
+ * @param dateString YYYY-MM-DD形式の日付文字列
+ * @returns JST基準のDateオブジェクト
+ */
+export function fromJSTDateString(dateString: string): Date {
+  const utcDate = new Date(dateString + 'T00:00:00Z');
+  return new Date(utcDate.getTime() - (9 * 60 * 60 * 1000));
+} 

@@ -9,9 +9,10 @@ import { getHabitDailyExecutionTime, formatHabitExecutionTime } from '@/lib/habi
 interface TaskTimerProps {
   task: Task;
   onExecutionComplete?: () => void;
+  selectedDate?: Date;
 }
 
-export const TaskTimer: React.FC<TaskTimerProps> = ({ task, onExecutionComplete }) => {
+export const TaskTimer: React.FC<TaskTimerProps> = ({ task, onExecutionComplete, selectedDate }) => {
   const {
     activeExecution,
     elapsedTime,
@@ -194,6 +195,9 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({ task, onExecutionComplete 
     };
   }, [showResetPopover]);
 
+  // 過去日・未来日判定（習慣のみ）- 今日以外は実行不可
+  const isNotToday = task.is_habit && selectedDate && selectedDate.toDateString() !== new Date().toDateString();
+
   // 他のタスクが実行中の場合は実行不可
   const isOtherTaskRunning = Boolean(activeExecution && !isCurrentTaskActive);
 
@@ -245,15 +249,17 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({ task, onExecutionComplete 
           // 開始ボタン
           <button
             onClick={handleStart}
-            disabled={isOtherTaskRunning}
+            disabled={isOtherTaskRunning || isNotToday}
             className={`
               flex items-center justify-center gap-2 px-3 py-1.5 rounded-md font-medium text-xs transition-colors
-              ${isOtherTaskRunning
+              ${isNotToday
+                ? 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-50'
+                : isOtherTaskRunning
                 ? 'bg-[#f5f5dc] text-[#7c5a2a] border border-[#deb887] cursor-not-allowed'
                 : 'bg-[#7c5a2a] text-white hover:bg-[#8b4513]'
               }
             `}
-            title={isOtherTaskRunning ? '他のタスクが実行中です' : '実行開始'}
+            title={isNotToday ? '今日以外は実行できません' : (isOtherTaskRunning ? '他のタスクが実行中です' : '実行開始')}
           >
             {FaPlay({ className: "w-3 h-3" })}
             開始

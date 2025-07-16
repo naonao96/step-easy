@@ -326,6 +326,104 @@ export default function SettingsPage() {
         throw settingsError;
       }
 
+      // emotions削除
+      const { error: emotionsError } = await supabase
+        .from('emotions')
+        .delete()
+        .eq('user_id', currentUser.id);
+      
+      if (emotionsError) {
+        console.error('emotions削除エラー:', emotionsError);
+      }
+
+      // notifications削除
+      const { error: notificationsError } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', currentUser.id);
+      
+      if (notificationsError) {
+        console.error('notifications削除エラー:', notificationsError);
+      }
+
+      // habits削除
+      const { error: habitsError } = await supabase
+        .from('habits')
+        .delete()
+        .eq('user_id', currentUser.id);
+      
+      if (habitsError) {
+        console.error('habits削除エラー:', habitsError);
+      }
+
+      // habit_completions削除
+      const { error: habitCompletionsError } = await supabase
+        .from('habit_completions')
+        .delete()
+        .eq('user_id', currentUser.id);
+      
+      if (habitCompletionsError) {
+        console.error('habit_completions削除エラー:', habitCompletionsError);
+      }
+
+      // task_categories削除
+      const { error: taskCategoriesError } = await supabase
+        .from('task_categories')
+        .delete()
+        .eq('user_id', currentUser.id);
+      
+      if (taskCategoriesError) {
+        console.error('task_categories削除エラー:', taskCategoriesError);
+      }
+
+      // Stripeサブスクリプションのキャンセル
+      const { data: subscription } = await supabase
+        .from('subscriptions')
+        .select('stripe_subscription_id')
+        .eq('user_id', currentUser.id)
+        .single();
+
+      if (subscription?.stripe_subscription_id) {
+        try {
+          console.log('🔐 Stripeサブスクリプションキャンセル開始:', subscription.stripe_subscription_id);
+          const response = await fetch('/api/stripe/cancel-subscription', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              subscriptionId: subscription.stripe_subscription_id 
+            }),
+          });
+          
+          if (!response.ok) {
+            console.error('Stripeサブスクリプションキャンセルエラー:', response.status);
+          } else {
+            console.log('✅ Stripeサブスクリプションをキャンセルしました');
+          }
+        } catch (error) {
+          console.error('Stripe API呼び出しエラー:', error);
+        }
+      }
+
+      // subscriptions削除（Stripe側は保持、データベース側のみ削除）
+      const { error: subscriptionsError } = await supabase
+        .from('subscriptions')
+        .delete()
+        .eq('user_id', currentUser.id);
+      
+      if (subscriptionsError) {
+        console.error('subscriptions削除エラー:', subscriptionsError);
+      }
+
+      // payment_history削除（Stripe側は保持、データベース側のみ削除）
+      const { error: paymentHistoryError } = await supabase
+        .from('payment_history')
+        .delete()
+        .eq('user_id', currentUser.id);
+      
+      if (paymentHistoryError) {
+        console.error('payment_history削除エラー:', paymentHistoryError);
+      }
+
       // users削除
       const { error: userError } = await supabase
         .from('users')

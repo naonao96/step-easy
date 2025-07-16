@@ -65,16 +65,16 @@ export default function RegisterPage() {
             </button>
 
             <div className="text-center">
-              <p className="text-sm text-[#7c5a2a]">
+            <p className="text-sm text-[#7c5a2a]">
                 既にアカウントをお持ちですか？{' '}
                 <a href="/login" className="text-[#8b4513] hover:underline font-medium">
                   ログイン
                 </a>
               </p>
             </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
   );
 } 

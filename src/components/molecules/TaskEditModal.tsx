@@ -1,5 +1,19 @@
-import React from 'react';
-import { Task } from '@/types/task';
+import React, { useState, useEffect } from 'react';
+import { useTaskStore } from '@/stores/taskStore';
+import { type Task } from '@/types/task';
+import { useAuth } from '@/contexts/AuthContext';
+import { Input } from '@/components/atoms/Input';
+import { PrioritySelector } from '@/components/atoms/PrioritySelector';
+import { CategorySelector } from '@/components/atoms/CategorySelector';
+import { DatePicker } from '@/components/atoms/DatePicker';
+import { DurationInput } from '@/components/atoms/DurationInput';
+import { Button } from '@/components/atoms/Button';
+import { TaskTimer } from './TaskTimer';
+import { TaskExecutionHistory } from './TaskExecutionHistory';
+import { FaTimes, FaSave, FaEdit, FaTrash, FaCheck, FaEye, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import ReactMarkdown from 'react-markdown';
+import { TASK_CONSTANTS } from '@/lib/constants';
+import { toJSTDateString } from '@/lib/timeUtils';
 import { BaseTaskModal } from './BaseTaskModal';
 
 interface TaskEditModalProps {
@@ -11,6 +25,7 @@ interface TaskEditModalProps {
   onPreview: (task: Task) => void;
   onRefresh: () => void;
   isMobile?: boolean;
+  selectedDate?: Date;
 }
 
 export const TaskEditModal: React.FC<TaskEditModalProps> = ({
@@ -21,7 +36,8 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
   onDelete,
   onPreview,
   onRefresh,
-  isMobile = false
+  isMobile = false,
+  selectedDate
 }) => {
   const createTaskFormData = (data: {
     title: string;
@@ -31,27 +47,18 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
     dueDate: Date | null;
     estimatedDuration: number | undefined;
     category: string;
-  }) => {
-    const taskData: any = {
+  }) => ({
       title: data.title.trim(),
-      description: data.content.trim(),
+    description: data.content,
       priority: data.priority,
-      category: data.category,
       is_habit: task?.is_habit || false,
-      start_date: data.startDate?.toISOString().split('T')[0],
+    habit_frequency: task?.habit_frequency || undefined,
+    status: 'todo' as const,
+    start_date: data.startDate ? toJSTDateString(data.startDate) : null,
+    due_date: data.dueDate ? toJSTDateString(data.dueDate) : null,
       estimated_duration: data.estimatedDuration,
-    };
-
-    if (data.dueDate) {
-      taskData.due_date = data.dueDate.toISOString().split('T')[0];
-    }
-
-    if (task?.is_habit) {
-      taskData.habit_frequency = task.habit_frequency;
-    }
-
-    return taskData;
-  };
+    category: data.category
+  });
 
   return (
     <BaseTaskModal
@@ -81,6 +88,7 @@ Markdownで自由に書けます！`}
       modalTitle="編集"
       createFormData={createTaskFormData}
       isMobile={isMobile}
+      selectedDate={selectedDate}
     />
   );
 }; 

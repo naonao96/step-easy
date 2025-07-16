@@ -369,7 +369,6 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ task
             <div className="px-4 py-3 border-b border-[#deb887]/30 bg-[#f0e8d8] rounded-t-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">🐦</span>
                   <h3 className="text-sm font-semibold text-[#8b4513]">
                     通知 {notificationCount > 0 && `(${notificationCount})`}
                   </h3>

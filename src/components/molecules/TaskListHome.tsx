@@ -182,7 +182,11 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
 
 
   // タスクカードの共通レンダリング
-  const renderTaskCard = (task: any, isHabit = false) => (
+  const renderTaskCard = (task: any, isHabit = false) => {
+    // 未来日判定（習慣のみ）- 過去日は操作可能
+    const isFutureDate = isHabit && selectedDate && selectedDate > new Date();
+    
+    return (
     <div
       key={task.id}
       className={`
@@ -202,6 +206,7 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
             checked={task.status === 'done'}
             onChange={() => onCompleteTask?.(task.id)}
             size="sm"
+              disabled={isFutureDate}
           />
         </div>
         
@@ -210,16 +215,21 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
           <button
             onClick={(e) => {
               e.stopPropagation();
+                if (!isFutureDate) {
               onCompleteTask?.(task.id);
+                }
             }}
+              disabled={isFutureDate}
             className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${
-              task.status === 'done'
+                isFutureDate
+                  ? 'bg-gray-200 border-gray-300 cursor-not-allowed opacity-50'
+                  : task.status === 'done'
                 ? 'bg-[#7c5a2a] border-[#7c5a2a] text-white scale-110'
                 : 'border-[#deb887] hover:border-[#7c5a2a] hover:scale-105'
             }`}
-            title={task.status === 'done' ? '未完了に戻す' : '完了にする'}
+              title={isFutureDate ? '未来日は完了できません' : (task.status === 'done' ? '未完了に戻す' : '完了にする')}
           >
-            {task.status === 'done' && FaCheck({ className: "w-3 h-3" })}
+              {task.status === 'done' && !isFutureDate && FaCheck({ className: "w-3 h-3" })}
           </button>
         </div>
       </div>
@@ -285,17 +295,21 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
             router.push(`/tasks?id=${task.id}&mode=edit`);
           }
         }}
+        disabled={isFutureDate}
         className={`flex-shrink-0 p-2 sm:p-1 transition-colors touch-manipulation ${
-          task.status === 'done' 
+          isFutureDate
+            ? 'text-gray-400 cursor-not-allowed opacity-50'
+            : task.status === 'done' 
             ? 'text-[#7c5a2a] hover:text-[#8b4513]' 
             : 'text-[#7c5a2a] hover:text-[#8b4513]'
         }`}
-        title="編集"
+        title={isFutureDate ? '未来日は編集できません' : '編集'}
       >
         {FaEdit({ className: "w-4 h-4 sm:w-3 sm:h-3" })}
       </button>
     </div>
   );
+  };
 
   // タブボタンコンポーネント
   const TabButton = ({ 
@@ -321,7 +335,7 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
       className={`
         flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200
         ${isActive 
-          ? 'bg-[#7c5a2a] text-white shadow-sm' 
+          ? 'bg-[#7c5a2a] text-white shadow-sm'
           : disabled
             ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
             : 'bg-[#f5f5dc] text-[#7c5a2a] hover:bg-[#deb887] hover:text-[#8b4513]'
@@ -334,7 +348,7 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
         <span className={`
           px-1.5 py-0.5 text-xs rounded-full min-w-[1.25rem] text-center
           ${isActive 
-            ? 'bg-white text-[#7c5a2a]' 
+            ? 'bg-white text-[#7c5a2a]'
             : 'bg-[#deb887] text-[#7c5a2a]'
           }
         `}>
@@ -408,7 +422,7 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
           disabled={!getTabAddButtonEnabled()}
           className={`flex-shrink-0 ml-2 flex items-center gap-2 px-3 py-1 text-sm rounded-lg transition-colors ${
             getTabAddButtonEnabled() 
-              ? 'bg-[#7c5a2a] text-white hover:bg-[#8b4513] shadow-sm' 
+              ? 'bg-[#7c5a2a] text-white hover:bg-[#8b4513] shadow-sm'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
           title={!getTabAddButtonEnabled() ? 
@@ -420,7 +434,7 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
             ) : ''
           }
         >
-          {FaPlus({ className: "w-3 h-3" })}
+          {activeTab === 'habits' ? FaFire({ className: "w-3 h-3" }) : FaTasks({ className: "w-3 h-3" })}
           <span className="text-xs sm:text-sm">{getTabAddButtonLabel()}</span>
         </button>
       </div>
