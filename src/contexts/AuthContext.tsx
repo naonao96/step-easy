@@ -236,12 +236,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
-      // Vercelプレビューモード対応: 環境変数または現在のURLのoriginを使用
-      const redirectUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${redirectUrl}/auth/callback`
+          redirectTo: `${window.location.origin}/auth/callback`
         }
       });
       if (error) throw error;

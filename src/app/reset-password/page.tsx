@@ -22,10 +22,8 @@ export default function ResetPasswordPage() {
     setIsLoading(true);
 
     try {
-      // Vercelプレビューモード対応: 環境変数または現在のURLのoriginを使用
-      const redirectUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${redirectUrl}/auth/callback?next=/update-password`,
+        redirectTo: `${window.location.origin}/auth/callback?next=/update-password`,
       });
 
       if (error) throw error;
