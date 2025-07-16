@@ -87,16 +87,7 @@ export const HabitModal = forwardRef<{ closeWithValidation: () => void }, HabitM
     }
   };
 
-  const renderAdditionalFields = () => (
-    <div className="flex items-center gap-4">
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-gray-700">習慣</span>
-        <div className="flex items-center gap-2 px-3 py-1 bg-blue-100 rounded-lg">
-          <span className="text-sm text-blue-700 font-medium">🔥 毎日</span>
-        </div>
-      </div>
-    </div>
-  );
+  const renderAdditionalFields = () => null;
 
   return (
     <BaseTaskModal

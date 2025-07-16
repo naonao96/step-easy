@@ -56,15 +56,8 @@ const fetchDailyMessage = async (userId: string): Promise<string | null> => {
     const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
     const hour = japanTime.getHours();
     
-    // 0-9時の場合は前日のメッセージを取得（日本時間）
-    let targetDate: string;
-    if (hour >= 0 && hour < 9) {
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
-      targetDate = getJSTDateString(yesterday);
-    } else {
-      targetDate = getJSTDateString();
-    }
+    // 常に今日のメッセージを取得（日本時間）
+    const targetDate = japanTime.toISOString().split('T')[0];
 
     const { data: dailyMessage, error } = await supabase
       .from('daily_messages')

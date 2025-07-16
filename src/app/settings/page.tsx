@@ -10,7 +10,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/templates/AppLayout';
 import { useTaskStore } from '@/stores/taskStore';
 import { PremiumComingSoonBanner } from '@/components/molecules/PremiumComingSoonBanner';
-import { TrialStatusBanner } from '@/components/molecules/TrialStatusBanner';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 // AuthContextと同じSupabaseクライアント作成方法を使用して認証状態を統一
@@ -663,8 +662,6 @@ export default function SettingsPage() {
 
             {/* メインコンテンツ */}
             <div className="md:col-span-3 col-span-1">
-              {/* 体験期間ステータスバナー */}
-              <TrialStatusBanner />
               
               <div className="bg-[#f5f5dc] rounded-lg shadow-md p-4 md:p-6 border border-[#deb887]">
                 {activeTab === 'profile' && (
@@ -704,39 +701,11 @@ export default function SettingsPage() {
                   <div className="space-y-6">
                     <div className="mb-4">
                       <div className="flex items-center gap-3">
-                        <span className="text-2xl">🐦</span>
                       <h2 className="text-xl font-semibold text-[#8b4513]">通知設定</h2>
                     </div>
                       <p className="text-[#7c5a2a] text-sm mt-2">
                         通知の種類と表示方法をカスタマイズできます
                       </p>
-                    </div>
-
-                    {/* 通知表示方法 */}
-                    <div className="bg-[#f5f5dc] border border-[#deb887] rounded-lg p-4">
-                      <h3 className="text-lg font-medium text-[#8b4513] mb-3">通知表示方法</h3>
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <span className="text-lg">🔔</span>
-                            <div>
-                              <div className="font-medium text-[#8b4513]">トースト通知</div>
-                              <div className="text-xs text-[#7c5a2a]">右下から表示される通知</div>
-                            </div>
-                          </div>
-                          <span className="text-xs text-[#7c5a2a] bg-[#f0e8d8] px-2 py-1 rounded">有効</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <span className="text-lg">📱</span>
-                            <div>
-                              <div className="font-medium text-[#8b4513]">ドロップダウン通知</div>
-                              <div className="text-xs text-[#7c5a2a]">ヘッダーの通知ベルから表示</div>
-                            </div>
-                          </div>
-                          <span className="text-xs text-[#7c5a2a] bg-[#f0e8d8] px-2 py-1 rounded">有効</span>
-                        </div>
-                      </div>
                     </div>
 
                     {/* 通知カテゴリ設定 */}
@@ -799,41 +768,6 @@ export default function SettingsPage() {
                       </button>
                     </form>
                     </div>
-
-                    {/* 通知の説明 */}
-                    <div className="bg-[#f0e8d8] border border-[#deb887]/50 rounded-lg p-4">
-                      <h3 className="text-lg font-medium text-[#8b4513] mb-3">通知について</h3>
-                      <div className="space-y-2 text-sm text-[#7c5a2a]">
-                        <div className="flex items-start gap-2">
-                          <span className="text-lg">📝</span>
-                          <div>
-                            <div className="font-medium">タスク通知</div>
-                            <div>期限が近いタスクや完了したタスクのお知らせ</div>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <span className="text-lg">🔥</span>
-                          <div>
-                            <div className="font-medium">習慣通知</div>
-                            <div>習慣の継続状況や途切れの警告</div>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <span className="text-lg">🛡️</span>
-                          <div>
-                            <div className="font-medium">システム通知</div>
-                            <div>アプリの更新やメンテナンス情報</div>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <span className="text-lg">🤖</span>
-                          <div>
-                            <div className="font-medium">AI通知</div>
-                            <div>AI分析の完了やメッセージ生成</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 )}
 
@@ -842,9 +776,6 @@ export default function SettingsPage() {
                     <div className="mb-4">
                       <h2 className="text-xl font-semibold text-[#8b4513]">プレミアム管理</h2>
                     </div>
-                    
-                    {/* 体験期間ステータスバナー */}
-                    <TrialStatusBanner />
                     
                     {isPremium ? (
                       /* プレミアムユーザー向け表示 */
@@ -1016,17 +947,38 @@ export default function SettingsPage() {
                               </div>
                             </div>
                           </div>
-                        </div>
-                        
-                        {/* プレミアム申込ボタン */}
-                        <div className="bg-[#f5f5dc] border border-[#deb887] rounded-lg p-4">
-                          <h3 className="text-lg font-semibold text-[#8b4513] mb-2">
-                            プレミアムにアップグレード
-                          </h3>
-                          <p className="text-[#7c5a2a] mb-4 text-sm">
-                            今すぐプレミアム機能をお試しいただけます。
-                          </p>
-                          <PremiumComingSoonBanner />
+                          
+                          {/* プレミアム申込ボタン */}
+                          <div className="mt-6 pt-4 border-t border-[#deb887]/30">
+                            <button 
+                              onClick={async () => {
+                                if (!user?.id || !user?.email) {
+                                  alert('ユーザー情報が見つかりません。');
+                                  return;
+                                }
+                                try {
+                                  const { createCheckoutSession } = await import('@/lib/stripe-client');
+                                  const { loadStripeClient } = await import('@/lib/stripe-client');
+                                  const sessionId = await createCheckoutSession(user.id, user.email);
+                                  const stripe = await loadStripeClient();
+                                  
+                                  if (stripe) {
+                                    await stripe.redirectToCheckout({ sessionId });
+                                  }
+                                } catch (error) {
+                                  console.error('Upgrade error:', error);
+                                  alert('決済ページを開けませんでした。もう一度お試しください。');
+                                }
+                              }}
+                              className="w-full px-4 py-3 bg-[#8b4513] hover:bg-[#7c5a2a] text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                            >
+                              {FaCrown({ className: "w-4 h-4" })}
+                              プレミアムにアップグレード
+                            </button>
+                            <p className="text-xs text-[#8b4513] text-center mt-3">
+                              7日間の無料体験期間付き・いつでも解約可能
+                            </p>
+                          </div>
                         </div>
                         
                         {/* FAQ・サポート */}
@@ -1036,13 +988,6 @@ export default function SettingsPage() {
                             <h3 className="text-lg font-semibold text-[#8b4513]">よくある質問</h3>
                           </div>
                           <div className="space-y-3 text-sm">
-                            <button
-                              onClick={() => window.open('/lp?section=faq', '_blank')}
-                              className="flex items-center gap-2 text-[#7c5a2a] hover:text-[#8b4513] transition-colors"
-                            >
-                              {FaQuestionCircle({ className: "w-3 h-3" })}
-                              <span>プレミアム機能について詳しく知りたい</span>
-                            </button>
                             <button
                               onClick={() => window.open('/terms', '_blank')}
                               className="flex items-center gap-2 text-[#7c5a2a] hover:text-[#8b4513] transition-colors"
