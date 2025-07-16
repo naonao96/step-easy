@@ -5,6 +5,9 @@ import { headers } from 'next/headers';
 import type Stripe from 'stripe';
 import { createSubscriptionNotification } from '@/lib/notifications';
 
+// 動的レンダリングを強制
+export const dynamic = 'force-dynamic';
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!

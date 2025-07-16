@@ -780,40 +780,6 @@ export default function SettingsPage() {
                     {isPremium ? (
                       /* プレミアムユーザー向け表示 */
                       <div className="space-y-6">
-                        {/* 現在のプラン状況 */}
-                        <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-lg p-6">
-                          <div className="flex items-center gap-3 mb-4">
-                            {FaCrown({ className: "w-6 h-6 text-green-600" })}
-                            <h3 className="text-lg font-semibold text-green-800">プレミアム会員</h3>
-                            <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
-                              アクティブ
-                            </span>
-                          </div>
-                          
-                          <p className="text-green-700 mb-4">
-                            すべてのプレミアム機能をご利用いただけます。習慣の記録を"人生の記憶"として残し、無制限の管理・分析が可能です。
-                          </p>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                            <div className="flex items-center gap-2">
-                              {FaHeart({ className: "w-4 h-4 text-green-600" })}
-                              <span className="text-sm text-green-700">無制限の習慣管理</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {FaHeart({ className: "w-4 h-4 text-green-600" })}
-                              <span className="text-sm text-green-700">データの永続保存</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {FaHeart({ className: "w-4 h-4 text-green-600" })}
-                              <span className="text-sm text-green-700">高度な分析機能</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {FaHeart({ className: "w-4 h-4 text-green-600" })}
-                              <span className="text-sm text-green-700">無制限のタスク作成</span>
-                            </div>
-                          </div>
-                        </div>
-                        
                         {/* サブスクリプション管理 */}
                         <div className="bg-[#f5f5dc] border border-[#deb887] rounded-lg p-6">
                           <div className="flex items-center gap-2 mb-4">

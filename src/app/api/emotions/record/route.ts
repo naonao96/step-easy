@@ -3,6 +3,9 @@ import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { getEmotionTimePeriod, getJapanTime } from '@/lib/timeUtils';
 
+// 動的レンダリングを強制
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = createRouteHandlerClient({ cookies });
