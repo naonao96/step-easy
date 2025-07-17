@@ -24,14 +24,14 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
       <div className="relative z-10 p-4">
         <div className="flex justify-center items-center">
           {/* プログレスインジケーター */}
-          <div className="flex space-x-2">
+          <div className="flex space-x-1.5">
             {[1, 2, 3, 4].map((step) => (
               <div
                 key={step}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
                   step <= currentStep 
-                    ? 'bg-[#8b4513] shadow-lg' 
-                    : 'bg-white/50'
+                    ? 'bg-[#8b4513] shadow-md scale-110' 
+                    : 'bg-white/50 hover:bg-white/70'
                 }`}
               />
             ))}

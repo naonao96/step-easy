@@ -16,7 +16,7 @@ import { MobileOthersContent } from '@/components/lp/MobileOthersContent';
 
 export default function ModernLandingPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, signInAsGuest } = useAuth();
   const [activeSection, setActiveSection] = useState<ContentSection>('home');
   const [isLoading, setIsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -63,12 +63,18 @@ export default function ModernLandingPage() {
 
   const handleRegister = async () => {
     setIsLoading(true);
-    router.push('/register');
+    router.push('/login');
   };
 
   const handleGuest = async () => {
     setIsLoading(true);
-    router.push('/guest');
+    try {
+      await signInAsGuest();
+      router.push('/menu');
+    } catch (error) {
+      console.error('Guest mode error:', error);
+      setIsLoading(false);
+    }
   };
 
   const renderContent = () => {

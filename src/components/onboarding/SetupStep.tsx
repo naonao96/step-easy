@@ -59,14 +59,16 @@ export const SetupStep: React.FC<SetupStepProps> = ({
   };
 
   return (
-    <div className="w-full max-w-md mx-auto text-center">
+    <div className="w-full max-w-md mx-auto text-center relative">
+      {/* 背景レイヤー（影効果） */}
+      <div className="absolute inset-0 bg-white/30 rounded-2xl transform translate-x-1 translate-y-1 blur-sm"></div>
+      
+      {/* コンテンツ */}
+      <div className="relative z-10 p-4">
       {/* ヘッダー */}
-      <div className="mb-8">
-        <h2 className="text-xl lg:text-3xl font-bold leading-tight mb-3 relative">
+      <div className="mb-4">
+        <h2 className="text-lg lg:text-2xl font-bold leading-tight mb-2 relative">
           {/* 背景レイヤー（影効果） */}
-          <div className="absolute inset-0 bg-white/30 rounded-2xl transform translate-x-1 translate-y-1 blur-sm"></div>
-          
-          {/* メインテキスト */}
           <div className="relative z-10 text-[#4a3728]" 
                style={{ 
                  textShadow: '1px 1px 2px rgba(255, 255, 255, 0.8), 2px 2px 4px rgba(139, 69, 19, 0.3)',
@@ -90,37 +92,37 @@ export const SetupStep: React.FC<SetupStepProps> = ({
       </div>
 
       {/* 名前入力 */}
-      <div className="mb-6">
-        <div className="relative overflow-hidden bg-gradient-to-br from-[#f5f5dc]/60 to-[#deb887]/30 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-[#deb887]/20">
+      <div className="mb-4">
+        <div className="relative overflow-hidden bg-gradient-to-br from-[#f5f5dc]/60 to-[#deb887]/30 backdrop-blur-sm rounded-3xl p-4 shadow-xl border border-[#deb887]/20">
           {/* 装飾要素 */}
-          <div className="absolute top-4 right-4 w-6 h-6 text-[#8b4513] opacity-30">
+          <div className="absolute top-3 right-3 w-5 h-5 text-[#8b4513] opacity-30">
             <svg fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
             </svg>
           </div>
           
           <div className="relative z-10">
-            <label htmlFor="userName" className="block text-[#8b4513] font-semibold mb-4 text-lg">
+            <label htmlFor="userName" className="block text-[#8b4513] font-semibold mb-3 text-base">
               ニックネーム
             </label>
-            <div className="relative mb-4">
+            <div className="relative mb-3">
               <input
                 id="userName"
                 type="text"
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
                 placeholder="例: 田中太郎"
-                className="w-full px-6 py-4 pl-14 border-2 border-[#deb887]/50 rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#8b4513]/20 focus:border-[#8b4513] bg-white/90 backdrop-blur-sm transition-all duration-300 hover:border-[#8b4513]/70"
+                className="w-full px-4 py-2 pl-12 border-2 border-[#deb887]/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#8b4513]/20 focus:border-[#8b4513] bg-white/90 backdrop-blur-sm transition-all duration-300 hover:border-[#8b4513]/70"
                 maxLength={20}
               />
-              {React.createElement(FaUser as any, { className: "absolute left-5 top-1/2 transform -translate-y-1/2 text-[#7c5a2a] transition-colors duration-300" })}
+              {React.createElement(FaUser as any, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 text-[#7c5a2a] transition-colors duration-300" })}
             </div>
-            <p className="text-[#7c5a2a] text-sm mb-3">
+            <p className="text-[#7c5a2a] text-xs mb-2">
               小鳥がその名前でメッセージを届けてくれます
             </p>
             {userName.length > 0 && (
-              <div className="bg-white/60 backdrop-blur-sm rounded-xl px-4 py-2 border border-[#deb887]/30">
-                <p className="text-[#8b4513] text-sm font-medium">
+              <div className="bg-white/20 backdrop-blur-sm rounded-md px-1 py-0.5 border border-[#deb887]/10">
+                <p className="text-[#8b4513] text-xs font-normal">
                   {userName.length}/20文字
                 </p>
               </div>
@@ -130,20 +132,20 @@ export const SetupStep: React.FC<SetupStepProps> = ({
       </div>
 
       {/* 利用規約同意 */}
-      <div className="mb-6">
-        <div className="relative overflow-hidden bg-gradient-to-br from-[#f5f5dc]/60 to-[#deb887]/30 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-[#deb887]/20">
+      <div className="mb-4">
+        <div className="relative overflow-hidden bg-gradient-to-br from-[#f5f5dc]/60 to-[#deb887]/30 backdrop-blur-sm rounded-3xl p-4 shadow-xl border border-[#deb887]/20">
           {/* 装飾要素 */}
-          <div className="absolute top-4 right-4 w-6 h-6 text-[#8b4513] opacity-30">
+          <div className="absolute top-3 right-3 w-5 h-5 text-[#8b4513] opacity-30">
             {React.createElement(FaCheck as any, { className: "w-full h-full" })}
           </div>
           
           <div className="relative z-10">
-            <h3 className="text-[#8b4513] font-semibold mb-6 text-lg">
+            <h3 className="text-[#8b4513] font-semibold mb-3 text-base">
               利用規約とプライバシーポリシー
             </h3>
             
-            <div className="space-y-4">
-              <div className="flex items-start gap-4">
+            <div className="space-y-2">
+              <div className="flex items-start gap-3">
                 <button
                   onClick={() => setAgreedToTerms(!agreedToTerms)}
                   className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 ${
@@ -154,21 +156,21 @@ export const SetupStep: React.FC<SetupStepProps> = ({
                 >
                   {agreedToTerms && React.createElement(FaCheck as any, { className: "text-white text-sm" })}
                 </button>
-                <div className="flex-1">
-                  <p className="text-[#7c5a2a] text-base font-medium mb-3">
+                <div className="flex flex-col">
+                  <p className="text-[#7c5a2a] text-sm font-medium mb-1">
                     利用規約とプライバシーポリシーに同意します
                   </p>
-                  <div className="flex gap-4">
+                  <div className="flex items-center gap-2 mt-1">
                     <button
                       onClick={() => setShowTerms(true)}
-                      className="text-[#8b4513] text-sm underline hover:no-underline font-medium transition-colors duration-300 hover:text-[#7c5a2a]"
+                      className="text-[#8b4513] text-xs underline hover:no-underline font-medium transition-colors duration-300 hover:text-[#7c5a2a]"
                     >
                       利用規約
                     </button>
-                    <span className="text-[#7c5a2a] text-sm">・</span>
+                    <span className="text-[#7c5a2a] text-xs">・</span>
                     <button
                       onClick={() => setShowPrivacy(true)}
-                      className="text-[#8b4513] text-sm underline hover:no-underline font-medium transition-colors duration-300 hover:text-[#7c5a2a]"
+                      className="text-[#8b4513] text-xs underline hover:no-underline font-medium transition-colors duration-300 hover:text-[#7c5a2a]"
                     >
                       プライバシーポリシー
                     </button>
@@ -184,7 +186,7 @@ export const SetupStep: React.FC<SetupStepProps> = ({
 
       {/* エラーメッセージ */}
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+        <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-xl">
           <p className="text-red-600 text-sm">{error}</p>
         </div>
       )}
@@ -193,7 +195,7 @@ export const SetupStep: React.FC<SetupStepProps> = ({
       <button
         onClick={handleComplete}
         disabled={!isFormValid || isLoading}
-        className={`group relative w-full font-semibold py-4 px-8 rounded-2xl text-lg transition-all duration-500 transform overflow-hidden ${
+        className={`group relative w-full font-semibold py-3 text-base rounded-2xl transition-all duration-500 transform overflow-hidden ${
           isFormValid && !isLoading
             ? 'bg-gradient-to-r from-[#8b4513] to-[#7c5a2a] text-white hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-2xl' 
             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -224,11 +226,12 @@ export const SetupStep: React.FC<SetupStepProps> = ({
           )}
         </span>
       </button>
-
+      </div>
+      
       {/* 利用規約モーダル */}
       {showTerms && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full max-h-96 overflow-y-auto">
+    <div className="bg-white rounded-2xl w-full max-w-md max-h-96 overflow-y-auto">
             <h3 className="text-lg font-bold text-[#8b4513] mb-4">利用規約</h3>
             <div className="text-sm text-[#7c5a2a] space-y-3">
               <p>StepEasyをご利用いただくにあたり、以下の利用規約に同意をお願いします。</p>
@@ -244,11 +247,11 @@ export const SetupStep: React.FC<SetupStepProps> = ({
           </div>
         </div>
       )}
-
+      
       {/* プライバシーポリシーモーダル */}
       {showPrivacy && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full max-h-96 overflow-y-auto">
+    <div className="bg-white rounded-2xl w-full max-w-md max-h-96 overflow-y-auto">
             <h3 className="text-lg font-bold text-[#8b4513] mb-4">プライバシーポリシー</h3>
             <div className="text-sm text-[#7c5a2a] space-y-3">
               <p>StepEasyは、ユーザーのプライバシーを大切にしています。</p>

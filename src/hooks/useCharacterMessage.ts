@@ -226,6 +226,13 @@ export const useCharacterMessage = ({ userType, userName, tasks, statistics, sel
         isNewReg = result.isNewRegistration;
       }
 
+      console.log('🔍 メッセージ生成結果:', {
+        userType,
+        message,
+        isNewReg,
+        messageLength: message.length
+      });
+
       setCharacterMessage(message);
       setIsNewRegistration(isNewReg);
       

@@ -103,7 +103,7 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="pb-0 mb-0">
       {/* 1. Heroセクション */}
       <section className="flex flex-col justify-center px-6 py-8 relative bg-transparent" ref={heroAnimation.elementRef}>
         <div className="text-center space-y-8">
@@ -310,8 +310,26 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
       <section className="py-16 px-6" ref={statsAnimation.elementRef}>
         <div className="max-w-2xl mx-auto">
           <div className={`transition-all duration-1000 ${statsAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <h2 className="text-3xl font-bold text-[#8b4513] text-center mb-12">
-              あなたの行動が、<br />カタチになる。
+            <h2 className="text-3xl font-bold text-center mb-12 relative">
+              {/* 背景レイヤー（影効果） */}
+              <div className="absolute inset-0 bg-white/30 rounded-2xl transform translate-x-1 translate-y-1 blur-sm"></div>
+              
+              {/* メインテキスト */}
+              <div className="relative z-10 text-[#4a3728]" 
+                   style={{ 
+                     textShadow: '1px 1px 2px rgba(255, 255, 255, 0.8), 2px 2px 4px rgba(139, 69, 19, 0.3)',
+                     filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.1))'
+                   }}>
+                あなたの<span className="relative z-20 text-[#8b4513] font-extrabold"
+                      style={{ 
+                        textShadow: '1px 1px 2px rgba(255, 255, 255, 0.9), 2px 2px 6px rgba(139, 69, 19, 0.4)',
+                        filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15))'
+                      }}>行動</span>が、<br /><span className="relative z-20 text-[#8b4513] font-extrabold"
+                      style={{ 
+                        textShadow: '1px 1px 2px rgba(255, 255, 255, 0.9), 2px 2px 6px rgba(139, 69, 19, 0.4)',
+                        filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15))'
+                      }}>カタチ</span>になる。
+              </div>
             </h2>
           </div>
           
@@ -380,8 +398,22 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
       <section className="py-16 px-6" ref={aiMessageAnimation.elementRef}>
         <div className="max-w-2xl mx-auto">
           <div className={`transition-all duration-1000 ${aiMessageAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <h2 className="text-3xl font-bold text-[#8b4513] text-center mb-12">
-              気づいてくれる存在がいる
+            <h2 className="text-3xl font-bold text-center mb-12 relative">
+              {/* 背景レイヤー（影効果） */}
+              <div className="absolute inset-0 bg-white/30 rounded-2xl transform translate-x-1 translate-y-1 blur-sm"></div>
+              
+              {/* メインテキスト */}
+              <div className="relative z-10 text-[#4a3728]" 
+                   style={{ 
+                     textShadow: '1px 1px 2px rgba(255, 255, 255, 0.8), 2px 2px 4px rgba(139, 69, 19, 0.3)',
+                     filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.1))'
+                   }}>
+                気づいてくれる<span className="relative z-20 text-[#8b4513] font-extrabold"
+                      style={{ 
+                        textShadow: '1px 1px 2px rgba(255, 255, 255, 0.9), 2px 2px 6px rgba(139, 69, 19, 0.4)',
+                        filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15))'
+                      }}>存在</span>がいる
+              </div>
             </h2>
           </div>
           
@@ -422,8 +454,22 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
       <section className="py-16 px-6" ref={uiGalleryAnimation.elementRef}>
         <div className="max-w-2xl mx-auto">
           <div className={`transition-all duration-1000 ${uiGalleryAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <h2 className="text-3xl font-bold text-[#8b4513] text-center mb-12">
-              画面で見る StepEasy
+            <h2 className="text-3xl font-bold text-center mb-12 relative">
+              {/* 背景レイヤー（影効果） */}
+              <div className="absolute inset-0 bg-white/30 rounded-2xl transform translate-x-1 translate-y-1 blur-sm"></div>
+              
+              {/* メインテキスト */}
+              <div className="relative z-10 text-[#4a3728]" 
+                   style={{ 
+                     textShadow: '1px 1px 2px rgba(255, 255, 255, 0.8), 2px 2px 4px rgba(139, 69, 19, 0.3)',
+                     filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.1))'
+                   }}>
+                画面で見る <span className="relative z-20 text-[#8b4513] font-extrabold"
+                      style={{ 
+                        textShadow: '1px 1px 2px rgba(255, 255, 255, 0.9), 2px 2px 6px rgba(139, 69, 19, 0.4)',
+                        filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15))'
+                      }}>StepEasy</span>
+              </div>
             </h2>
           </div>
 
@@ -604,8 +650,22 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
       <section className="py-16 px-6 relative" ref={finalCtaAnimation.elementRef}>
         <div className="max-w-2xl mx-auto text-center">
           <div className={`transition-all duration-1000 ${finalCtaAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <h2 className="text-3xl font-bold text-[#8b4513] text-center mb-8">
-              今日から、<br />小さなステップを
+            <h2 className="text-3xl font-bold text-center mb-8 relative">
+              {/* 背景レイヤー（影効果） */}
+              <div className="absolute inset-0 bg-white/30 rounded-2xl transform translate-x-1 translate-y-1 blur-sm"></div>
+              
+              {/* メインテキスト */}
+              <div className="relative z-10 text-[#4a3728]" 
+                   style={{ 
+                     textShadow: '1px 1px 2px rgba(255, 255, 255, 0.8), 2px 2px 4px rgba(139, 69, 19, 0.3)',
+                     filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.1))'
+                   }}>
+                今日から、<br /><span className="relative z-20 text-[#8b4513] font-extrabold"
+                      style={{ 
+                        textShadow: '1px 1px 2px rgba(255, 255, 255, 0.9), 2px 2px 6px rgba(139, 69, 19, 0.4)',
+                        filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15))'
+                      }}>小さなステップ</span>を
+              </div>
             </h2>
             
             <p className="text-lg text-[#7c5a2a] leading-relaxed mb-12">
@@ -640,23 +700,13 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
               className="drop-shadow-lg hover:scale-105 transition-transform duration-300"
             />
           </div>
-          
-          <div className={`flex justify-center opacity-20 transition-all duration-1000 delay-400 ${finalCtaAnimation.isVisible ? 'opacity-20 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <Image
-              src="/TalkToTheBird.png"
-              alt="飛んでいく小鳥キャラクター"
-              width={80}
-              height={80}
-              className="animate-bounce"
-            />
-          </div>
         </div>
       </section>
 
       {/* 9. フッター */}
-      <footer className="py-12 px-6 bg-[#8b4513] text-white">
+      <footer className="py-6 px-6 pb-20 bg-gradient-to-br from-[#f5f5dc]/60 to-[#deb887]/30 backdrop-blur-sm text-[#4a3728]">
         <div className="max-w-2xl mx-auto">
-          <div className="text-center space-y-8">
+          <div className="text-center space-y-4">
             <div>
               <div className="flex items-center justify-center gap-3 mb-4">
                 <Image
@@ -669,36 +719,36 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
                 />
                 <h3 className="text-lg font-bold">StepEasy</h3>
               </div>
-              <p className="text-[#deb887] text-sm">
+              <p className="text-[#7c5a2a] text-sm">
                 小鳥の一声が、あなたの習慣を運んでいく
               </p>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-2">
               <div>
                 <h4 className="text-sm font-bold mb-2">リンク</h4>
-                <div className="flex flex-wrap justify-center gap-4 text-[#deb887] text-sm">
-                  <a href="/privacy" target="_blank" className="hover:text-white transition-colors">プライバシーポリシー</a>
-                  <a href="/terms" target="_blank" className="hover:text-white transition-colors">利用規約</a>
-                  <a href="mailto:stepeasytasks@gmail.com" className="hover:text-white transition-colors">お問い合わせ</a>
+                <div className="flex flex-wrap justify-center gap-4 text-[#7c5a2a] text-sm">
+                  <a href="/privacy" target="_blank" className="hover:text-[#8b4513] transition-colors">プライバシーポリシー</a>
+                  <a href="/terms" target="_blank" className="hover:text-[#8b4513] transition-colors">利用規約</a>
+                  <a href="mailto:stepeasytasks@gmail.com" className="hover:text-[#8b4513] transition-colors">お問い合わせ</a>
                 </div>
               </div>
               
               <div>
                 <h4 className="text-sm font-bold mb-2">SNS</h4>
                 <div className="flex justify-center gap-4">
-                  <a href="#" className="text-[#deb887] hover:text-white transition-colors">
+                  <a href="#" className="text-[#7c5a2a] hover:text-[#8b4513] transition-colors">
                     {(FaTwitter as any)({ className: "w-5 h-5" })}
                   </a>
-                  <a href="#" className="text-[#deb887] hover:text-white transition-colors">
+                  <a href="#" className="text-[#7c5a2a] hover:text-[#8b4513] transition-colors">
                     {(FaFileAlt as any)({ className: "w-5 h-5" })}
                   </a>
                 </div>
               </div>
             </div>
             
-            <div className="border-t border-[#deb887] pt-6">
-              <p className="text-[#deb887] text-sm">&copy; naonao96. All rights reserved.</p>
+            <div className="border-t border-[#deb887]/30 pt-3">
+              <p className="text-[#7c5a2a] text-sm">&copy; naonao96. All rights reserved.</p>
             </div>
           </div>
         </div>

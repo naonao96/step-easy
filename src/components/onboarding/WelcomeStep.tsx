@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 // Lottie Playerを動的インポート
 const Player = dynamic(() => import('@lottiefiles/react-lottie-player').then(mod => ({ default: mod.Player })), {
   ssr: false,
-  loading: () => <div className="w-[200px] h-[200px] mx-auto bg-gray-100 rounded-lg animate-pulse"></div>
+  loading: () => <div className="w-[150 h-[150px] mx-auto bg-gray-100 rounded-lg animate-pulse"></div>
 });
 
 interface WelcomeStepProps {
@@ -16,31 +16,41 @@ interface WelcomeStepProps {
 
 export const WelcomeStep: React.FC<WelcomeStepProps> = ({ onNext, onSkip }) => {
   const [isClient, setIsClient] = useState(false);
+  const [isLottieLoaded, setIsLottieLoaded] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
+  const handleLottieLoad = () => {
+    setIsLottieLoaded(true);
+  };
+
   return (
-    <div className="w-full max-w-md mx-auto text-center">
+    <div className="w-full max-w-md mx-auto text-center relative">
+      {/* 背景レイヤー（影効果） */}
+      <div className="absolute inset-0 bg-white/30 rounded-2xl transform translate-x-1 translate-y-1 blur-sm"></div>
+      
+      {/* コンテンツ */}
+      <div className="relative z-10 p-8">
       {/* Lottieアニメーション */}
-      <div className="mb-8">
-        {isClient && (
+      <div className="mb-6">
+        {isClient ? (
           <Player
             autoplay
             loop
             src="/animations/Welcome.json"
-            style={{ height: '200px', width: '200px' }}
+            style={{ height: 150, width: 150 }}
             className="mx-auto"
           />
+        ) : (
+          <div className="w-[150 h-[150px] mx-auto bg-gray-100 rounded-lg animate-pulse"></div>
         )}
       </div>
 
       {/* メインテキスト */}
-      <div className="mb-8">
-        <h1 className="text-2xl lg:text-4xl font-bold leading-tight mb-6 relative">
-          {/* 背景レイヤー（影効果） */}
-          <div className="absolute inset-0 bg-white/30 rounded-2xl transform translate-x-1 translate-y-1 blur-sm"></div>
+      <div className="mb-6">
+        <h1 className="text-xl lg:text-3xl font-bold leading-tight mb-4 relative">
           
           {/* メインテキスト */}
           <div className="relative z-10 text-[#4a3728]" 
@@ -64,7 +74,7 @@ export const WelcomeStep: React.FC<WelcomeStepProps> = ({ onNext, onSkip }) => {
           </div>
         </h1>
         
-        <p className="text-[#7c5a2a] text-base sm:text-lg leading-relaxed">
+        <p className="text-[#7a] text-sm sm:text-base leading-relaxed">
           StepEasyは、やさしく寄り添う習慣化アプリ。<br />
           無理なく、あなたらしく、続けられる毎日を。
         </p>
@@ -73,7 +83,7 @@ export const WelcomeStep: React.FC<WelcomeStepProps> = ({ onNext, onSkip }) => {
       {/* CTAボタン */}
       <button
         onClick={onNext}
-        className="group relative w-full bg-gradient-to-r from-[#8b4513] to-[#7c5a2a] text-white font-semibold py-4 px-8 rounded-2xl text-lg transition-all duration-500 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-2xl overflow-hidden"
+        className="group relative w-full bg-gradient-to-r from-[#8b4513] to-[#7c5a2a] text-white font-semibold py-3 px-8 rounded-2xl text-base transition-all duration-500 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-2xl overflow-hidden"
       >
         {/* グラデーションオーバーレイ */}
         <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
@@ -86,6 +96,7 @@ export const WelcomeStep: React.FC<WelcomeStepProps> = ({ onNext, onSkip }) => {
           </svg>
         </span>
       </button>
+      </div>
     </div>
   );
 }; 

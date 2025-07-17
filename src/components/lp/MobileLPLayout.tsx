@@ -77,7 +77,7 @@ export const MobileLPLayout: React.FC<MobileLPLayoutProps> = ({
   return (
     <div className="min-h-screen flex flex-col">
       {/* ヘッダー */}
-      <header className="h-16 md:h-20 bg-gradient-to-b from-[#f7ecd7] to-[#f5e9da] backdrop-blur-sm shadow-lg border-b border-[#deb887]/30 sticky top-0 z-40">
+      <header className="h-16 md:h-20 bg-gradient-to-b from-[#f7ecd7] to-[#f5e9da] backdrop-blur-sm shadow-lg border-b border-[#deb887]/30 sticky top-0 z-40 pt-safe">
         <div className="px-4 sm:px-6 h-full flex items-center">
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
@@ -97,8 +97,9 @@ export const MobileLPLayout: React.FC<MobileLPLayoutProps> = ({
               <button
                 onClick={onLogin}
                 disabled={isLoading}
-                className="px-3 py-1.5 bg-[#8b4513] hover:bg-[#7c5a2a] text-white text-sm rounded-lg font-medium transition-colors disabled:opacity-50"
+                className="px-2 py-1 bg-[#8b4513] hover:bg-[#7c5a2a] text-white text-xs rounded-md font-medium transition-colors disabled:opacity-50 flex items-center gap-1"
               >
+                {(FaSignInAlt as any)({ className: "w-3 h-3" })}
                 ログイン
               </button>
             </div>
@@ -136,14 +137,14 @@ export const MobileLPLayout: React.FC<MobileLPLayoutProps> = ({
       )}
 
       {/* メインコンテンツ */}
-      <main className="flex-1 overflow-y-auto pb-32">
+      <main className="flex-1 overflow-y-auto">
         {children}
       </main>
 
 
 
       {/* ボトムナビゲーション */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-gradient-to-b from-[#f7ecd7] to-[#f5e9da] backdrop-blur-sm border-t border-[#deb887]/30 shadow-lg z-40">
+      <nav className="fixed bottom-0 left-0 right-0 bg-gradient-to-b from-[#f7ecd7] to-[#f5e9da] backdrop-blur-sm border-t border-[#deb887]/30 shadow-lg z-40 pb-safe">
         <div className="grid grid-cols-4 h-16">
           {bottomNavItems.map((item) => {
             const IconComponent = item.icon;

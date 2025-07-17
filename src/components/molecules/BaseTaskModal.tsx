@@ -368,7 +368,11 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
         await updateTask(initialData.id, taskData);
         // 保存後はプレビューモードに切り替え
         if (onPreview && initialData) {
-          onPreview(initialData as Task);
+          const updatedTask = {
+            ...initialData,
+            ...taskData  // 保存した新しいデータで上書き
+          };
+          onPreview(updatedTask as Task);
         }
       } else {
         // 新規タスクの作成

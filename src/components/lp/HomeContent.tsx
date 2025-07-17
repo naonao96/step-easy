@@ -642,8 +642,22 @@ export const HomeContent: React.FC<HomeContentProps> = ({ onLogin, onRegister, o
       <section className="py-20 px-8 relative" ref={finalCtaAnimation.elementRef}>
         <div className="max-w-7xl mx-auto text-center">
           <div className={`transition-all duration-1000 ${finalCtaAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <h2 className="text-4xl font-bold text-[#8b4513] mb-8">
-              今日から、小さなステップを
+            <h2 className="text-4xl font-bold text-center mb-8 relative">
+              {/* 背景レイヤー（影効果） */}
+              <div className="absolute inset-0 bg-white/30 rounded-2xl transform translate-x-1 translate-y-1 blur-sm"></div>
+              
+              {/* メインテキスト */}
+              <div className="relative z-10 text-[#4a3728]" 
+                   style={{ 
+                     textShadow: '1px 1px 2px rgba(255, 255, 255, 0.8), 2px 2px 4px rgba(139, 69, 19, 0.3)',
+                     filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.1))'
+                   }}>
+                今日から、<span className="relative z-20 text-[#8b4513] font-extrabold"
+                      style={{ 
+                        textShadow: '1px 1px 2px rgba(255, 255, 255, 0.9), 2px 2px 6px rgba(139, 69, 19, 0.4)',
+                        filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15))'
+                      }}>小さなステップ</span>を
+              </div>
             </h2>
             
             <p className="text-xl text-[#7c5a2a] leading-relaxed mb-12 max-w-3xl mx-auto">
@@ -683,7 +697,7 @@ export const HomeContent: React.FC<HomeContentProps> = ({ onLogin, onRegister, o
       </section>
 
       {/* 9. フッター */}
-      <footer className="py-12 px-8 bg-[#8b4513] text-white">
+      <footer className="py-12 pl-8 pr-4 bg-gradient-to-br from-[#f5f5dc]/60 to-[#deb887]/30 backdrop-blur-sm text-[#4a3728]">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
@@ -696,36 +710,35 @@ export const HomeContent: React.FC<HomeContentProps> = ({ onLogin, onRegister, o
                   className="h-10 w-auto"
                   quality={100}
                 />
-                <h3 className="text-xl font-bold">StepEasy</h3>
               </div>
-              <p className="text-[#deb887]">
+              <p className="text-[#7c5a2a]">
                 小鳥の一声が、あなたの習慣を運んでいく
               </p>
             </div>
             
             <div>
               <h4 className="text-lg font-bold mb-4">リンク</h4>
-              <ul className="space-y-2 text-[#deb887]">
-                <li><a href="/privacy" target="_blank" className="hover:text-white transition-colors">プライバシーポリシー</a></li>
-                <li><a href="/terms" target="_blank" className="hover:text-white transition-colors">利用規約</a></li>
-                <li><a href="mailto:stepeasytasks@gmail.com" className="hover:text-white transition-colors">お問い合わせ</a></li>
+              <ul className="space-y-2 text-[#7c5a2a]">
+                <li><a href="/privacy" target="_blank" className="hover:text-[#8b4513] transition-colors">プライバシーポリシー</a></li>
+                <li><a href="/terms" target="_blank" className="hover:text-[#8b4513] transition-colors">利用規約</a></li>
+                <li><a href="mailto:stepeasytasks@gmail.com" className="hover:text-[#8b4513] transition-colors">お問い合わせ</a></li>
               </ul>
-          </div>
+            </div>
 
             <div>
               <h4 className="text-lg font-bold mb-4">SNS</h4>
               <div className="flex gap-4">
-                <a href="#" className="text-[#deb887] hover:text-white transition-colors">
+                <a href="#" className="text-[#7c5a2a] hover:text-[#8b4513] transition-colors">
                   {(FaTwitter as any)({ className: "w-6 h-6" })}
                 </a>
-                <a href="#" className="text-[#deb887] hover:text-white transition-colors">
+                <a href="#" className="text-[#7c5a2a] hover:text-[#8b4513] transition-colors">
                   {(FaFileAlt as any)({ className: "w-6 h-6" })}
                 </a>
               </div>
             </div>
           </div>
 
-          <div className="border-t border-[#deb887] mt-8 pt-8 text-center text-[#deb887]">
+          <div className="border-t border-[#deb887]/30 mt-8 pt-8 text-center text-[#7c5a2a]">
             <p>&copy; naonao96. All rights reserved.</p>
           </div>
         </div>

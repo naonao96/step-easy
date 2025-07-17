@@ -614,7 +614,7 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], habits = [], sel
                 const taskInfo = getTaskDisplayInfo(dayTasks);
                 return (
                   <div
-                    className={`relative p-3 text-left cursor-pointer rounded-xl transition-all duration-200 flex flex-col items-start justify-start w-full ${
+                    className={`relative p-3 text-left cursor-pointer rounded-xl transition-all duration-200 flex flex-row items-start gap-3 w-full ${
                       isTodayDate 
                         ? 'bg-green-100/50 ring-2 ring-green-300 shadow-sm' 
                         : isClickedDate
@@ -624,41 +624,32 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], habits = [], sel
                     style={{ minHeight: '5rem' }}
                     onClick={() => handleDateClick(date)}
                   >
-                    {/* 日付 */}
-                    <div className={`text-sm font-bold mb-1 ${
+                    {/* 日付（固定幅） */}
+                    <div className={`text-sm font-bold text-[#8b4513] flex-shrink-0 ${
                       isTodayDate ? 'text-[#8b4513]' : 'text-[#8b4513]'
                     }`}>
                       {date.getDate()}
                     </div>
-                    {/* 凡例バッチ＋タスク・習慣タイトル（横並び1行） */}
-                    <div className="flex flex-row items-center gap-2 w-full">
-                      {/* バッチ */}
-                      {taskInfo ? (
-                        <div className={`w-2 h-2 rounded-full ${taskInfo.dotColor} shadow-sm flex-shrink-0`}></div>
-                      ) : (
-                        <div className="w-2 h-2 flex-shrink-0"></div>
+                    {/* タスク・習慣リスト（横並び、残りスペースを占有） */}
+                    <div className="flex flex-row flex-wrap gap-2 items-center flex-1">
+                      {dayTasks.slice(0, 6).map((task, idx) => (
+                        <div
+                          key={task.id}
+                          className={`flex items-center gap-1 px-2 py-1 rounded bg-[#f5f5dc] max-w-[6rem] ${
+                            task.status === 'done' ? 'line-through text-[#7c5a2a] bg-[#deb887]' : task.is_habit ? 'text-[#8b4513] bg-[#deb887]' : 'text-[#7c5a2a] bg-[#f5f5dc]'
+                          }`}
+                          title={task.title}
+                          style={{ fontSize: '11px' }}
+                        >
+                          <span className="flex-shrink-0">{getTaskIcon(task)}</span>
+                          <span className="truncate" style={{ maxWidth: '4rem' }}>{task.title.length > 8 ? task.title.substring(0, 8) + '...' : task.title}</span>
+                        </div>
+                      ))}
+                      {dayTasks.length > 6 && (
+                        <div className="text-[10px] text-[#7c5a2a] font-medium bg-[#deb887] px-2 py-1 rounded">
+                          +{dayTasks.length - 6}件
+                        </div>
                       )}
-                      {/* タスク・習慣リスト（横並び） */}
-                      <div className="flex flex-row flex-wrap gap-2 items-center w-full">
-                        {dayTasks.slice(0, 6).map((task, idx) => (
-                          <div
-                            key={task.id}
-                            className={`flex items-center gap-1 px-2 py-1 rounded bg-[#f5f5dc] max-w-[8rem] ${
-                              task.status === 'done' ? 'line-through text-[#7c5a2a] bg-[#deb887]' : task.is_habit ? 'text-[#8b4513] bg-[#deb887]' : 'text-[#7c5a2a] bg-[#f5f5dc]'
-                            }`}
-                            title={task.title}
-                            style={{ fontSize: '11px' }}
-                          >
-                            <span className="flex-shrink-0">{getTaskIcon(task)}</span>
-                            <span className="truncate" style={{ maxWidth: '5.5rem' }}>{task.title.length > 12 ? task.title.substring(0, 12) + '...' : task.title}</span>
-                          </div>
-                        ))}
-                        {dayTasks.length > 6 && (
-                          <div className="text-[10px] text-[#7c5a2a] font-medium bg-[#deb887] px-2 py-1 rounded">
-                            +{dayTasks.length - 6}件
-                          </div>
-                        )}
-                      </div>
                     </div>
                   </div>
                 );

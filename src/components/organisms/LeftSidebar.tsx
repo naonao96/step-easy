@@ -44,17 +44,16 @@ export function LeftSidebar({ className = '' }: LeftSidebarProps) {
 
   // プラン別でアクションアイテムをフィルタリング
   const getAvailableActionItems = () => {
-    const baseItems = [
-      {
-        icon: () => FaChartBar({ className: 'w-6 h-6 shrink-0 text-[#7c5a2a] hover:text-[#8b4513] transition-colors' }),
-        label: '統計情報',
-        href: '/progress'
-      }
-    ];
+    const baseItems = [];
 
-    // ゲストユーザー以外はアーカイブ、設定を追加
+    // ゲストユーザー以外は統計情報、アーカイブ、設定を追加
     if (!isGuest) {
       baseItems.push(
+        {
+          icon: () => FaChartBar({ className: 'w-6 h-6 shrink-0 text-[#7c5a2a] hover:text-[#8b4513] transition-colors' }),
+          label: '統計情報',
+          href: '/progress'
+        },
         {
           icon: () => FaArchive({ className: 'w-6 h-6 shrink-0 text-[#7c5a2a] hover:text-[#8b4513] transition-colors' }),
           label: 'アーカイブ',
@@ -140,7 +139,7 @@ export function LeftSidebar({ className = '' }: LeftSidebarProps) {
           <div className="mt-auto pt-4 border-t border-[#deb887]/40">
             <div className="bg-[#f0e8d8]/80 rounded-lg p-3 border border-[#deb887]/30">
               <p className="text-xs text-[#7c5a2a] text-center">
-                アーカイブと設定は<br/>
+                統計情報・アーカイブ・設定は<br/>
                 ログイン後に利用可能
               </p>
             </div>

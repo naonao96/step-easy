@@ -50,9 +50,6 @@ export const ModernLPLayout: React.FC<ModernLPLayoutProps> = ({
               priority
               quality={100}
             />
-            <div>
-              <p className="text-xs text-[#7c5a2a]">習慣を育てる、成長を実感する</p>
-            </div>
           </div>
         </div>
 
@@ -101,14 +98,7 @@ export const ModernLPLayout: React.FC<ModernLPLayoutProps> = ({
               {(FaSignInAlt as any)({ className: "w-4 h-4" })}
               ログイン
             </button>
-            <button
-              onClick={onRegister}
-              disabled={isLoading}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-[#7c5a2a] hover:bg-[#8b4513] text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-            >
-              {(FaUserPlus as any)({ className: "w-4 h-4" })}
-              新規登録
-            </button>
+            {/* 新規登録ボタン削除済み */}
             <button
               onClick={onGuest}
               disabled={isLoading}

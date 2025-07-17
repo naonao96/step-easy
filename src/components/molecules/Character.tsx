@@ -4,6 +4,7 @@ import { EmotionHoverMenu } from './EmotionHoverMenu';
 import { EmotionRecord, TimePeriod } from '@/types/emotion';
 import { getEmotionTimePeriodLabel } from '@/lib/timeUtils';
 import { useEmotionStore } from '@/stores/emotionStore';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CharacterProps {
   message?: string;
@@ -73,6 +74,10 @@ export const Character: React.FC<CharacterProps> = ({
 }) => {
   const [showEmotionMenu, setShowEmotionMenu] = useState(false);
   const characterRef = useRef<HTMLDivElement>(null);
+  const { isGuest } = useAuth();
+  
+  // ゲストモード時は感情メニューを無効化
+  const shouldShowEmotionMenu = showEmotionMenu && !isGuest;
   
   // メッセージが変更された時にリセット
   const prevMessage = useRef<string>('');
@@ -267,7 +272,7 @@ export const Character: React.FC<CharacterProps> = ({
             />
             
             {/* 朝昼晩（統合型ヘッダー）をキャラクターの足元にabsolute配置：感情メニュー表示時のみ表示 */}
-            {showEmotionMenu && (
+            {shouldShowEmotionMenu && (
               <div className="absolute left-1/2 -translate-x-1/2 -bottom-8 z-30 w-auto min-w-fit max-w-md flex justify-center pointer-events-none">
                 <span className={`
                   bg-white/90 border border-gray-200 rounded-full px-4 py-1 text-sm font-bold text-gray-800 shadow-md pointer-events-none select-none
@@ -279,10 +284,10 @@ export const Character: React.FC<CharacterProps> = ({
             )}
             
             {/* 感情記録メニュー - キャラクター画像の中心に配置 */}
-            {showEmotionMenu && (
+            {shouldShowEmotionMenu && (
               <div className="absolute inset-0 z-40">
                 <EmotionHoverMenu
-                  isVisible={showEmotionMenu}
+                  isVisible={shouldShowEmotionMenu}
                   onClose={handleCloseEmotionMenu}
                   characterRef={characterRef}
                   isMessageDisplaying={showMessage}
@@ -319,7 +324,15 @@ export const Character: React.FC<CharacterProps> = ({
           ref={characterRef}
           className="cursor-pointer flex-shrink-0 relative z-40" 
           style={{ height: '3cm', width: 'auto', display: 'flex', alignItems: 'center' }} 
-          onClick={onClick}
+          onClick={() => {
+            console.log('🔍 Character コンポーネント クリック:', {
+              onClick: !!onClick,
+              showEmotionMenu,
+              showMessage,
+              isTyping
+            });
+            onClick?.();
+          }}
           onMouseEnter={() => setShowEmotionMenu(true)}
           onMouseLeave={() => setShowEmotionMenu(false)}
         >
@@ -343,7 +356,7 @@ export const Character: React.FC<CharacterProps> = ({
           />
           
           {/* 朝昼晩（統合型ヘッダー）をキャラクターの足元にabsolute配置：ホバー時のみ表示 */}
-          {showEmotionMenu && (
+          {shouldShowEmotionMenu && (
             <div className="absolute left-1/2 -translate-x-1/2 -bottom-8 z-50 w-auto min-w-fit max-w-md flex justify-center pointer-events-none">
               <span className={`
                 bg-white/90 border border-gray-200 rounded-full px-4 py-1 text-sm font-bold text-gray-800 shadow-md pointer-events-auto
@@ -357,7 +370,7 @@ export const Character: React.FC<CharacterProps> = ({
           
           {/* 感情ログホバーメニュー（Radial Menu） */}
           <EmotionHoverMenu
-            isVisible={showEmotionMenu}
+            isVisible={shouldShowEmotionMenu}
             onClose={handleCloseEmotionMenu}
             isMessageDisplaying={false} // メッセージ表示中でもRadial Menu有効
             isTyping={false}
@@ -449,7 +462,7 @@ export const Character: React.FC<CharacterProps> = ({
       )}
       {/* 感情ログホバーメニュー */}
       <EmotionHoverMenu 
-        isVisible={showEmotionMenu}
+        isVisible={shouldShowEmotionMenu}
         onClose={handleCloseEmotionMenu}
         isMessageDisplaying={showMessage}
         isTyping={isTyping}

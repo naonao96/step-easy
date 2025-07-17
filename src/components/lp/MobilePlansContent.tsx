@@ -22,7 +22,7 @@ export const MobilePlansContent: React.FC<MobilePlansContentProps> = ({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f5f5dc] to-[#deb887]">
-      <div className="px-6 py-8">
+      <div className="px-6 py-8 pb-20">
         {/* ヘッダー */}
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-[#8b4513] mb-4">

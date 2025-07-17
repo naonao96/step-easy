@@ -74,8 +74,8 @@ export default function MenuPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [mounted, setMounted] = useState(false);
   const [greeting, setGreeting] = useState('');
-  const [currentMobileTab, setCurrentMobileTab] = useState<'tasks' | 'habits'>('habits');
-  const [currentDesktopTab, setCurrentDesktopTab] = useState<'tasks' | 'habits'>('habits');
+  const [currentMobileTab, setCurrentMobileTab] = useState<'tasks' | 'habits'>(planType === 'guest' ? 'tasks' : 'habits');
+  const [currentDesktopTab, setCurrentDesktopTab] = useState<'tasks' | 'habits'>(planType === 'guest' ? 'tasks' : 'habits');
   const [guestTasks, setGuestTasks] = React.useState<Task[]>([]);
   const [migrationError, setMigrationError] = React.useState<string | null>(null);
   const [contentHeight, setContentHeight] = useState(46); // rem単位（カレンダーと統一）
@@ -388,6 +388,13 @@ export default function MenuPage() {
 
   // クリック処理（デスクトップ版用）
   const handleClick = () => {
+    console.log('🔍 キャラクタークリック処理:', {
+      isGuest,
+      characterMessage,
+      messageParts,
+      showMessage,
+      isTyping
+    });
     handleMessageClick();
   };
 

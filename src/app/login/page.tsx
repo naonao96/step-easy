@@ -28,12 +28,29 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-transparent flex items-center justify-center p-4">
       <div className="w-full max-w-md mx-auto">
-        <div className="bg-white/90 backdrop-blur-sm p-8 rounded-3xl border border-gray-200 shadow-2xl hover:shadow-3xl transition-shadow duration-300">
+        <div className="p-8 rounded-3xl border border-gray-200 shadow-2xl hover:shadow-3xl transition-shadow duration-300">
           {/* ヘッダー */}
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-[#8b4513] mb-2">StepEasy</h1>
-            <h2 className="text-xl font-semibold text-[#7c5a2a]">おかえりなさい</h2>
-            <p className="text-sm text-[#a0522d] mt-1">タスク管理を続けましょう</p>
+            <h1 className="text-2xl lg:text-3xl font-bold mb-4 relative">
+              {/* 背景レイヤー（影効果） */}
+              <div className="absolute inset-0 bg-white/30 rounded-2xl transform translate-x-1 translate-y-1 blur-sm"></div>
+              
+              {/* メインテキスト */}
+              <div className="relative z-10 text-[#4a3728]" 
+                   style={{ 
+                     textShadow: '1px 1 2px rgba(255,255, 255,0.8), 2px 2 4px rgba(139, 69, 19, 0.3)',
+                     filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.1))'
+                   }}>
+                <span className="relative z-20 text-[#8b4513] font-extrabold"
+                      style={{ 
+                        textShadow: '1px 1 2px rgba(255,255, 255,0.9), 2px 2 6px rgba(139, 69, 19, 0.4)',
+                        filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))'
+                      }}>StepEasy</span>へようこそ
+              </div>
+            </h1>
+            <p className="text-lg text-[#7c5a2a] leading-relaxed">
+              今日もあなたの一歩を応援します
+            </p>
           </div>
 
           {/* エラーメッセージ */}
@@ -63,14 +80,6 @@ export default function LoginPage() {
             Googleでログイン
           </button>
 
-            <div className="text-center">
-            <p className="text-sm text-[#7c5a2a]">
-              アカウントをお持ちでないですか？{' '}
-                <a href="/register" className="text-[#8b4513] hover:underline font-medium">
-                新規登録
-                </a>
-            </p>
-            </div>
           </div>
         </div>
       </div>

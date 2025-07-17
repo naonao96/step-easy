@@ -529,7 +529,7 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
         )}
 
         {/* メインコンテンツ */}
-        <div className="flex-1 p-6 overflow-y-auto bg-transparent">
+        <div className="flex-1 p-6 pb-20 overflow-y-auto bg-transparent">
           {filteredSections.map((section) => {
             if (section.id !== activeSection) return null;
             

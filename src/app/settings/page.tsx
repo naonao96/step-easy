@@ -4,7 +4,7 @@ import React, { useState, useEffect, ChangeEvent } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { Input } from '@/components/atoms/Input';
 import { FaUser, FaBell, FaLock, FaSignOutAlt, FaInfoCircle, FaGem, FaFileContract, FaShieldAlt, FaTrash, FaSave, FaKey, FaCrown, FaCreditCard, FaQuestionCircle, FaHeart, FaTasks, FaFire, FaRobot } from 'react-icons/fa';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/templates/AppLayout';
@@ -17,9 +17,13 @@ const supabase = createClientComponentClient();
 
 export default function SettingsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, signOut, isPremium, isGuest } = useAuth();
   const { tasks, fetchTasks } = useTaskStore();
-  const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'subscription' | 'security'>('profile');
+  
+  // URLパラメータからタブを取得、デフォルトは'profile'
+  const initialTab = searchParams.get('tab') as 'profile' | 'notifications' | 'subscription' | 'security' || 'profile';
+  const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'subscription' | 'security'>(initialTab);
   const [isLoading, setIsLoading] = useState(false);
 
   // デバッグ用ログ

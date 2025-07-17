@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/atoms/Button';
 import { NotificationDropdown } from '@/components/molecules/NotificationDropdown';
-import { FaArrowLeft, FaSignOutAlt, FaUser, FaUserPlus, FaSignInAlt } from 'react-icons/fa';
+import { FaArrowLeft, FaSignOutAlt, FaUser, FaUserPlus, FaSignInAlt, FaGem } from 'react-icons/fa';
 import { Task } from '@/types/task';
 import Image from 'next/image';
 
@@ -48,7 +48,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   className = ''
 }) => {
   const router = useRouter();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isPremium } = useAuth();
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const mobileAccountMenuRef = useRef<HTMLDivElement>(null);
@@ -141,13 +141,24 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           </div>
       </div>
 
-      {/* 右側：通知 + デスクトップアクション + ユーザー情報 */}
+      {/* 右側：通知 + プレミアム + デスクトップアクション + ユーザー情報 */}
       <div className="flex items-center gap-2 sm:gap-3">
         {/* 通知ドロップダウン */}
         {showNotifications && (
           <div className="text-[#7c5a2a] hover:text-[#8b4513] transition-colors duration-200">
             <NotificationDropdown tasks={tasks} />
           </div>
+        )}
+
+        {/* プレミアムアイコン（プレミアムユーザーのみ） */}
+        {isPremium && (
+          <button
+            onClick={() => router.push('/settings?tab=subscription')}
+            className="p-2 text-[#7c5a2a] hover:text-[#8b4513] transition-colors duration-200 hover:scale-105"
+            title="プレミアム設定"
+          >
+            {FaGem({ className: "w-5 h-5" })}
+          </button>
         )}
 
         {/* カスタムアクション（デスクトップのみ） */}
@@ -163,8 +174,15 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             onClick={() => setShowAccountMenu(!showAccountMenu)}
             className="flex items-center gap-2 p-2 text-[#7c5a2a] hover:text-[#8b4513] transition-colors duration-200 font-medium bg-transparent border-none shadow-none group"
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7c5a2a] to-[#4b2e0e] flex items-center justify-center text-white text-sm font-medium transition-colors duration-200 group-hover:from-[#a67c52] group-hover:to-[#c9b29b]">
-              {user?.isGuest ? 'G' : (user?.displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U')}
+            <div className="relative">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7c5a2a] to-[#4b2e0e] flex items-center justify-center text-white text-sm font-medium transition-colors duration-200 group-hover:from-[#a67c52] group-hover:to-[#c9b29b]">
+                {user?.isGuest ? 'G' : (user?.displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U')}
+              </div>
+              {isPremium && (
+                <div className="absolute -top-0.5 -right-0.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white w-4 h-4 rounded-full flex items-center justify-center shadow-sm border border-white">
+                  {FaGem({ className: "w-2 h-2" })}
+                </div>
+              )}
             </div>
             <span className="text-sm hidden xl:block">
               {user?.isGuest ? 'ゲスト' : (user?.displayName || user?.email?.split('@')[0] || 'ユーザー')}
@@ -175,16 +193,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             <div className="absolute right-0 top-full mt-2 w-48 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-[#deb887]/20 py-1 z-50">
               {user?.isGuest ? (
                 <>
-                  <button
-                    onClick={() => {
-                      setShowAccountMenu(false);
-                      router.push('/register');
-                    }}
-                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-[#7c5a2a] hover:bg-[#deb887]/10 transition-all duration-200"
-                  >
-                    {FaUserPlus({ className: "w-4 h-4 flex-shrink-0" })}
-                    <span>新規登録</span>
-                  </button>
                   <button
                     onClick={() => {
                       setShowAccountMenu(false);
@@ -213,31 +221,28 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         </div>
 
         {/* モバイル用アカウントボタン */}
-        <button
-          onClick={() => setShowAccountMenu(!showAccountMenu)}
-          className="lg:hidden p-1 w-10 h-10 bg-gradient-to-br from-[#7c5a2a] to-[#4b2e0e] rounded-full flex items-center justify-center hover:shadow-lg transition-all duration-200 hover:scale-105"
-          title="アカウントメニュー"
-        >
-          <span className="text-white text-sm font-medium">
-            {user?.isGuest ? 'G' : (user?.displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U')}
-          </span>
-        </button>
+        <div className="relative lg:hidden">
+          <button
+            onClick={() => setShowAccountMenu(!showAccountMenu)}
+            className="p-1 w-10 h-10 bg-gradient-to-br from-[#7c5a2a] to-[#4b2e0e] rounded-full flex items-center justify-center hover:shadow-lg transition-all duration-200 hover:scale-105"
+            title="アカウントメニュー"
+          >
+            <span className="text-white text-sm font-medium">
+              {user?.isGuest ? 'G' : (user?.displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U')}
+            </span>
+          </button>
+          {isPremium && (
+            <div className="absolute -top-0.5 -right-0.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white w-4 h-4 rounded-full flex items-center justify-center shadow-sm border border-white">
+              {FaGem({ className: "w-2 h-2" })}
+            </div>
+          )}
+        </div>
 
         {/* モバイル用ドロップダウンメニュー */}
         {showAccountMenu && (
           <div className="absolute lg:hidden right-2 top-16 w-44 sm:w-48 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-[#deb887]/20 py-1 z-[9999]" ref={mobileAccountMenuRef}>
             {user?.isGuest ? (
               <>
-                <button
-                  onClick={() => {
-                    setShowAccountMenu(false);
-                    router.push('/register');
-                  }}
-                  className="flex items-center gap-3 w-full px-3 sm:px-4 py-2 text-sm text-[#7c5a2a] hover:bg-[#deb887]/10 transition-all duration-200"
-                >
-                  {FaUserPlus({ className: "w-4 h-4 flex-shrink-0" })}
-                  <span>新規登録</span>
-                </button>
                 <button
                   onClick={() => {
                     setShowAccountMenu(false);

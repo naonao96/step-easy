@@ -61,38 +61,38 @@ export const MobileOthersContent: React.FC = () => {
   const renderFAQContent = () => (
     <div className="space-y-4">
       <div className="text-center mb-6">
-        <h2 className="text-xl font-bold text-slate-900 mb-2">よくある質問</h2>
-        <p className="text-sm text-slate-600">StepEasyについてよくお寄せいただく質問と回答</p>
+        <h2 className="text-xl font-bold text-[#8b4513] mb-2">よくある質問</h2>
+        <p className="text-sm text-[#7c5a2a]">StepEasyについてよくお寄せいただく質問と回答</p>
       </div>
       
       <div className="space-y-3">
         {faqs.map((faq, index) => (
-          <div key={index} className="border border-slate-200 rounded-lg overflow-hidden">
+          <div key={index} className="border border-[#deb887]/40 rounded-lg overflow-hidden bg-[#f5f5dc]/60">
             <button
               onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}
-              className="w-full p-4 text-left bg-white hover:bg-slate-50 transition-colors flex justify-between items-center"
+              className="w-full p-4 text-left bg-[#f5f5dc]/60 hover:bg-[#f5f5dc]/80 transition-colors flex justify-between items-center"
             >
-              <span className="font-medium text-slate-900 text-sm pr-2">{faq.question}</span>
+              <span className="font-medium text-[#8b4513] text-sm pr-2">{faq.question}</span>
               {expandedFaq === index ? 
-                React.createElement(FaChevronUp as any, { className: "w-4 h-4 text-slate-500 flex-shrink-0" }) :
-                React.createElement(FaChevronDown as any, { className: "w-4 h-4 text-slate-500 flex-shrink-0" })
+                React.createElement(FaChevronUp as any, { className: "w-4 h-4 text-[#7c5a2a] flex-shrink-0" }) :
+                React.createElement(FaChevronDown as any, { className: "w-4 h-4 text-[#7c5a2a] flex-shrink-0" })
               }
             </button>
             {expandedFaq === index && (
-              <div className="p-4 pt-0 bg-slate-50 border-t border-slate-200">
-                <p className="text-sm text-slate-700 leading-relaxed">{faq.answer}</p>
+              <div className="p-4 pt-0 bg-[#f5f5dc]/80 border-t border-[#deb887]/40">
+                <p className="text-sm text-[#4a3728] leading-relaxed">{faq.answer}</p>
               </div>
             )}
           </div>
         ))}
       </div>
       
-      <div className="mt-6 bg-slate-50 rounded-lg p-4">
-        <h3 className="font-semibold text-slate-900 mb-2 text-sm">他にご質問がありますか？</h3>
-        <p className="text-slate-600 mb-3 text-sm">
+      <div className="mt-6 bg-[#f5f5dc]/60 rounded-lg p-4 border border-[#deb887]/30">
+        <h3 className="font-semibold text-[#8b4513] mb-2 text-sm">他にご質問がありますか？</h3>
+        <p className="text-[#4a3728] mb-3 text-sm">
           上記以外のご質問やサポートが必要な場合は、お気軽にお問い合わせください。
         </p>
-        <div className="text-xs text-slate-500">
+        <div className="text-xs text-[#7c5a2a]">
           <p>※ お問い合わせ機能は今後実装予定です</p>
         </div>
       </div>
@@ -102,30 +102,30 @@ export const MobileOthersContent: React.FC = () => {
   const renderPrivacyContent = () => (
     <div className="space-y-4">
       <div className="text-center mb-6">
-        <h2 className="text-xl font-bold text-slate-900 mb-2">プライバシーポリシー</h2>
-        <div className="text-xs text-slate-600">
+        <h2 className="text-xl font-bold text-[#8b4513] mb-2">プライバシーポリシー</h2>
+        <div className="text-xs text-[#7c5a2a]">
           <p>公開日：{new Date().toLocaleDateString('ja-JP')}</p>
           <p>バージョン：Ver1.0.0</p>
         </div>
       </div>
       
-      <div className="space-y-4 text-sm text-slate-700">
+      <div className="space-y-4 text-sm text-[#4a3728]">
         <p>StepEasyは、naonao96が提供する個人の習慣化を支援するAIタスク管理サービスです。</p>
         <p>当方は、ユーザーのプライバシーを最大限尊重し、以下の方針に従って個人情報を取り扱います。</p>
         
         <section>
-          <h3 className="font-semibold text-slate-900 mb-2">1. 取得する情報</h3>
+          <h3 className="font-semibold text-[#8b4513] mb-2">1. 取得する情報</h3>
           <ul className="list-disc pl-4 space-y-1">
             <li>タスク情報および自由記述メモ</li>
             <li>タスクの開始・完了などの行動ログ</li>
             <li>感情・ストレス・モチベーションなどのAI解析内容</li>
             <li>認証・セッション管理に必要なCookie情報</li>
           </ul>
-          <p className="text-xs text-slate-500 mt-1">※トラッキング目的のCookieは使用していません</p>
+          <p className="text-xs text-[#7c5a2a] mt-1">※トラッキング目的のCookieは使用していません</p>
         </section>
 
         <section>
-          <h3 className="font-semibold text-slate-900 mb-2">2. 利用目的</h3>
+          <h3 className="font-semibold text-[#8b4513] mb-2">2. 利用目的</h3>
           <ul className="list-disc pl-4 space-y-1">
             <li>タスクの保存・管理・表示などのサービス提供</li>
             <li>パーソナライズされたAI応援・フィードバック</li>
@@ -135,7 +135,7 @@ export const MobileOthersContent: React.FC = () => {
         </section>
 
         <section>
-          <h3 className="font-semibold text-slate-900 mb-2">3. 保存期間</h3>
+          <h3 className="font-semibold text-[#8b4513] mb-2">3. 保存期間</h3>
           <ul className="list-disc pl-4 space-y-1">
             <li>ゲストユーザー：セッション中のみ</li>
             <li>無料ログインユーザー：30日間</li>
@@ -144,7 +144,7 @@ export const MobileOthersContent: React.FC = () => {
         </section>
 
         <section>
-          <h3 className="font-semibold text-slate-900 mb-2">4. 外部サービス連携</h3>
+          <h3 className="font-semibold text-[#8b4513] mb-2">4. 外部サービス連携</h3>
           <ul className="list-disc pl-4 space-y-1">
             <li>Supabase（認証・DB）</li>
             <li>Stripe（課金処理）</li>
@@ -154,9 +154,9 @@ export const MobileOthersContent: React.FC = () => {
         </section>
 
         <section>
-          <h3 className="font-semibold text-slate-900 mb-2">5. お問い合わせ窓口</h3>
-          <div className="bg-slate-100 p-3 rounded">
-            <p className="font-medium">お問い合わせ：stepeasytasks@gmail.com</p>
+          <h3 className="font-semibold text-[#8b4513] mb-2">5. お問い合わせ窓口</h3>
+          <div className="bg-[#f5f5dc]/60 p-3 rounded border border-[#deb887]/30">
+            <p className="font-medium text-[#8b4513]">お問い合わせ：stepeasytasks@gmail.com</p>
           </div>
         </section>
       </div>
@@ -166,25 +166,25 @@ export const MobileOthersContent: React.FC = () => {
   const renderTermsContent = () => (
     <div className="space-y-4">
       <div className="text-center mb-6">
-        <h2 className="text-xl font-bold text-slate-900 mb-2">利用規約</h2>
-        <div className="text-xs text-slate-600">
+        <h2 className="text-xl font-bold text-[#8b4513] mb-2">利用規約</h2>
+        <div className="text-xs text-[#7c5a2a]">
           <p>公開日：{new Date().toLocaleDateString('ja-JP')}</p>
           <p>バージョン：Ver1.0.0</p>
         </div>
       </div>
       
-      <div className="space-y-4 text-sm text-slate-700">
+      <div className="space-y-4 text-sm text-[#4a3728]">
         <p>本利用規約は、StepEasyの利用条件を定めるものです。ユーザーは本サービスを利用することにより、本規約に同意したものとみなします。</p>
         
         <section>
-          <h3 className="font-semibold text-slate-900 mb-2">第1条（適用）</h3>
+          <h3 className="font-semibold text-[#8b4513] mb-2">第1条（適用）</h3>
           <p>本利用規約は、StepEasyの利用条件を定めるものです。ユーザーは本サービスを利用することにより、本規約に同意したものとみなします。</p>
           <p>本サービスは、18歳以上の方を対象としています。18歳未満の方は、保護者の同意を得た上でご利用ください。</p>
         </section>
 
         <section>
-          <h3 className="font-semibold text-slate-900 mb-2">事業者情報</h3>
-          <div className="bg-slate-100 p-3 rounded">
+          <h3 className="font-semibold text-[#8b4513] mb-2">事業者情報</h3>
+          <div className="bg-[#f5f5dc]/60 p-3 rounded border border-[#deb887]/30">
             <p><strong>運営者名：</strong> naonao96</p>
             <p><strong>連絡先：</strong> stepeasytasks@gmail.com</p>
             <p><strong>サービス名：</strong> StepEasy</p>
@@ -193,7 +193,7 @@ export const MobileOthersContent: React.FC = () => {
         </section>
 
         <section>
-          <h3 className="font-semibold text-slate-900 mb-2">第2条（利用登録）</h3>
+          <h3 className="font-semibold text-[#8b4513] mb-2">第2条（利用登録）</h3>
           <ul className="list-disc pl-4 space-y-1">
             <li>本サービスは、ゲスト・無料ログイン・プレミアム会員の3区分で利用可能です。</li>
             <li>利用者は正確な情報をもとに登録を行うものとします。</li>
@@ -201,7 +201,7 @@ export const MobileOthersContent: React.FC = () => {
         </section>
 
         <section>
-          <h3 className="font-semibold text-slate-900 mb-2">第3条（禁止事項）</h3>
+          <h3 className="font-semibold text-[#8b4513] mb-2">第3条（禁止事項）</h3>
           <p>以下の行為は禁止します：</p>
           <ul className="list-disc pl-4 space-y-1">
             <li>法令違反または公序良俗に反する行為</li>
@@ -212,12 +212,12 @@ export const MobileOthersContent: React.FC = () => {
         </section>
 
         <section>
-          <h3 className="font-semibold text-slate-900 mb-2">第4条（データの取扱い）</h3>
+          <h3 className="font-semibold text-[#8b4513] mb-2">第4条（データの取扱い）</h3>
           <p>ユーザーが入力したデータ（タスク、行動ログ、AI関連入力など）は、プライバシーポリシーに基づき適切に管理されます。</p>
         </section>
 
         <section>
-          <h3 className="font-semibold text-slate-900 mb-2">第5条（課金・支払い）</h3>
+          <h3 className="font-semibold text-[#8b4513] mb-2">第5条（課金・支払い）</h3>
           <ul className="list-disc pl-4 space-y-1">
             <li>一部機能はプレミアム会員向けに提供されます。</li>
             <li>Stripeを通じて月額課金が行われます。</li>
@@ -226,7 +226,7 @@ export const MobileOthersContent: React.FC = () => {
         </section>
 
         <section>
-          <h3 className="font-semibold text-slate-900 mb-2">第6条（免責事項）</h3>
+          <h3 className="font-semibold text-[#8b4513] mb-2">第6条（免責事項）</h3>
           <ul className="list-disc pl-4 space-y-1">
             <li>本サービスは、完全な継続・成果を保証するものではありません。</li>
             <li>外部サービスの不具合による影響について、当方は責任を負いません。</li>
@@ -235,22 +235,22 @@ export const MobileOthersContent: React.FC = () => {
         </section>
 
         <section>
-          <h3 className="font-semibold text-slate-900 mb-2">第7条（退会・データ削除）</h3>
+          <h3 className="font-semibold text-[#8b4513] mb-2">第7条（退会・データ削除）</h3>
           <p>退会手続きにより、アカウントおよびデータは削除されます。ただし、一部のログデータは一定期間保存される場合があります（法令遵守のため）。</p>
         </section>
 
         <section>
-          <h3 className="font-semibold text-slate-900 mb-2">第8条（規約変更）</h3>
+          <h3 className="font-semibold text-[#8b4513] mb-2">第8条（規約変更）</h3>
           <p>当方は必要に応じて本規約を変更することがあります。変更後の規約は公開された時点で効力を持ちます。</p>
         </section>
 
         <section>
-          <h3 className="font-semibold text-slate-900 mb-2">第9条（準拠法・管轄）</h3>
+          <h3 className="font-semibold text-[#8b4513] mb-2">第9条（準拠法・管轄）</h3>
           <p>本規約は日本法に基づき解釈され、ユーザーと当方の間で紛争が生じた場合は、当方の所在地を管轄する裁判所を第一審の専属的合意管轄裁判所とします。</p>
         </section>
 
-        <div className="bg-slate-100 p-3 rounded">
-          <p className="font-medium text-slate-900">お問い合わせ先</p>
+        <div className="bg-[#f5f5dc]/60 p-3 rounded border border-[#deb887]/30">
+          <p className="font-medium text-[#8b4513]">お問い合わせ先</p>
           <p>stepeasytasks@gmail.com</p>
         </div>
       </div>
@@ -258,9 +258,9 @@ export const MobileOthersContent: React.FC = () => {
   );
 
   return (
-    <div className="p-4">
+    <div className="p-4 pb-20">
       {/* タブナビゲーション */}
-      <div className="flex bg-slate-100 rounded-lg p-1 mb-6">
+      <div className="flex bg-[#f5f5dc]/60 rounded-lg p-1 mb-6 border border-[#deb887]/30">
         {tabs.map((tab) => {
           const IconComponent = tab.icon;
           const isActive = activeTab === tab.id;
@@ -271,8 +271,8 @@ export const MobileOthersContent: React.FC = () => {
               onClick={() => setActiveTab(tab.id)}
               className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-medium transition-colors ${
                 isActive
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-[#8b4513] text-[#f5f5dc] shadow-sm'
+                  : 'text-[#7c5a2a] hover:text-[#8b4513]'
               }`}
             >
               {IconComponent({ className: "w-3 h-3" })}
@@ -284,7 +284,7 @@ export const MobileOthersContent: React.FC = () => {
       </div>
 
       {/* コンテンツ */}
-      <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+      <div className="bg-[#f5f5dc]/40 rounded-lg shadow-sm border border-[#deb887]/40 p-4">
         {activeTab === 'faq' && renderFAQContent()}
         {activeTab === 'privacy' && renderPrivacyContent()}
         {activeTab === 'terms' && renderTermsContent()}
