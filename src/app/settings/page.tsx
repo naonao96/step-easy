@@ -83,16 +83,7 @@ export default function SettingsPage() {
     },
   ];
 
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
 
-  // 個別のパスワード変更用state
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
 
   useEffect(() => {
     fetchTasks();
@@ -221,24 +212,7 @@ export default function SettingsPage() {
     }
   };
 
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      toast.error('新しいパスワードが一致しません');
-      return;
-    }
-    setIsLoading(true);
-    try {
-      toast.success('パスワードを変更しました');
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-    } catch (error) {
-      toast.error('パスワードの変更に失敗しました');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
 
   const handleDeleteAccount = async () => {
     // 段階的確認プロセス
@@ -982,65 +956,6 @@ export default function SettingsPage() {
                 {activeTab === 'security' && (
                   <div className="space-y-6">
                     <h2 className="text-xl font-semibold text-[#8b4513]">セキュリティ</h2>
-                    
-                    <form onSubmit={handlePasswordChange} className="space-y-4">
-                      <div>
-                        <label htmlFor="currentPassword" className="block text-sm font-medium text-[#7c5a2a] mb-2">
-                          現在のパスワード
-                        </label>
-                                                  <Input
-                            id="currentPassword"
-                            type="password"
-                            value={currentPassword}
-                            onChange={(e) => setCurrentPassword(e.target.value)}
-                            placeholder="現在のパスワードを入力"
-                            required
-                          />
-                      </div>
-                      
-                      <div>
-                        <label htmlFor="newPassword" className="block text-sm font-medium text-[#7c5a2a] mb-2">
-                          新しいパスワード
-                        </label>
-                                                  <Input
-                            id="newPassword"
-                            type="password"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            placeholder="新しいパスワードを入力"
-                            required
-                          />
-                      </div>
-                      
-                      <div>
-                        <label htmlFor="confirmPassword" className="block text-sm font-medium text-[#7c5a2a] mb-2">
-                          新しいパスワード（確認）
-                        </label>
-                                                  <Input
-                            id="confirmPassword"
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            placeholder="新しいパスワードを再入力"
-                            required
-                          />
-                      </div>
-                      
-                      <button
-                        type="submit"
-                        disabled={isLoading}
-                        className="w-full sm:w-auto flex items-center gap-2 px-4 py-2 bg-[#7c5a2a] text-white rounded-lg hover:bg-[#8b4513] transition-colors text-sm"
-                      >
-                        {isLoading ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        ) : (
-                          FaKey({ className: "w-4 h-4" })
-                        )}
-                        パスワードを変更
-                      </button>
-                    </form>
-
-                    <hr className="my-8 border-[#deb887]" />
 
                     {/* 法的情報セクション */}
                     <div className="bg-[#f5f5dc] border border-[#deb887] rounded-lg p-4">

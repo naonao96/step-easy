@@ -183,19 +183,29 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], habits = [], sel
       
       // 開始日も期限日もないタスクの処理
       if (!task.start_date && !task.due_date) {
-        // 習慣タスクの場合：毎日表示
+        // 習慣タスクの場合：開始日以降のみ表示
         if (task.is_habit) {
+          // 習慣の開始日チェック（start_dateまたはcreated_atを基準日とする）
+          const baseDate = task.start_date ? new Date(task.start_date) : (task.created_at ? new Date(task.created_at) : null);
+          if (baseDate) {
+            baseDate.setHours(0, 0, 0, 0);
+            // 対象日が開始日より前の場合は表示しない
+            if (targetDate.getTime() < baseDate.getTime()) {
+              return false;
+            }
+          }
+          
           // 完了済みタスク：完了日が対象日と一致
           if (task.status === 'done' && task.completed_at) {
             const completedDate = new Date(task.completed_at);
             completedDate.setHours(0, 0, 0, 0);
             return completedDate.getTime() === targetDate.getTime();
           }
-          
-          // 未完了タスク：毎日表示
+          // 未完了タスク：開始日以降の毎日表示
           if (task.status !== 'done') {
             return true;
           }
+          return false;
         } else {
           // 通常タスクの場合：完了済みタスクは完了日のみ表示
           if (task.status === 'done' && task.completed_at) {
@@ -203,7 +213,6 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], habits = [], sel
             completedDate.setHours(0, 0, 0, 0);
             return completedDate.getTime() === targetDate.getTime();
           }
-          
           // 未完了タスク：今日のみ表示（対象日が今日の場合）
           if (task.status !== 'done') {
             return targetDate.getTime() === today.getTime();
@@ -213,11 +222,6 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], habits = [], sel
       
       return false;
     });
-    
-    // デバッグログ（開発時のみ）
-    // if (calendarMode === 'habits' && filteredTasks.length > 0) {
-    //   console.log(`Calendar - ${targetDate.toDateString()} の習慣:`, filteredTasks);
-    // }
     
     return filteredTasks;
   };
@@ -246,8 +250,6 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], habits = [], sel
   // アクティブな習慣を取得
   const activeHabits = useMemo(() => {
     const habits = allTasks.filter(task => task.is_habit);
-    // console.log('Calendar - 習慣データ:', habits);
-    // console.log('Calendar - 全タスクデータ:', allTasks);
     return habits;
   }, [allTasks]);
 

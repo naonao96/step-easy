@@ -150,8 +150,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           </div>
         )}
 
-        {/* プレミアムアイコン（プレミアムユーザーのみ） */}
-        {isPremium && (
+        {/* プレミアムアイコン（ログインユーザー全員） */}
+        {!user?.isGuest && (
           <button
             onClick={() => router.push('/settings?tab=subscription')}
             className="p-2 text-[#7c5a2a] hover:text-[#8b4513] transition-colors duration-200 hover:scale-105"

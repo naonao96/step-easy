@@ -107,11 +107,9 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   
   // 感情記録の状態をpropsから取得（一元管理）
   const recordStatus = useMemo(() => {
-    console.log('🔍 ModernMobileHome recordStatus 更新:', emotionLog.recordStatus);
     return emotionLog.recordStatus;
   }, [emotionLog.recordStatus]);
   const currentTimePeriod = useMemo(() => {
-    console.log('🔍 ModernMobileHome currentTimePeriod 更新:', emotionLog.currentTimePeriod);
     return emotionLog.currentTimePeriod;
   }, [emotionLog.currentTimePeriod]);
   
@@ -127,7 +125,6 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   
   // 感情メニューの開閉状態を管理
   const setShowEmotionMenu = (value: boolean) => {
-    console.log('🔍 setShowEmotionMenu 実行:', { 前の値: showEmotionMenuRef.current, 新しい値: value });
     showEmotionMenuRef.current = value;
     forceUpdate({});
   };
@@ -294,10 +291,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
 
   // 感情記録メニューを閉じる
   const handleCloseEmotionMenu = () => {
-    console.log('🔍 handleCloseEmotionMenu 実行前:', showEmotionMenu);
-    console.log('🔍 handleCloseEmotionMenu 関数ID:', Date.now());
     setShowEmotionMenu(false);
-    console.log('🔍 handleCloseEmotionMenu 実行後:', showEmotionMenu);
   };
 
   // 感情メニューの外部クリック処理
@@ -414,6 +408,8 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
             </div>
           </button>
           
+
+          
           <button
             onClick={() => handleTabChange('tasks')}
             className={`flex-1 py-3 px-4 text-center font-medium transition-colors ${
@@ -437,6 +433,22 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
 
       {/* Task List */}
       <div className="flex-1 p-4">
+        {/* 無料ユーザー向け習慣制限表示（習慣タブの時のみ） */}
+        {activeTab === 'habits' && planType === 'free' && (
+          <div className="mb-3 flex justify-center">
+            <button
+              onClick={() => router.push('/settings?tab=subscription')}
+              className="bg-[#f5f5dc] border border-[#deb887] rounded px-2 py-1 hover:bg-[#deb887] transition-colors cursor-pointer"
+              title="プレミアム版で習慣を無制限に追加できます"
+            >
+              <div className="flex items-center gap-1">
+                {FaCrown({ className: "w-3 h-3 text-[#8b4513]" })}
+                <span className="text-xs font-medium text-[#8b4513]">習慣制限: {habitTasks.length}/3</span>
+              </div>
+            </button>
+          </div>
+        )}
+        
         {getCurrentTasks().length === 0 ? (
           <div className="text-center py-12">
             <div className="text-gray-400 mb-4">
@@ -541,18 +553,11 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
               )}
               
               {/* 感情記録メニュー - キャラクター画像の中心に配置 */}
-              {(() => { console.log('🔍 ModernMobileHome レンダリング:', { showEmotionMenu, showMessage, isTyping }); return null; })()}
               {showEmotionMenu && (
                 <div className="absolute inset-0 z-40">
-                  {(() => { console.log('🔍 ModernMobileHome EmotionHoverMenu onClose:', { 
-                    handleCloseEmotionMenu: typeof handleCloseEmotionMenu,
-                    handleCloseEmotionMenuToString: handleCloseEmotionMenu.toString()
-                  }); return null; })()}
                   <EmotionHoverMenu
                     isVisible={showEmotionMenu}
                     onClose={() => {
-                      console.log('🔍 ModernMobileHome EmotionHoverMenu onClose 実行');
-                      console.log('🔍 handleCloseEmotionMenu 関数:', handleCloseEmotionMenu.toString());
                       handleCloseEmotionMenu();
                     }}
                     characterRef={characterRef}
@@ -567,9 +572,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
             {/* 感情記録ボタン（モバイル版専用） */}
             <button
               onClick={() => {
-                console.log('🔍 感情記録ボタンクリック前:', showEmotionMenu);
                 setShowEmotionMenu(!showEmotionMenu);
-                console.log('🔍 感情記録ボタンクリック後:', showEmotionMenu);
               }}
               className="absolute -bottom-8 -right-8 w-14 h-14 bg-pink-400/30 backdrop-blur-sm rounded-full shadow-lg border-2 border-white flex items-center justify-center text-white hover:bg-pink-500/30 active:scale-95 transition-all duration-200 z-40"
               title="感情を記録"

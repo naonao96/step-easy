@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaTasks, FaFire, FaChartLine, FaRobot, FaClock, FaGem, FaSearch, FaBars, FaTimes, FaCog, FaHeart } from 'react-icons/fa';
+import { FaTasks, FaFire, FaChartLine, FaRobot, FaClock, FaGem, FaBars, FaTimes, FaCog, FaHeart, FaArchive } from 'react-icons/fa';
 
 interface FeatureGuideProps {
   className?: string;
@@ -23,7 +23,6 @@ interface Feature {
 
 export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) => {
   const [activeSection, setActiveSection] = useState('task-management');
-  const [searchQuery, setSearchQuery] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -47,7 +46,7 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
         {
           name: 'タスクの作成・編集・削除',
           description: 'タイトル、説明、優先度、期限、カテゴリを設定してタスクを管理',
-          howToUse: 'メニュー → タスク管理 → 新規作成ボタンから作成',
+          howToUse: 'メニュー → 新規作成ボタンから作成',
           status: 'implemented'
         },
         {
@@ -69,6 +68,18 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
           status: 'implemented'
         },
         {
+          name: '期限日設定',
+          description: 'タスクの期限日を設定（ゲスト：不可、無料・プレミアム：可能）',
+          howToUse: 'タスク作成・編集時に期限日を設定',
+          status: 'implemented'
+        },
+        {
+          name: 'プラン別日付制限',
+          description: 'ゲスト：今日のみ｜無料：今日〜14日先｜プレミアム：無制限',
+          howToUse: 'プランに応じて自動制限、プレミアムで制限解除',
+          status: 'implemented'
+        },
+        {
           name: 'フィルター・検索',
           description: 'ステータス、優先度、カテゴリ、キーワードでタスクを絞り込み',
           howToUse: 'タスク一覧画面の検索バーとフィルターを使用',
@@ -78,30 +89,6 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
           name: 'ソート機能',
           description: '優先度、期限、作成日、継続日数など複数条件で並び替え',
           howToUse: 'タスク一覧画面のソートドロップダウンから選択',
-          status: 'implemented'
-        },
-        {
-          name: 'キーワード検索',
-          description: 'タスクのタイトル・説明文からキーワード検索が可能',
-          howToUse: 'タスク一覧画面の検索バーにキーワードを入力',
-          status: 'implemented'
-        },
-        {
-          name: 'ステータス別フィルター',
-          description: '未着手・進行中・完了の3段階でタスクを絞り込み',
-          howToUse: 'タスク一覧画面のフィルターボタンから選択',
-          status: 'implemented'
-        },
-        {
-          name: 'カテゴリ別フィルター',
-          description: '仕事・健康・学習・プライベート・趣味・その他の6カテゴリで分類',
-          howToUse: 'タスク一覧画面のカテゴリフィルターから選択',
-          status: 'implemented'
-        },
-        {
-          name: '優先度別フィルター',
-          description: '高・中・低の優先度でタスクを絞り込み',
-          howToUse: 'タスク一覧画面の優先度フィルターから選択',
           status: 'implemented'
         }
       ]
@@ -113,33 +100,33 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
       description: '継続的な習慣形成をサポートする機能群',
       features: [
         {
+          name: '習慣タスク作成',
+          description: '通常のタスクを習慣として設定、継続的な管理が可能',
+          howToUse: 'タスク作成時に「習慣タスク」をチェック',
+          status: 'implemented'
+        },
+        {
           name: 'ストリーク記録',
           description: '習慣タスクの継続日数を自動カウント、レベル別バッジ表示',
-          howToUse: 'タスク作成時に「習慣タスク」をチェック、完了すると継続日数が増加',
-          status: 'implemented'
-        },
-        {
-          name: '習慣頻度設定',
-          description: '毎日・週1回・月1回の頻度で習慣の期限を自動管理',
-          howToUse: '習慣タスク作成時に頻度を選択、期限切れ前にアラート表示',
-          status: 'implemented'
-        },
-        {
-          name: 'ストリーク状態管理',
-          description: '正常・注意・期限切れの3段階で継続状況を色分け表示',
-          howToUse: 'タスク一覧でストリークバッジの色で状態確認',
-          status: 'implemented'
-        },
-        {
-          name: '期限切れ自動リセット',
-          description: '設定した頻度を過ぎた習慣のストリークを自動リセット',
-          howToUse: '自動実行、アプリ起動時に期限切れタスクをチェック',
+          howToUse: '習慣タスクを完了すると継続日数が増加',
           status: 'implemented'
         },
         {
           name: 'ストリークレベルシステム',
           description: '継続日数に応じてバッジが進化（スタート→軌道→1週間→ベテラン→マスター級）',
           howToUse: '継続するほど高レベルのバッジを獲得',
+          status: 'implemented'
+        },
+        {
+          name: 'プラン別習慣制限',
+          description: 'ゲスト：不可｜無料：3個まで｜プレミアム：無制限',
+          howToUse: 'プランに応じて自動制限、プレミアムで制限解除',
+          status: 'implemented'
+        },
+        {
+          name: '期限切れ自動リセット',
+          description: '設定した頻度を過ぎた習慣のストリークを自動リセット',
+          howToUse: '自動実行、アプリ起動時に期限切れタスクをチェック',
           status: 'implemented'
         }
       ]
@@ -172,12 +159,6 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
           name: '累積時間統計',
           description: '今日・今週・今月・全期間の累積実行時間を表示',
           howToUse: 'タスク詳細画面やプロフィール画面で確認',
-          status: 'implemented'
-        },
-        {
-          name: '多層リセット機能',
-          description: 'セッション・日次・全期間の時間データを選択的にリセット',
-          howToUse: 'タスク詳細画面のリセットボタンから選択',
           status: 'implemented'
         }
       ]
@@ -213,21 +194,9 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
           status: 'implemented'
         },
         {
-          name: 'パフォーマンス分析',
-          description: '時間内完了率、平均精度、最適な時間帯の分析',
-          howToUse: 'モバイル版の詳細分析機能で確認',
-          status: 'implemented'
-        },
-        {
           name: '実行時間分析',
           description: 'タスクごとの予想時間vs実績時間の比較分析',
           howToUse: 'タスク詳細画面で実行時間の詳細を確認',
-          status: 'implemented'
-        },
-        {
-          name: 'カテゴリ別パフォーマンス',
-          description: 'カテゴリごとの完了率・実行時間・効率性を分析',
-          howToUse: 'プログレス画面 → カテゴリ別分析タブで確認',
           status: 'implemented'
         },
         {
@@ -237,9 +206,9 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
           status: 'implemented'
         },
         {
-          name: '時間帯別生産性分析',
-          description: '24時間×7曜日のマトリックスで最適な時間帯を分析',
-          howToUse: 'プログレス画面 → ヒートマップタブで確認',
+          name: 'プラン別アクセス制限',
+          description: 'ゲスト：統計画面アクセス不可｜無料・プレミアム：利用可能',
+          howToUse: 'プランに応じて自動制限、ログインで制限解除',
           status: 'implemented'
         }
       ]
@@ -273,6 +242,12 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
           description: 'ストレスレベル判定、モチベーション分析、休息提案による心理的サポート',
           howToUse: '感情記録に基づいてAIが適切な心理的サポートを提供',
           status: 'implemented'
+        },
+        {
+          name: 'プラン別アクセス制限',
+          description: 'ゲスト：感情記録不可｜無料・プレミアム：利用可能',
+          howToUse: 'プランに応じて自動制限、ログインで制限解除',
+          status: 'implemented'
         }
       ]
     },
@@ -301,18 +276,6 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
           status: 'implemented'
         },
         {
-          name: 'フリー/プレミアム対応',
-          description: 'プランに応じたメッセージの詳細度とパーソナライズ度の調整',
-          howToUse: 'プラン設定に応じて自動調整',
-          status: 'implemented'
-        },
-        {
-          name: '日次メッセージ配信',
-          description: '毎朝のモチベーション向上メッセージを自動生成・配信',
-          howToUse: 'Edge Function による自動配信',
-          status: 'implemented'
-        },
-        {
           name: '毎朝9時自動配信',
           description: 'CronJobによる毎朝9時の自動メッセージ配信',
           howToUse: '自動実行、ユーザーの状況に応じてメッセージが生成',
@@ -325,21 +288,41 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
           status: 'implemented'
         },
         {
-          name: '感情分析機能',
-          description: 'ストレス・モチベーション・継続性の3要素を分析',
-          howToUse: 'AIが自動判定、適切なメッセージを生成',
-          status: 'implemented'
-        },
-        {
           name: 'データ保存期間制限',
           description: '無料プラン：30日間、プレミアム：無制限',
           howToUse: 'プラン設定に応じて自動制限',
           status: 'implemented'
+        }
+      ]
+    },
+    {
+      id: 'archive',
+      title: 'アーカイブ機能',
+      icon: FaArchive,
+      description: '過去のタスクとデータを管理・閲覧する機能',
+      features: [
+        {
+          name: '完了タスクアーカイブ',
+          description: '完了したタスクを自動的にアーカイブに保存',
+          howToUse: 'タスク完了時に自動的にアーカイブに移動',
+          status: 'implemented'
         },
         {
-          name: 'レート制限対応',
-          description: 'API制限に応じたリトライ機能とエラーハンドリング',
-          howToUse: '自動実行、エラー時は適切なフォールバック',
+          name: 'アーカイブ閲覧',
+          description: '過去の完了タスクを日付・カテゴリ別に閲覧',
+          howToUse: 'アーカイブ画面で過去のタスクを確認',
+          status: 'implemented'
+        },
+        {
+          name: 'プラン別表示制限',
+          description: '無料プラン：30日間表示｜プレミアム：無制限表示',
+          howToUse: 'プランに応じて自動制限、プレミアムで制限解除',
+          status: 'implemented'
+        },
+        {
+          name: 'プラン別アクセス制限',
+          description: 'ゲスト：アーカイブアクセス不可｜無料・プレミアム：利用可能',
+          howToUse: 'プランに応じて自動制限、ログインで制限解除',
           status: 'implemented'
         }
       ]
@@ -375,70 +358,20 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
           status: 'implemented'
         },
         {
+          name: 'プラン別アクセス制限',
+          description: 'ゲスト：設定画面アクセス不可｜無料・プレミアム：利用可能',
+          howToUse: 'プランに応じて自動制限、ログインで制限解除',
+          status: 'implemented'
+        },
+        {
           name: '通知設定',
-          description: 'カスタマイズ可能な通知設定',
-          status: 'coming-soon'
-        },
-        {
-          name: '外観設定',
-          description: 'カスタマイズ可能な外観設定',
-          status: 'coming-soon'
-        },
-        {
-          name: 'パスワードリセット',
-          description: 'パスワードリセット機能',
-          status: 'coming-soon'
-        }
-      ]
-    },
-    {
-      id: 'premium-features',
-      title: 'プレミアム機能',
-      icon: FaGem,
-      description: '月額200円で利用できる高度な分析・サポート機能',
-      features: [
-        {
-          name: '週次・月次詳細レポート',
-          description: '行動パターンの詳細分析と成長の軌跡を可視化',
-          status: 'coming-soon'
-        },
-        {
-          name: '性格タイプ分析',
-          description: '行動データから性格タイプを判定し、最適なアプローチを提案',
-          status: 'coming-soon'
-        },
-        {
-          name: 'AI専属コーチ強化',
-          description: '個人の特性を学習した専属AIコーチによる高度なサポート',
-          status: 'coming-soon'
-        },
-        {
-          name: '習慣最適化提案',
-          description: '個人の生活パターンに合わせた最適な習慣プランを提案',
-          status: 'coming-soon'
-        },
-        {
-          name: '感情パターン解析',
-          description: 'メモから感情を読み取り、心理状態の変化を分析',
-          status: 'coming-soon'
-        },
-        {
-          name: '成長予測機能',
-          description: '過去のデータから未来のパフォーマンスを予測',
-          status: 'coming-soon'
+          description: 'タスク・習慣・サブスクリプション・システム・AIの5カテゴリの通知設定',
+          howToUse: '設定画面 → 通知タブから各カテゴリのON/OFFを設定',
+          status: 'implemented'
         }
       ]
     }
   ];
-
-  const filteredSections = featureSections.map(section => ({
-    ...section,
-    features: section.features.filter(feature => 
-      searchQuery === '' ||
-      feature.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      feature.description.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  })).filter(section => section.features.length > 0);
 
   const getStatusBadge = (status: Feature['status']) => {
     switch (status) {
@@ -460,39 +393,47 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
 
   return (
     <div className={`bg-transparent rounded-lg shadow-md ${className} relative h-screen flex flex-col`}>
-      {/* ヘッダー */}
-      <div className="border-b border-[#deb887] p-6 bg-white/90 backdrop-blur-sm z-10 flex-shrink-0">
-        <div className="flex items-center gap-4 mb-4">
-          {isMobile && (
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="p-2 rounded-xl bg-[#deb887] hover:bg-[#8b4513] text-[#8b4513] hover:text-white transition-colors"
-            >
-              {(FaBars as any)({ className: "w-5 h-5" })}
-            </button>
-          )}
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-[#8b4513] mb-2">StepEasy 機能ガイド</h1>
-            <p className="text-[#7c5a2a]">
-              現在実装されている機能と今後追加予定の機能を詳しく説明します
-            </p>
+      {/* モバイル用ハンバーガーボタン */}
+      {isMobile && (
+        <div className="p-6 pb-2 bg-transparent z-10 flex-shrink-0">
+          <div className="bg-[#f5f5dc]/40 rounded-lg shadow-sm border border-[#deb887]/40 p-4">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="relative p-2 rounded-lg bg-gradient-to-br from-[#f5e9da] to-[#ecd9c6] hover:from-[#ecd9c6] hover:to-[#deb887] text-[#8b4513] hover:text-[#7c5a2a] transition-all duration-300 shadow-md hover:shadow-lg border border-[#deb887]/30 hover:border-[#deb887]/60 group"
+              >
+                {/* ハンバーガーアイコンの3本線 */}
+                <div className="flex flex-col gap-1 items-center justify-center w-4 h-4">
+                  <div className="w-4 h-0.5 bg-current rounded-full transition-all duration-300 group-hover:bg-[#7c5a2a]"></div>
+                  <div className="w-4 h-0.5 bg-current rounded-full transition-all duration-300 group-hover:bg-[#7c5a2a]"></div>
+                  <div className="w-4 h-0.5 bg-current rounded-full transition-all duration-300 group-hover:bg-[#7c5a2a]"></div>
+                </div>
+                
+                {/* ホバー時の光沢効果 */}
+                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                
+                {/* アクティブ状態のインジケーター */}
+                <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#deb887] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              </button>
+              
+              {/* 現在のセクションタイトルとサブタイトル */}
+              <div className="flex-1">
+                {(() => {
+                  const currentSection = featureSections.find(section => section.id === activeSection);
+                  if (!currentSection) return null;
+                  
+                  return (
+                    <div>
+                      <h1 className="text-lg font-bold text-[#8b4513] mb-1">{currentSection.title}</h1>
+                      <p className="text-sm text-[#7c5a2a] leading-tight">{currentSection.description}</p>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
           </div>
         </div>
-        
-        {/* 検索バー */}
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            {(FaSearch as any)({ className: "h-4 w-4 text-[#7c5a2a]" })}
-          </div>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="機能を検索..."
-            className="block w-full pl-10 pr-3 py-2 border border-[#deb887] rounded-xl leading-5 bg-white placeholder-[#7c5a2a] focus:outline-none focus:placeholder-[#8b4513] focus:ring-2 focus:ring-[#8b4513] focus:border-[#8b4513]"
-          />
-        </div>
-      </div>
+      )}
 
       <div className="flex flex-1 overflow-hidden">
         {/* デスクトップサイドバー */}
@@ -528,21 +469,16 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
           </div>
         )}
 
-        {/* メインコンテンツ */}
+        {/* メインコンテンツ - 青空と雲の背景を透過して表示 */}
         <div className="flex-1 p-6 pb-20 overflow-y-auto bg-transparent">
-          {filteredSections.map((section) => {
+          {featureSections.map((section) => {
             if (section.id !== activeSection) return null;
             
             return (
               <div key={section.id}>
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-[#8b4513] mb-2">{section.title}</h2>
-                  <p className="text-[#7c5a2a]">{section.description}</p>
-                </div>
-                
                 <div className="space-y-4">
                   {section.features.map((feature, index) => (
-                    <div key={index} className="border border-[#deb887] rounded-2xl p-6 hover:shadow-lg transition-shadow bg-white/80 backdrop-blur">
+                    <div key={index} className="border border-[#deb887]/40 rounded-2xl p-6 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-[#f5f5dc]/90 via-[#f5e9da]/85 to-[#ecd9c6]/90 backdrop-blur-sm hover:from-[#f5f5dc]/95 hover:via-[#f5e9da]/90 hover:to-[#ecd9c6]/95 hover:scale-[1.02] hover:border-[#deb887]/60">
                       <div className="flex items-start justify-between mb-3">
                         <h3 className="text-lg font-bold text-[#8b4513]">{feature.name}</h3>
                         {getStatusBadge(feature.status)}
@@ -551,7 +487,7 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
                       <p className="text-[#7c5a2a] mb-4 leading-relaxed">{feature.description}</p>
                       
                       {feature.howToUse && (
-                        <div className="bg-[#deb887]/80 backdrop-blur rounded-xl p-4">
+                        <div className="bg-gradient-to-br from-[#deb887]/60 via-[#cd853f]/50 to-[#deb887]/60 backdrop-blur-sm rounded-xl p-4 border border-[#deb887]/30">
                           <h4 className="text-sm font-bold text-[#8b4513] mb-2">使い方</h4>
                           <p className="text-sm text-[#7c5a2a] leading-relaxed">{feature.howToUse}</p>
                         </div>
@@ -575,13 +511,13 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
           />
           
           {/* サイドバー */}
-          <div className="w-80 bg-white/95 backdrop-blur border-l border-[#deb887] shadow-2xl overflow-y-auto">
-            <div className="p-6 border-b border-[#deb887]">
+          <div className="w-80 bg-gradient-to-br from-[#f7ecd7]/95 via-[#f5e9da]/90 to-[#ecd9c6]/95 backdrop-blur-sm border-l border-[#deb887]/40 shadow-2xl overflow-y-auto">
+            <div className="p-6 border-b border-[#deb887]/40 bg-gradient-to-r from-[#f5e9da]/80 to-[#ecd9c6]/80">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold text-[#8b4513]">機能一覧</h3>
                 <button
                   onClick={() => setSidebarOpen(false)}
-                  className="p-2 rounded-xl hover:bg-[#deb887] text-[#7c5a2a] transition-colors"
+                  className="p-2 rounded-xl hover:bg-[#deb887]/60 text-[#7c5a2a] transition-all duration-300 hover:scale-110"
                 >
                   {(FaTimes as any)({ className: "w-5 h-5" })}
                 </button>
@@ -597,15 +533,15 @@ export const FeatureGuide: React.FC<FeatureGuideProps> = ({ className = '' }) =>
                   <button
                     key={section.id}
                     onClick={() => selectSection(section.id)}
-                    className={`w-full p-4 rounded-xl text-left transition-all duration-200 ${
+                    className={`w-full p-4 rounded-xl text-left transition-all duration-300 ${
                       isActive 
-                        ? 'bg-[#deb887] border-2 border-[#8b4513] shadow-sm' 
-                        : 'hover:bg-[#deb887] border-2 border-transparent'
+                        ? 'bg-gradient-to-br from-[#deb887]/80 to-[#cd853f]/70 border-2 border-[#8b4513] shadow-lg' 
+                        : 'hover:bg-gradient-to-br hover:from-[#deb887]/40 hover:to-[#cd853f]/30 border-2 border-transparent'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                        isActive ? 'bg-[#8b4513]' : 'bg-[#deb887]'
+                        isActive ? 'bg-[#8b4513]' : 'bg-[#deb887]/60'
                       }`}>
                         {(IconComponent as any)({ 
                           className: `w-5 h-5 ${isActive ? 'text-white' : 'text-[#8b4513]'}` 

@@ -8,7 +8,7 @@ import { ToggleSwitch } from '../atoms/ToggleSwitch';
 import { SortOption } from '../atoms/SortDropdown';
 import { sortTasks, getSavedSortOption, saveSortOption } from '@/lib/sortUtils';
 import { formatDurationShort } from '@/lib/timeUtils';
-import { FaPlus, FaCheck, FaEdit, FaFilter, FaFire, FaTasks } from 'react-icons/fa';
+import { FaPlus, FaCheck, FaEdit, FaFilter, FaFire, FaTasks, FaCrown, FaGem } from 'react-icons/fa';
 
 interface TaskListHomeProps {
   tasks?: Task[];
@@ -155,8 +155,15 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
 
   const handleAddTask = () => {
     const { canAdd, message } = getAddTaskButtonInfo();
+    const buttonLabel = getTabAddButtonLabel();
     
     if (!canAdd) {
+      // プレミアム版が必要な場合は設定画面のプレミアムタブに遷移
+      if (buttonLabel.includes('プレミアム版が必要')) {
+        router.push('/settings?tab=subscription');
+        return;
+      }
+      // その他の制限（ログインが必要など）はalertで表示
       alert(message);
       return;
     }
@@ -419,11 +426,13 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
         <h2 className="text-lg font-semibold text-[#8b4513] min-w-0 flex-1 truncate">{getTitle()}</h2>
         <button
           onClick={handleAddTask}
-          disabled={!getTabAddButtonEnabled()}
+          disabled={!getTabAddButtonEnabled() && !getTabAddButtonLabel().includes('プレミアム版が必要')}
           className={`flex-shrink-0 ml-2 flex items-center gap-2 px-3 py-1 text-sm rounded-lg transition-colors ${
             getTabAddButtonEnabled() 
               ? 'bg-[#7c5a2a] text-white hover:bg-[#8b4513] shadow-sm'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              : getTabAddButtonLabel().includes('プレミアム版が必要')
+                ? 'bg-[#deb887] text-[#8b4513] hover:bg-[#d4a574] cursor-pointer'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
           title={!getTabAddButtonEnabled() ? 
             (activeTab === 'habits' ? 
@@ -460,7 +469,7 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
         />
       </div>
 
-      {/* ソートドロップダウン */}
+      {/* ソートドロップダウンと制限表示 */}
       <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-2">
         <div className="flex items-center gap-2 text-sm text-[#7c5a2a]">
           {FaFilter({ className: "w-4 h-4 text-[#7c5a2a]" })}
@@ -486,6 +495,20 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
           <option value="title_asc">あいうえお順</option>
           <option value="title_desc">あいうえお順（逆）</option>
         </select>
+        
+        {/* 無料ユーザー向け習慣制限表示（習慣タブの時のみ） */}
+        {activeTab === 'habits' && planType === 'free' && (
+          <button
+            onClick={() => router.push('/settings?tab=subscription')}
+            className="bg-[#f5f5dc] border border-[#deb887] rounded-lg p-2 hover:bg-[#deb887] transition-colors cursor-pointer"
+            title="プレミアム版で習慣を無制限に追加できます"
+          >
+            <div className="flex items-center gap-2">
+              {FaCrown({ className: "w-3 h-3 text-[#8b4513]" })}
+              <span className="text-xs font-medium text-[#8b4513]">習慣制限: {habitTasks.length}/3</span>
+            </div>
+          </button>
+        )}
       </div>
 
       {/* タブコンテンツ */}

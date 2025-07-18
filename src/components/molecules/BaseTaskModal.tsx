@@ -365,7 +365,7 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
 
       if (initialData && initialData.id) {
         // 既存タスクの更新
-        await updateTask(initialData.id, taskData);
+          await updateTask(initialData.id, taskData);
         // 保存後はプレビューモードに切り替え
         if (onPreview && initialData) {
           const updatedTask = {
@@ -442,40 +442,23 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
   if (isPreviewMode && initialData) {
     return (
       <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 ${overlayClassName}`}>
-        <div className={`bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[calc(80vh-120px)] overflow-hidden flex flex-col ${contentClassName} ${isFullScreen ? 'max-w-none max-h-none rounded-none' : ''}`}>
+        <div className={`bg-white rounded-xl shadow-xl max-w-4xl w-full ${isMobile ? 'max-h-[calc(80vh-120px)]' : 'max-h-[calc(90vh-80px)]'} overflow-hidden flex flex-col ${contentClassName} ${isFullScreen ? 'max-w-none max-h-none rounded-none' : ''}`}>
           {/* ヘッダー */}
           <div className={`${isHabit ? 'bg-orange-50 border-orange-200' : 'bg-[#f5f5dc] border-[#deb887]'} border-b px-4 sm:px-6 ${isMobile ? 'py-3 pt-safe' : 'py-4'}`}>
-            {/* モバイル版：3行レイアウト */}
+            {/* モバイル版：1行レイアウト - ボタン群を上下中央に配置 */}
             {isMobile ? (
-              <>
-                {/* 1行目：作成日と完了日 */}
-                <div className="flex items-center gap-4 text-xs text-[#7c5a2a] font-medium mb-1 mt-1">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#7c5a2a]"></div>
-                    <span>{new Date(initialData.created_at || '').toLocaleDateString('ja-JP', { 
-                      month: 'short', 
-                      day: 'numeric'
-                    })}</span>
-                  </div>
-                  {initialData.completed_at && (
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#8b4513]"></div>
-                      <span>完了 {new Date(initialData.completed_at).toLocaleDateString('ja-JP', { 
-                        month: 'short', 
-                        day: 'numeric'
-                      })}</span>
-                    </div>
-                  )}
+              <div className="flex items-center justify-between text-xs text-[#7c5a2a] font-medium">
+                <div className="flex items-center gap-4">
+                  {/* 左側の空のdiv */}
                 </div>
-                
-                {/* 2行目：アクションボタン */}
-                <div className="flex items-center gap-2 mb-1">
+                {/* ボタン配置 - 上下中央 */}
+                <div className="flex items-center gap-1">
                   {onEdit && (
                     <>
                       <button
                         onClick={() => onEdit(initialData as Task)}
                         disabled={isFutureDate}
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg transition-all duration-200 ${
+                        className={`inline-flex items-center gap-1 px-1 py-1 text-xs font-medium rounded-lg transition-all duration-200 ${
                           isFutureDate
                             ? 'text-gray-400 cursor-not-allowed opacity-50'
                             : 'text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc]'
@@ -486,7 +469,7 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
                         編集
                       </button>
                       {onComplete && (
-                        <div className="w-px h-3 bg-[#deb887] mx-1"></div>
+                        <div className="w-px h-3 bg-[#deb887] mx-0"></div>
                       )}
                     </>
                   )}
@@ -494,7 +477,7 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
                     <button
                       onClick={handleComplete}
                       disabled={isFutureDate}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg transition-all duration-200 ${
+                      className={`inline-flex items-center gap-1 px-1 py-1 text-xs font-medium rounded-lg transition-all duration-200 ${
                         isFutureDate
                           ? 'text-gray-400 cursor-not-allowed opacity-50'
                           : getTaskStatus() === 'done' 
@@ -509,73 +492,57 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
                   )}
                   {onDelete && (
                     <>
-                      <div className="w-px h-3 bg-[#deb887] mx-1"></div>
+                      <div className="w-px h-3 bg-[#deb887] mx-0"></div>
                       <button
                         onClick={handleDelete}
                         disabled={isDeleting}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[#8b4513] hover:text-[#7c5a2a] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200 disabled:opacity-50"
+                        className="inline-flex items-center gap-1 px-1 py-1 text-xs font-medium text-[#8b4513] hover:text-[#7c5a2a] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200 disabled:opacity-50"
                       >
                         {FaTrash({ className: "w-3 h-3" })}
                         {isDeleting ? '削除中...' : '削除'}
                       </button>
                     </>
                   )}
+                  <div className="w-px h-3 bg-[#deb887] mx-0"></div>
+                  <button
+                    onClick={() => handleCloseWithConfirm(handleModalClose)}
+                    className="inline-flex items-center gap-1 px-1 py-1 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200"
+                  >
+                    {FaTimes({ className: "w-3 h-3" })}
+                    閉じる
+                  </button>
                 </div>
-                
-                              {/* 3行目：閉じるボタン（左寄せ） */}
-              <div className="flex justify-start">
-                <button
-                  onClick={() => handleCloseWithConfirm(handleModalClose)}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200"
-                >
-                  {FaTimes({ className: "w-3 h-3" })}
-                  閉じる
-                </button>
               </div>
-              </>
             ) : (
-              /* デスクトップ版：1行レイアウト（既存のまま） */
+              /* デスクトップ版：1行レイアウト - ボタン群を上下中央に配置 */
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
               <div className="flex items-center gap-4 text-xs text-[#7c5a2a] font-medium">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#7c5a2a]"></div>
-                  <span>{new Date(initialData.created_at || '').toLocaleDateString('ja-JP', { 
-                    month: 'short', 
-                    day: 'numeric'
-                  })}</span>
-                </div>
-                {initialData.completed_at && (
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#8b4513]"></div>
-                    <span>完了 {new Date(initialData.completed_at).toLocaleDateString('ja-JP', { 
-                      month: 'short', 
-                      day: 'numeric'
-                    })}</span>
-                  </div>
-                )}
               </div>
               
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 {onEdit && (
-                  <button
-                    onClick={() => onEdit(initialData as Task)}
-                    disabled={isFutureDate}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
-                      isFutureDate
-                        ? 'text-gray-400 bg-gray-100 cursor-not-allowed opacity-50'
-                        : 'text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc]'
-                    }`}
-                    title={isFutureDate ? '未来日は編集できません' : '編集'}
-                  >
-                    {FaEdit({ className: "w-3 h-3" })}
-                    編集
-                  </button>
+                  <>
+                    <button
+                      onClick={() => onEdit(initialData as Task)}
+                      disabled={isFutureDate}
+                      className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-lg transition-all duration-200 ${
+                        isFutureDate
+                          ? 'text-gray-400 bg-gray-100 cursor-not-allowed opacity-50'
+                          : 'text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc]'
+                      }`}
+                      title={isFutureDate ? '未来日は編集できません' : '編集'}
+                    >
+                      {FaEdit({ className: "w-3 h-3" })}
+                      編集
+                    </button>
+                    <div className="w-px h-3 bg-[#deb887] mx-0.5"></div>
+                  </>
                 )}
                 {onComplete && (
                   <button
                     onClick={handleComplete}
                     disabled={isFutureDate}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
+                    className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-lg transition-all duration-200 ${
                       isFutureDate
                         ? 'text-gray-400 bg-gray-100 cursor-not-allowed opacity-50'
                         : getTaskStatus() === 'done' 
@@ -590,21 +557,21 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
                 )}
                 {onDelete && (
                   <>
-                    <div className="w-px h-3 bg-[#deb887] mx-1"></div>
+                    <div className="w-px h-3 bg-[#deb887] mx-0.5"></div>
                     <button
                       onClick={handleDelete}
                       disabled={isDeleting}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-[#8b4513] hover:text-[#7c5a2a] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200 disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-[#8b4513] hover:text-[#7c5a2a] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200 disabled:opacity-50"
                     >
                       {FaTrash({ className: "w-3 h-3" })}
                       {isDeleting ? '削除中...' : '削除'}
                     </button>
                   </>
                 )}
-                <div className="w-px h-3 bg-[#deb887] mx-1"></div>
+                <div className="w-px h-3 bg-[#deb887] mx-0.5"></div>
                 <button
                   onClick={() => handleCloseWithConfirm(handleModalClose)}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200"
+                  className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200"
                 >
                   {FaTimes({ className: "w-3 h-3" })}
                   閉じる
@@ -690,133 +657,145 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
 
   return (
     <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 ${overlayClassName}`}>
-      <div className={`bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[calc(80vh-120px)] overflow-hidden flex flex-col ${contentClassName} ${isFullScreen ? 'max-w-none max-h-none rounded-none' : ''}`}>
+      <div className={`bg-white rounded-xl shadow-xl max-w-4xl w-full ${isMobile ? 'max-h-[calc(80vh-120px)]' : 'max-h-[calc(90vh-80px)]'} overflow-hidden flex flex-col ${contentClassName} ${isFullScreen ? 'max-w-none max-h-none rounded-none' : ''}`}>
         {/* ヘッダー */}
           <div className={`${isHabit ? 'bg-orange-50 border-orange-200' : 'bg-[#f5f5dc] border-[#deb887]'} border-b px-4 sm:px-6 ${isMobile ? 'py-3 pt-safe' : 'py-4'}`}>
           {/* モバイル版：3行レイアウト */}
           {isMobile ? (
             <>
-              {/* 1行目：編集中の状態とタイムスタンプ */}
-              <div className="flex items-center gap-4 text-xs text-[#7c5a2a] font-medium mb-1 mt-1">
-                {initialData ? (
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#7c5a2a]"></div>
-                    <span>編集中 {new Date(initialData.updated_at || initialData.created_at || '').toLocaleDateString('ja-JP', { 
-                      month: 'short', 
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#8b4513]"></div>
-                    <span>{modalTitle}</span>
-                  </div>
-                )}
+              {/* ヘッダー全体 - ボタン群を上下中央に配置 */}
+              <div className="flex items-center justify-between text-xs text-[#7c5a2a] font-medium">
+                <div className="flex items-center gap-4">
+                  {initialData ? (
+                    <div className="flex items-center gap-1.5">
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                    </div>
+                  )}
+                </div>
+                {/* ボタン配置 - 上下中央 */}
+                <div className="flex items-center gap-1">
+                  {!isExistingTask ? (
+                    /* 新規追加モード：保存と閉じるボタン */
+                    <>
+                      <button
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="inline-flex items-center gap-1 px-1 py-1 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {FaSave({ className: "w-3 h-3" })}
+                        {isSaving ? '保存中...' : '保存'}
+                      </button>
+                      <div className="w-px h-3 bg-[#deb887] mx-0"></div>
+                      <button
+                        onClick={() => handleCloseWithConfirm(onClose)}
+                        className="inline-flex items-center gap-1 px-1 py-1 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200"
+                      >
+                        {FaTimes({ className: "w-3 h-3" })}
+                        閉じる
+                      </button>
+                    </>
+                  ) : (
+                    /* 編集・プレビューモード：プレビュー・保存・削除ボタン */
+                    <>
+                      {initialData && onPreview && (
+                        <>
+                          <button
+                            onClick={() => onPreview(initialData as Task)}
+                            className="inline-flex items-center gap-1 px-1 py-1 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200"
+                          >
+                            {FaEye({ className: "w-3 h-3" })}
+                            プレビュー
+                          </button>
+                          <div className="w-px h-3 bg-[#deb887] mx-0"></div>
+                        </>
+                      )}
+                      <button
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="inline-flex items-center gap-1 px-1 py-1 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {FaSave({ className: "w-3 h-3" })}
+                        {isSaving ? '保存中...' : '保存'}
+                      </button>
+                      {initialData && onDelete && (
+                        <>
+                          <div className="w-px h-3 bg-[#deb887] mx-0"></div>
+                          <button
+                            onClick={handleDelete}
+                            disabled={isDeleting || isFutureDate}
+                            className={`inline-flex items-center gap-1 px-1 py-1 text-xs font-medium rounded-lg transition-all duration-200 ${
+                              isFutureDate
+                                ? 'text-gray-400 cursor-not-allowed opacity-50'
+                                : 'text-[#8b4513] hover:text-[#7c5a2a] hover:bg-[#f5f5dc] disabled:opacity-50'
+                            }`}
+                            title={isFutureDate ? '未来日は削除できません' : (isDeleting ? '削除中...' : '削除')}
+                          >
+                            {FaTrash({ className: "w-3 h-3" })}
+                            {isDeleting ? '削除中...' : '削除'}
+                          </button>
+                        </>
+                      )}
+                      <div className="w-px h-3 bg-[#deb887] mx-0"></div>
+                      <button
+                        onClick={() => handleCloseWithConfirm(onClose)}
+                        className="inline-flex items-center gap-1 px-1 py-1 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200"
+                      >
+                        {FaTimes({ className: "w-3 h-3" })}
+                        閉じる
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
               
-              {/* 2行目：アクションボタン */}
-              <div className="flex items-center gap-2 mb-1">
-                {isExistingTask && initialData && onPreview && (
-                  <>
-                    <button
-                      onClick={() => onPreview(initialData as Task)}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200"
-                    >
-                      {FaEye({ className: "w-3 h-3" })}
-                      プレビュー
-                    </button>
-                    <div className="w-px h-3 bg-[#deb887] mx-1"></div>
-                  </>
-                )}
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {FaSave({ className: "w-3 h-3" })}
-                  {isSaving ? '保存中...' : '保存'}
-                </button>
-                {isExistingTask && initialData && onDelete && (
-                  <>
-                    <div className="w-px h-3 bg-[#deb887] mx-1"></div>
-                    <button
-                      onClick={handleDelete}
-                      disabled={isDeleting || isFutureDate}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg transition-all duration-200 ${
-                        isFutureDate
-                          ? 'text-gray-400 cursor-not-allowed opacity-50'
-                          : 'text-[#8b4513] hover:text-[#7c5a2a] hover:bg-[#f5f5dc] disabled:opacity-50'
-                      }`}
-                      title={isFutureDate ? '未来日は削除できません' : (isDeleting ? '削除中...' : '削除')}
-                    >
-                      {FaTrash({ className: "w-3 h-3" })}
-                      {isDeleting ? '削除中...' : '削除'}
-                    </button>
-                  </>
-                )}
-              </div>
+
               
-              {/* 3行目：閉じるボタン（左寄せ） */}
-              <div className="flex justify-start">
-                <button
-                  onClick={() => handleCloseWithConfirm(onClose)}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200"
-                >
-                  {FaTimes({ className: "w-3 h-3" })}
-                  閉じる
-                </button>
-              </div>
+              
             </>
           ) : (
-            /* デスクトップ版：1行レイアウト（既存のまま） */
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+            /* デスクトップ版：1行レイアウト - ボタン群を上下中央に配置 */
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
               <div className="flex items-center gap-4 text-xs text-[#7c5a2a] font-medium">
                 {isExistingTask && initialData && (
                   <div className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#7c5a2a]"></div>
-                    <span>編集中 {new Date(initialData.updated_at || '').toLocaleDateString('ja-JP', { 
-                      month: 'short', 
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}</span>
                   </div>
                 )}
                 {!isExistingTask && (
                   <div className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#8b4513]"></div>
-                    <span>{modalTitle}</span>
                   </div>
                 )}
               </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               {isExistingTask && initialData && onPreview && (
-                <button
-                  onClick={() => onPreview(initialData as Task)}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200"
-                >
-                  {FaEye({ className: "w-3 h-3" })}
-                  プレビュー
-                </button>
+                <>
+                  <button
+                    onClick={() => onPreview(initialData as Task)}
+                    className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200"
+                  >
+                    {FaEye({ className: "w-3 h-3" })}
+                    プレビュー
+                  </button>
+                  <div className="w-px h-3 bg-[#deb887] mx-0.5"></div>
+                </>
               )}
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium bg-[#7c5a2a] hover:bg-[#8b4513] text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {FaSave({ className: "w-3 h-3" })}
                 {isSaving ? '保存中...' : '保存'}
               </button>
               {isExistingTask && initialData && onDelete && (
                 <>
-                  <div className="w-px h-3 bg-[#deb887] mx-1"></div>
+                  <div className="w-px h-3 bg-[#deb887] mx-0.5"></div>
                   <button
                     onClick={handleDelete}
                     disabled={isDeleting || isFutureDate}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
+                    className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-lg transition-all duration-200 ${
                       isFutureDate
                         ? 'text-gray-400 cursor-not-allowed opacity-50'
                         : 'text-[#8b4513] hover:text-[#7c5a2a] hover:bg-[#f5f5dc] disabled:opacity-50'
@@ -828,10 +807,10 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
                   </button>
                 </>
               )}
-              <div className="w-px h-3 bg-[#deb887] mx-1"></div>
+              <div className="w-px h-3 bg-[#deb887] mx-0.5"></div>
               <button
                 onClick={() => handleCloseWithConfirm(onClose)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200"
+                className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-all duration-200"
               >
                 {FaTimes({ className: "w-3 h-3" })}
                 閉じる
@@ -1013,7 +992,7 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   placeholder={contentPlaceholder}
-                  className={`w-full resize-none border-0 focus:ring-0 focus:outline-none text-[#8b4513] placeholder-[#7c5a2a] bg-transparent text-sm sm:text-base ${isMobile ? 'h-64' : 'h-96'}`}
+                  className={`w-full resize-none border-0 focus:ring-0 focus:outline-none text-[#8b4513] placeholder-[#7c5a2a] bg-transparent text-sm sm:text-base ${isMobile ? 'h-64' : 'h-[28rem]'}`}
                   style={{ fontFamily: 'Monaco, Menlo, monospace' }}
                   disabled={isPreviewMode}
                 />
