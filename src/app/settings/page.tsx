@@ -895,29 +895,11 @@ export default function SettingsPage() {
                           {/* プレミアム申込ボタン */}
                           <div className="mt-6 pt-4 border-t border-[#deb887]/30">
                             <button 
-                              onClick={async () => {
-                                if (!user?.id || !user?.email) {
-                                  alert('ユーザー情報が見つかりません。');
-                                  return;
-                                }
-                                try {
-                                  const { createCheckoutSession } = await import('@/lib/stripe-client');
-                                  const { loadStripeClient } = await import('@/lib/stripe-client');
-                                  const sessionId = await createCheckoutSession(user.id, user.email);
-                                  const stripe = await loadStripeClient();
-                                  
-                                  if (stripe) {
-                                    await stripe.redirectToCheckout({ sessionId });
-                                  }
-                                } catch (error) {
-                                  console.error('Upgrade error:', error);
-                                  alert('決済ページを開けませんでした。もう一度お試しください。');
-                                }
-                              }}
-                              className="w-full px-4 py-3 bg-[#8b4513] hover:bg-[#7c5a2a] text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                              disabled
+                              className="w-full px-4 py-3 bg-[#8b4513] text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 opacity-60 cursor-not-allowed"
                             >
                               {FaCrown({ className: "w-4 h-4" })}
-                              プレミアムにアップグレード
+                              Coming Soon
                             </button>
                             <p className="text-xs text-[#8b4513] text-center mt-3">
                               7日間の無料体験期間付き・いつでも解約可能

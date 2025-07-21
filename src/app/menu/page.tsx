@@ -758,7 +758,7 @@ export default function MenuPage() {
                     priority: taskData.priority,
                     estimated_duration: taskData.estimated_duration,
                     start_date: taskData.start_date || undefined,
-                    due_date: taskData.due_date || undefined,
+                    due_date: taskData.due_date === '' || taskData.due_date == null ? undefined : taskData.due_date,
                     has_deadline: taskData.due_date !== null
                   };
                   await updateHabit(selectedTask.id, habitData);

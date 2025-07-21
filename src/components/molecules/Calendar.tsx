@@ -34,8 +34,9 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], habits = [], sel
     const convertedHabits = habits.map(habit => ({
       ...habit,
       is_habit: true,
-      start_date: null,
-      due_date: null,
+      // start_date, due_dateはhabitの値をそのまま使う
+      start_date: habit.start_date || null,
+      due_date: habit.due_date || null,
       status: habit.isCompleted ? 'done' : 'todo',
       completed_at: habit.isCompleted ? new Date().toISOString() : undefined
     }));
@@ -186,6 +187,7 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], habits = [], sel
           if (task.habit_status === 'active') {
           // 習慣の開始日チェック（start_dateまたはcreated_atを基準日とする）
           const baseDate = task.start_date ? new Date(task.start_date) : (task.created_at ? new Date(task.created_at) : null);
+          const dueDate = task.due_date ? new Date(task.due_date) : null;
           if (baseDate) {
             baseDate.setHours(0, 0, 0, 0);
             // 対象日が開始日より前の場合は表示しない
@@ -193,14 +195,20 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], habits = [], sel
               return false;
             }
           }
-          
+          // 期限日がある場合、期限日より後は表示しない
+          if (dueDate) {
+            dueDate.setHours(0, 0, 0, 0);
+            if (targetDate.getTime() > dueDate.getTime()) {
+              return false;
+            }
+          }
           // 完了済みタスク：完了日が対象日と一致
           if (task.status === 'done' && task.completed_at) {
             const completedDate = new Date(task.completed_at);
             completedDate.setHours(0, 0, 0, 0);
             return completedDate.getTime() === targetDate.getTime();
           }
-          // 未完了タスク：開始日以降の毎日表示
+          // 未完了タスク：開始日以降（かつ期限日まで）の毎日表示
           if (task.status !== 'done') {
             return true;
           }

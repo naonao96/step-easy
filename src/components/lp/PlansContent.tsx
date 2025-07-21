@@ -214,11 +214,10 @@ export const PlansContent: React.FC<PlansContentProps> = ({ onLogin, onRegister,
               </div>
               
               <button
-                onClick={onRegister}
-                disabled={isLoading}
-                className="w-full bg-[#8b4513] hover:bg-[#7c5a2a] text-white px-6 py-3 rounded-xl font-bold transition-colors disabled:opacity-50"
+                disabled
+                className="w-full bg-[#8b4513] text-white px-6 py-3 rounded-xl font-bold transition-colors opacity-60 cursor-not-allowed"
               >
-                プレミアムで始める
+                Coming Soon
               </button>
             </div>
           </div>

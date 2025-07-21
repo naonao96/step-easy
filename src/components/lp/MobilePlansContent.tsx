@@ -223,11 +223,10 @@ export const MobilePlansContent: React.FC<MobilePlansContentProps> = ({
               </div>
               
               <button
-                onClick={onRegister}
-                disabled={isLoading}
-                className="w-full bg-[#8b4513] hover:bg-[#7c5a2a] text-white px-6 py-3 rounded-xl font-bold transition-all duration-300 disabled:opacity-50 shadow-md hover:shadow-lg"
+                disabled
+                className="w-full bg-[#8b4513] text-white px-6 py-3 rounded-xl font-bold transition-all duration-300 opacity-60 cursor-not-allowed shadow-md"
               >
-                プレミアムで始める
+                Coming Soon
               </button>
             </div>
           </div>
