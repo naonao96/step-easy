@@ -286,6 +286,24 @@ export function toJSTDateString(date: Date): string {
 }
 
 /**
+ * 日付をISO文字列に変換（データベース用）
+ * @param date 変換対象の日付
+ * @returns ISO文字列（YYYY-MM-DDTHH:mm:ss.sssZ）
+ */
+export function toISODateString(date: Date): string {
+  return date.toISOString();
+}
+
+/**
+ * 日付をISO文字列に変換（null対応）
+ * @param date 変換対象の日付（null可）
+ * @returns ISO文字列またはnull
+ */
+export function toISODateStringOrNull(date: Date | null): string | null {
+  return date ? date.toISOString() : null;
+}
+
+/**
  * 今日の日付をJSTで取得してYYYY-MM-DD形式の文字列に変換
  * @returns 今日のJST基準YYYY-MM-DD形式文字列
  */
@@ -302,4 +320,24 @@ export function getTodayJSTString(): string {
 export function fromJSTDateString(dateString: string): Date {
   const utcDate = new Date(dateString + 'T00:00:00Z');
   return new Date(utcDate.getTime() - (9 * 60 * 60 * 1000));
-} 
+}
+
+/**
+ * 日付をDATE型用のYYYY-MM-DD形式に変換（start_date用）
+ * @param date 変換対象の日付（null可）
+ * @returns YYYY-MM-DD形式文字列またはnull
+ */
+export function toDateStringOrNull(date: Date | null): string | null {
+  return date ? date.toISOString().split('T')[0] : null;
+}
+
+/**
+ * 日付をTIMESTAMP WITH TIME ZONE型用のISO文字列に変換（due_date用）
+ * @param date 変換対象の日付（null可）
+ * @returns ISO文字列またはnull
+ */
+export function toTimestampStringOrNull(date: Date | null): string | null {
+  return date ? date.toISOString() : null;
+}
+
+ 

@@ -1,13 +1,14 @@
 import React, { forwardRef } from 'react';
 import { type Task } from '@/types/task';
+import { type Habit } from '@/types/habit';
 import { BaseTaskModal } from './BaseTaskModal';
-import { toJSTDateString } from '@/lib/timeUtils';
+import { toDateStringOrNull, toTimestampStringOrNull } from '@/lib/timeUtils';
 
 interface TaskModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialData?: Partial<Task>;
-  onSave?: (task: Task) => void;
+  onSave?: (task: Task | Habit) => void;
   mode?: 'create' | 'edit' | 'preview';
   isMobile?: boolean;
   onRequestClose?: () => void;
@@ -34,11 +35,9 @@ export const TaskModal = forwardRef<{ closeWithValidation: () => void }, TaskMod
     title: data.title.trim(),
     description: data.content,
     priority: data.priority,
-    is_habit: false, // 通常タスクは常にfalse
-    habit_frequency: undefined, // 通常タスクは習慣頻度なし
     status: 'todo' as const,
-    start_date: data.startDate ? toJSTDateString(data.startDate) : null,
-    due_date: data.dueDate ? toJSTDateString(data.dueDate) : null,
+    start_date: toDateStringOrNull(data.startDate), // DATE型用（YYYY-MM-DD）
+    due_date: toTimestampStringOrNull(data.dueDate), // TIMESTAMP WITH TIME ZONE型用（ISO文字列）
     estimated_duration: data.estimatedDuration,
     category: data.category
   });

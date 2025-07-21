@@ -1,6 +1,6 @@
 import { Habit, HabitCompletionResult } from '@/types/habit';
 import { Task } from '@/types/task';
-import { isNewHabit, isLegacyHabit, isHabitCompleted } from './habitUtils';
+import { isNewHabit, isHabitCompleted } from './habitUtils';
 import { useHabitStore } from '@/stores/habitStore';
 
 // 習慣の完了処理
@@ -43,7 +43,7 @@ export const completeHabit = async (
   
   // 既存のタスクテーブルのタスクの場合
   const task = tasks.find(t => t.id === id);
-  if (task && isLegacyHabit(task)) {
+  if (task && !isNewHabit(task)) {
     const newStatus = task.status === 'done' ? 'todo' : 'done';
     
     // 完了時は選択されている日付をcompleted_atに設定
@@ -79,7 +79,7 @@ export const deleteHabit = async (
   await deleteHabitFn(id);
   
   // 既存のタスクテーブルからの習慣削除も試行
-  const legacyHabit = tasks.find(task => task.id === id && task.is_habit);
+  const legacyHabit = tasks.find(task => task.id === id && task.habit_status === 'active');
   if (legacyHabit) {
     await deleteTaskFn(id);
   }
@@ -103,7 +103,7 @@ export const editHabit = async (
   
   // 既存のタスクテーブルの習慣の場合
   const task = tasks.find(t => t.id === id);
-  if (task && isLegacyHabit(task)) {
+  if (task && !isNewHabit(task)) {
     await updateTaskFn(id, updates);
   }
 }; 

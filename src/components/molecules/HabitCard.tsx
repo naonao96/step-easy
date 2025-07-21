@@ -7,7 +7,6 @@ import { useTaskStore } from '@/stores/taskStore';
 import { Button } from '../atoms/Button';
 import {
   isNewHabit,
-  isLegacyHabit,
   isHabitCompleted
 } from '@/lib/habitUtils';
 
@@ -43,7 +42,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
         if (!result.success) {
           console.error('習慣切り替えエラー:', result.message);
         }
-      } else if (isLegacyHabit(habit)) {
+      } else if (!isNewHabit(habit)) {
         // 既存のタスクテーブルの習慣：従来の切り替え
         const newStatus = habit.status === 'done' ? 'todo' : 'done';
         

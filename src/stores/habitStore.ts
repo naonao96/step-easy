@@ -64,6 +64,8 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
         user_id: user.id,
         habit_status: habitData.habit_status || 'active',
         frequency: 'daily' as const,
+        priority: habitData.priority || 'medium',
+        estimated_duration: habitData.estimated_duration,
         current_streak: 0,
         longest_streak: 0
       };
@@ -82,12 +84,29 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
 
   updateHabit: async (id, updates) => {
     try {
+      console.log('🔍 習慣データ更新開始:', {
+        habit_id: id,
+        updates: updates,
+        update_type: 'habit_update',
+        timestamp: new Date().toISOString()
+      });
+
       const { error } = await supabase
         .from('habits')
         .update(updates)
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ 習慣更新エラー:', error);
+        throw error;
+      }
+
+      console.log('✅ 習慣データ更新完了:', {
+        habit_id: id,
+        updated_fields: Object.keys(updates),
+        timestamp: new Date().toISOString()
+      });
+
       // fetchHabits()は呼び出し元で行うため、ここでは削除
     } catch (error) {
       console.error('習慣更新エラー:', error);

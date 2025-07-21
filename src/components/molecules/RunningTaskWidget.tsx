@@ -53,7 +53,11 @@ export const RunningTaskWidget: React.FC = () => {
   };
 
   const handleViewDetails = () => {
-    router.push(`/tasks?id=${runningTask.id}`);
+    // ページ遷移ではなくモーダル表示
+    const event = new CustomEvent('showTaskPreviewModal', {
+      detail: { task: runningTask, show: true }
+    });
+    window.dispatchEvent(event);
   };
 
   return (
@@ -109,10 +113,10 @@ export const RunningTaskWidget: React.FC = () => {
         <button
           onClick={handleStop}
           className="flex items-center justify-center gap-2 px-2 py-1 bg-[#8b4513] text-white rounded-md hover:bg-[#7c5a2a] font-medium text-xs transition-colors w-full"
-          title={runningTask.is_habit ? "今日分完了" : "完了して記録"}
+          title={runningTask.habit_status === 'active' ? "今日分完了" : "完了して記録"}
         >
           {FaStop({ className: "w-3 h-3" })}
-          {runningTask.is_habit ? "今日分完了" : "完了して記録"}
+          {runningTask.habit_status === 'active' ? "今日分完了" : "完了して記録"}
         </button>
 
         <button

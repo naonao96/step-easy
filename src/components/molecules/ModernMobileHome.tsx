@@ -4,6 +4,7 @@ import { Task } from '@/types/task';
 import { CategoryBadge } from '@/components/atoms/CategoryBadge';
 import { Character } from './Character';
 import { getEmotionTimePeriodLabel } from '@/lib/timeUtils';
+import { isNewHabit } from '@/lib/habitUtils';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { MobileTaskTimer } from './MobileTaskTimer';
@@ -164,7 +165,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
     const habit: Task[] = [];
     
     selectedDateTasks.forEach(task => {
-      if (task.is_habit) {
+      if (isNewHabit(task)) {
         habit.push(task);
       } else {
         regular.push(task);
@@ -347,6 +348,20 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
     handleAutoDisplay();
   }, [handleAutoDisplay]);
 
+  // タスクプレビューモーダル表示のイベントリスナー
+  useEffect(() => {
+    const handleShowTaskPreviewModal = (event: CustomEvent) => {
+      const { task } = event.detail;
+      setSelectedTask(task);
+      setShowTaskPreviewModal(true);
+    };
+
+    window.addEventListener('showTaskPreviewModal', handleShowTaskPreviewModal as EventListener);
+    
+    return () => {
+      window.removeEventListener('showTaskPreviewModal', handleShowTaskPreviewModal as EventListener);
+    };
+  }, []);
 
 
   return (

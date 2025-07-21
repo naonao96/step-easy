@@ -15,7 +15,7 @@ export const TaskExecutionHistory: React.FC<TaskExecutionHistoryProps> = ({ task
   // 習慣の実行時間を取得
   useEffect(() => {
     const fetchHabitExecutionTime = async () => {
-      if (task.is_habit) {
+      if (task.habit_status === 'active') {
         setIsLoading(true);
         try {
           const executionTime = await getHabitDailyExecutionTime(task.id, selectedDate);
@@ -29,7 +29,7 @@ export const TaskExecutionHistory: React.FC<TaskExecutionHistoryProps> = ({ task
     };
 
     fetchHabitExecutionTime();
-  }, [task.id, task.is_habit, selectedDate]);
+  }, [task.id, task.habit_status, selectedDate]);
 
   const formatDuration = (minutes: number): string => {
     if (minutes < 60) {
@@ -49,7 +49,7 @@ export const TaskExecutionHistory: React.FC<TaskExecutionHistoryProps> = ({ task
   const actualDuration = task.actual_duration;
 
   // 習慣の場合は実行時間があれば表示、タスクの場合は従来の条件
-  if (task.is_habit) {
+  if (task.habit_status === 'active') {
     if (habitExecutionTime === 0 && !estimatedDuration) {
       return null;
     }
@@ -67,7 +67,7 @@ export const TaskExecutionHistory: React.FC<TaskExecutionHistoryProps> = ({ task
       </div>
       
       <div className="space-y-3">
-        {task.is_habit ? (
+        {task.habit_status === 'active' ? (
           // 習慣の場合
           <>
             {/* 予想時間 */}
@@ -119,7 +119,7 @@ export const TaskExecutionHistory: React.FC<TaskExecutionHistoryProps> = ({ task
         )}
 
         {/* タスクの場合のみ実行時間と予想時間の比較を表示 */}
-        {!task.is_habit && hasExecutionData && estimatedDuration && (
+        {task.habit_status !== 'active' && hasExecutionData && estimatedDuration && (
           <div className="border-t border-[#deb887] pt-3">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
               <span className="text-sm text-[#7c5a2a]">予想との差</span>
@@ -161,7 +161,7 @@ export const TaskExecutionHistory: React.FC<TaskExecutionHistoryProps> = ({ task
         )}
 
         {/* タスクの場合のみ実行時間のみの場合の表示 */}
-        {!task.is_habit && hasExecutionData && !estimatedDuration && (
+        {task.habit_status !== 'active' && hasExecutionData && !estimatedDuration && (
           <div className="flex items-center gap-2 text-xs text-[#7c5a2a]">
             {FaClock ({className:"w-3 h-3"})}
             <span>次回は予想時間を設定してみましょう</span>

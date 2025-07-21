@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { useTaskStore } from '@/stores/taskStore';
 import { type Task } from '@/types/task';
+import { type Habit } from '@/types/habit';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/atoms/Input';
 import { PrioritySelector } from '@/components/atoms/PrioritySelector';
@@ -15,15 +16,13 @@ import { FaTimes, FaSave, FaEdit, FaTrash, FaCheck, FaEye, FaChevronDown, FaChev
 import ReactMarkdown from 'react-markdown';
 import { TASK_CONSTANTS, MODAL_CONSTANTS } from '@/lib/constants';
 import { useHabitStore } from '@/stores/habitStore';
-import { isNewHabit, isHabitCompleted } from '@/lib/habitUtils';
+import { isNewHabit, isHabitCompleted, isHabitByType } from '@/lib/habitUtils';
 
 // 型定義
 interface BaseTaskFormData {
   title: string;
   description: string;
   priority: 'low' | 'medium' | 'high';
-  is_habit: boolean;
-  habit_frequency?: 'daily' | 'weekly' | 'monthly';
   status: 'todo';
   start_date: string | null;
   due_date: string | null;
@@ -45,18 +44,17 @@ interface InitialFormValues {
   dueDate: Date | null;
   estimatedDuration: number | undefined;
   category: string;
-  habit_frequency?: 'daily' | 'weekly' | 'monthly';
 }
 
 interface BaseTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialData?: Partial<Task>;
-  onSave?: (task: Task) => void;
+  initialData?: Partial<Task | Habit>;
+  onSave?: (task: Task | Habit) => void;
   onDelete?: (id: string) => Promise<void>;
   onComplete?: (id: string) => Promise<void>;
-  onEdit?: (task: Task) => void;
-  onPreview?: (task: Task) => void;
+  onEdit?: (task: Task | Habit) => void;
+  onPreview?: (task: Task | Habit) => void;
   onRefresh?: () => void;
   mode?: 'create' | 'edit' | 'preview';
   isHabit?: boolean;
@@ -144,8 +142,7 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
     startDate: null,
     dueDate: null,
     estimatedDuration: undefined,
-    category: TASK_CONSTANTS.DEFAULT_CATEGORY,
-    habit_frequency: 'daily'
+    category: TASK_CONSTANTS.DEFAULT_CATEGORY
   });
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingCloseAction, setPendingCloseAction] = useState<(() => void) | null>(null);
@@ -155,7 +152,7 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
   const isEditMode = mode === 'edit';
   
   // 未来日判定（習慣のみ）
-  const isFutureDate = initialData?.is_habit && selectedDate && selectedDate > new Date();
+  const isFutureDate = isHabit && selectedDate && selectedDate > new Date();
   
   // 習慣の完了状態を正しく判定（リアルタイム + ローカル状態）
   const getTaskStatus = () => {
@@ -164,8 +161,8 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
       return localCompletionStatus;
     }
     
-    if (initialData && initialData.id && isNewHabit(initialData as any)) {
-      // 新しい習慣テーブルの習慣の場合：habitCompletionsからリアルタイムで判定
+    if (initialData && initialData.id && isHabitByType(initialData)) {
+      // 習慣の場合：habitCompletionsからリアルタイムで判定
       const targetDate = selectedDate || new Date();
       const japanTime = new Date(targetDate.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
       const dateString = japanTime.toISOString().split('T')[0];
@@ -175,8 +172,8 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
       );
       return isCompleted ? 'done' : 'todo';
     } else {
-      // 既存のタスクテーブルの習慣または通常のタスクの場合
-      return initialData?.status || 'todo';
+      // 通常のタスクの場合
+      return (initialData as any)?.status || 'todo';
     }
   };
 
@@ -189,9 +186,7 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
       initialValues.category !== category ||
       initialValues.estimatedDuration !== estimatedDuration ||
       (initialValues.startDate?.getTime() !== startDate?.getTime()) ||
-      (initialValues.dueDate?.getTime() !== dueDate?.getTime()) ||
-      // 習慣タスクの場合のみ習慣頻度を比較
-      (isHabit && initialValues.habit_frequency !== initialData?.habit_frequency)
+      (initialValues.dueDate?.getTime() !== dueDate?.getTime())
     );
   };
 
@@ -247,8 +242,6 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
       const newDueDate = initialData.due_date ? new Date(initialData.due_date) : null;
       const newEstimatedDuration = initialData.estimated_duration;
       const newCategory = initialData.category || TASK_CONSTANTS.DEFAULT_CATEGORY;
-      const newHabitFrequency = initialData.habit_frequency || 'daily';
-
       setTitle(newTitle);
       setContent(newContent);
       setPriority(newPriority);
@@ -265,8 +258,7 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
         startDate: newStartDate,
         dueDate: newDueDate,
         estimatedDuration: newEstimatedDuration,
-        category: newCategory,
-        habit_frequency: newHabitFrequency
+        category: newCategory
       });
     } else {
       // 新規作成モード
@@ -277,8 +269,7 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
         startDate: new Date(),
         dueDate: null,
         estimatedDuration: undefined,
-        category: TASK_CONSTANTS.DEFAULT_CATEGORY,
-        habit_frequency: 'daily' as const
+        category: TASK_CONSTANTS.DEFAULT_CATEGORY
       };
 
       setTitle(defaultValues.title);
@@ -364,8 +355,17 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
       });
 
       if (initialData && initialData.id) {
-        // 既存タスクの更新
+        // 既存タスク・習慣の更新
+        if (isHabit) {
+          // 習慣の場合はonSaveコールバックを使用
+          if (onSave) {
+            onSave(taskData as unknown as Habit);
+          }
+        } else {
+          // 通常のタスクの場合はupdateTaskを使用
           await updateTask(initialData.id, taskData);
+        }
+        
         // 保存後はプレビューモードに切り替え
         if (onPreview && initialData) {
           const updatedTask = {
@@ -375,8 +375,16 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
           onPreview(updatedTask as Task);
         }
       } else {
-        // 新規タスクの作成
-        await createTask(taskData as any);
+        // 新規タスク・習慣の作成
+        if (isHabit) {
+          // 習慣の場合はonSaveコールバックを使用
+          if (onSave) {
+            onSave(taskData as unknown as Habit);
+          }
+        } else {
+          // 通常のタスクの場合はcreateTaskを使用
+          await createTask(taskData as any);
+        }
       }
 
       // 短い遅延を入れてからモーダルを閉じる
@@ -456,7 +464,7 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
                   {onEdit && (
                     <>
                       <button
-                        onClick={() => onEdit(initialData as Task)}
+                        onClick={() => onEdit(initialData as any)}
                         disabled={isFutureDate}
                         className={`inline-flex items-center gap-1 px-1 py-1 text-xs font-medium rounded-lg transition-all duration-200 ${
                           isFutureDate
@@ -523,7 +531,7 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
                 {onEdit && (
                   <>
                     <button
-                      onClick={() => onEdit(initialData as Task)}
+                      onClick={() => onEdit(initialData as any)}
                       disabled={isFutureDate}
                       className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-lg transition-all duration-200 ${
                         isFutureDate
@@ -595,7 +603,7 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
                   }`}>
                     優先度: {initialData.priority === 'high' ? '高' : initialData.priority === 'medium' ? '中' : '低'}
                   </span>
-                  {initialData.is_habit && (
+                  {isHabit && (
                     <span className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-full bg-[#f5f5dc] text-[#8b4513] border border-[#deb887]">
                       習慣タスク
                     </span>

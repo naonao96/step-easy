@@ -5,6 +5,7 @@ import { type Task } from '@/types/task';
 import { type Habit, type HabitFormData } from '@/types/habit';
 import { useAuth } from '@/contexts/AuthContext';
 import { BaseTaskModal } from './BaseTaskModal';
+import { toDateStringOrNull, toTimestampStringOrNull } from '@/lib/timeUtils';
 
 interface HabitModalProps {
   isOpen: boolean;
@@ -51,7 +52,8 @@ export const HabitModal = forwardRef<{ closeWithValidation: () => void }, HabitM
 
 
 
-  const handleSave = async (data: {
+  // BaseTaskFormData形式でデータを返す関数
+  const createHabitFormData = (data: {
     title: string;
     content: string;
     priority: 'low' | 'medium' | 'high';
@@ -59,17 +61,58 @@ export const HabitModal = forwardRef<{ closeWithValidation: () => void }, HabitM
     dueDate: Date | null;
     estimatedDuration: number | undefined;
     category: string;
-  }) => {
+  }) => ({
+    title: data.title.trim(),
+    description: data.content,
+    priority: data.priority,
+    status: 'todo' as const,
+    start_date: toDateStringOrNull(data.startDate),
+    due_date: toTimestampStringOrNull(data.dueDate), // TIMESTAMP WITH TIME ZONE型に統一
+    estimated_duration: data.estimatedDuration,
+    category: data.category
+  });
+
+  const handleSave = async (data: any) => {
     try {
+      console.log('🔍 HabitModal handleSave開始:', {
+        mode: mode,
+        initialData: initialData,
+        input_data: data,
+        timestamp: new Date().toISOString()
+      });
+
       const habitData: HabitFormData = {
         title: data.title.trim(),
-        description: data.content,
-        category: data.category
+        description: data.description,
+        category: data.category,
+        priority: data.priority,
+        estimated_duration: data.estimated_duration,
+        // データベース基準で文字列のまま渡す
+        start_date: data.start_date || undefined,
+        due_date: data.due_date || undefined,
+        has_deadline: data.due_date !== null
       };
 
+      console.log('🔍 変換後のhabitData:', {
+        habitData: habitData,
+        data_types: {
+          title: typeof habitData.title,
+          description: typeof habitData.description,
+          category: typeof habitData.category,
+          priority: typeof habitData.priority,
+          estimated_duration: typeof habitData.estimated_duration,
+          start_date: typeof habitData.start_date,
+          due_date: typeof habitData.due_date,
+          has_deadline: typeof habitData.has_deadline
+        },
+        timestamp: new Date().toISOString()
+      });
+
       if (mode === 'create') {
+        console.log('📝 習慣作成モード');
         await createHabit(habitData);
       } else if (initialData?.id) {
+        console.log('✏️ 習慣編集モード:', { habit_id: initialData.id });
         await updateHabit(initialData.id, habitData);
       }
 
@@ -81,9 +124,10 @@ export const HabitModal = forwardRef<{ closeWithValidation: () => void }, HabitM
         }
       }
       
+      console.log('✅ HabitModal handleSave完了');
       onClose();
     } catch (error) {
-      console.error('習慣保存エラー:', error);
+      console.error('❌ 習慣保存エラー:', error);
     }
   };
 
@@ -94,8 +138,8 @@ export const HabitModal = forwardRef<{ closeWithValidation: () => void }, HabitM
       ref={ref}
       isOpen={isOpen}
       onClose={onClose}
-      initialData={initialData as any}
-      onSave={handleSave as any}
+      initialData={initialData}
+      onSave={handleSave}
       mode={mode}
       isHabit={true}
       titlePlaceholder="習慣のタイトルを入力"
@@ -114,7 +158,7 @@ export const HabitModal = forwardRef<{ closeWithValidation: () => void }, HabitM
 Markdownで自由に書けます！`}
       modalTitle="新規作成"
       additionalValidation={checkHabitLimit}
-      createFormData={handleSave as any}
+      createFormData={createHabitFormData}
       renderAdditionalFields={renderAdditionalFields}
       isMobile={isMobile}
       onRequestClose={onRequestClose}

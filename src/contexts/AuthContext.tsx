@@ -132,35 +132,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     try {
-      // ユーザーが存在するかチェック・作成
-      await ensureUserExists(
-        session.user.id,
-        session.user.email || '',
-        session.user.user_metadata?.display_name
-      );
+      // まずセッション情報で即座にユーザーを設定（レスポンス向上）
+      const sessionUser = {
+        id: session.user.id,
+        email: session.user.email || '',
+        displayName: session.user.user_metadata?.display_name || '',
+        planType: 'free' as const,
+      };
+      
+      setUser(sessionUser);
+      console.log('🔐 User set from session immediately');
 
-      // データベースから最新情報を取得
-      const userData = await fetchUserFromDatabase(session.user.id);
-      if (userData) {
-        console.log('🔐 User data loaded from database:', userData);
-        setUser(userData);
-      } else {
-        // データベース取得に失敗した場合のフォールバック
-        setUser({
-          id: session.user.id,
-          email: session.user.email || '',
-          displayName: session.user.email?.split('@')[0] || 'ユーザー',
-          planType: 'free' as const,
+      // バックグラウンドでデータベース情報を更新
+      try {
+        // ユーザーが存在するかチェック・作成（非同期）
+        ensureUserExists(
+          session.user.id,
+          session.user.email || '',
+          session.user.user_metadata?.display_name
+        ).catch(error => {
+          console.warn('🔐 Background ensureUserExists failed:', error);
         });
+
+        // データベースから最新情報を取得（非同期）
+        fetchUserFromDatabase(session.user.id).then(userData => {
+          if (userData) {
+            console.log('🔐 User data updated from database:', userData);
+            setUser(userData);
+          }
+        }).catch(error => {
+          console.warn('🔐 Background fetchUserFromDatabase failed:', error);
+        });
+        
+      } catch (error) {
+        console.warn('🔐 Background database operations failed:', error);
       }
       
     } catch (error) {
       console.error('🔐 Error setting user from session:', error);
-      // エラーが発生した場合のフォールバック
+      // エラーが発生してもセッション情報でフォールバック
       setUser({
         id: session.user.id,
         email: session.user.email || '',
-        displayName: session.user.email?.split('@')[0] || 'ユーザー',
+        displayName: session.user.user_metadata?.display_name || '',
         planType: 'free',
       });
     }

@@ -513,7 +513,7 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
                       {isHabit && (
                         <span className="text-xs bg-[#deb887] text-[#7c5a2a] px-1.5 sm:px-2 py-1 rounded flex items-center gap-1">
                           {FaFire({ className: "w-2.5 h-2.5" })}
-                          {getFrequencyLabel(task.habit_frequency)}
+                          {getFrequencyLabel(task.frequency)}
                         </span>
                       )}
                       {/* カテゴリバッジ */}

@@ -5,7 +5,7 @@ import { HabitCompletion } from '@/types/habit';
  * 習慣の種類に応じた継続期限を計算
  */
 export const getStreakDeadline = (task: Task): Date | null => {
-  if (!task.is_habit || !task.last_completed_date || task.current_streak === 0) {
+  if (task.habit_status !== 'active' || !task.last_completed_date || task.current_streak === 0) {
     return null;
   }
   
@@ -16,7 +16,7 @@ export const getStreakDeadline = (task: Task): Date | null => {
     'monthly': 30  // 月1 → 30日後まで
   };
   
-  const daysToAdd = deadlineMap[task.habit_frequency || 'daily'];
+  const daysToAdd = deadlineMap[task.frequency || 'daily'];
   const deadline = new Date(lastCompleted);
   deadline.setDate(deadline.getDate() + daysToAdd);
   
@@ -56,7 +56,7 @@ export const isStreakAtRisk = (task: Task): boolean => {
  */
 export const getExpiredStreakTasks = (tasks: Task[]): Task[] => {
   return tasks.filter(task => 
-    task.is_habit && 
+    task.habit_status === 'active' && 
     (task.current_streak || 0) > 0 && 
     !isStreakActive(task)
   );
@@ -67,7 +67,7 @@ export const getExpiredStreakTasks = (tasks: Task[]): Task[] => {
  */
 export const getRiskyStreakTasks = (tasks: Task[]): Task[] => {
   return tasks.filter(task => 
-    task.is_habit && 
+    task.habit_status === 'active' && 
     (task.current_streak || 0) > 0 && 
     isStreakActive(task) && 
     isStreakAtRisk(task)
@@ -79,7 +79,7 @@ export const getRiskyStreakTasks = (tasks: Task[]): Task[] => {
  */
 export const getActiveStreakTasks = (tasks: Task[]): Task[] => {
   return tasks.filter(task => 
-    task.is_habit && 
+    task.habit_status === 'active' && 
     (task.current_streak || 0) > 0 && 
     isStreakActive(task)
   );

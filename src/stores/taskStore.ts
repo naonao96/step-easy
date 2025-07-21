@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { useAuth } from '@/contexts/AuthContext';
 import { getExpiredStreakTasks } from '@/lib/streakUtils';
 import { Task } from '@/types/task';
 

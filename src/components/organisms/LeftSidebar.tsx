@@ -38,7 +38,11 @@ export function LeftSidebar({ className = '' }: LeftSidebarProps) {
   // タイマーアイコンクリック時の動作
   const handleTimerClick = () => {
     if (runningTask) {
-      router.push(`/tasks?id=${runningTask.id}`)
+      // ページ遷移ではなくモーダル表示
+      const event = new CustomEvent('showTaskPreviewModal', {
+        detail: { task: runningTask, show: true }
+      });
+      window.dispatchEvent(event);
     }
   }
 

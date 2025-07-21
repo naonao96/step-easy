@@ -6,7 +6,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTaskStore } from '@/stores/taskStore';
 import { Task } from '@/types/task';
 import { AppLayout } from '@/components/templates/AppLayout';
-import { Button } from '@/components/atoms/Button';
 import { FaCalendarAlt, FaCheckCircle, FaUndo, FaTrash, FaFilter, FaHistory, FaSearch, FaSort } from 'react-icons/fa';
 import { ArchiveExecutionLog } from '@/components/molecules/ArchiveExecutionLog';
 
@@ -299,16 +298,9 @@ export default function ArchivePage() {
                   <h3 className="text-lg font-semibold text-[#8b4513] mb-2">
                     完了タスクがありません
                   </h3>
-                  <p className="text-[#7c5a2a] mb-6">
+                  <p className="text-[#7c5a2a]">
                     タスクを完了すると、ここに履歴が表示されます
                   </p>
-                  <Button
-                    variant="primary"
-                    onClick={() => router.push('/tasks')}
-                    className="bg-[#7c5a2a] hover:bg-[#8b4513] text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    新しいタスクを作成
-                  </Button>
                 </div>
               ) : (
                 <div className="space-y-6">

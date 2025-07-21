@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Task } from '@/types/task';
 import { useAuth } from '@/contexts/AuthContext';
-import { getHabitLimits, getFrequencyLabel, getHabitStatus } from '@/lib/habitUtils';
+import { getHabitLimits, getFrequencyLabel, getHabitStatus, isNewHabit } from '@/lib/habitUtils';
 
 import { ToggleSwitch } from '../atoms/ToggleSwitch';
 import { SortOption } from '../atoms/SortDropdown';
@@ -69,7 +69,7 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
     const habit: Task[] = [];
     
     tasks.forEach(task => {
-      if (task.is_habit) {
+      if (isNewHabit(task)) {
         habit.push(task);
       } else {
         regular.push(task);

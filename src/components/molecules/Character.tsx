@@ -97,38 +97,8 @@ export const Character: React.FC<CharacterProps> = ({
   );
 
   // shouldBlinkの詳細デバッグ（開発環境のみ）
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🔍 Character shouldBlink 詳細計算:', {
-      effectiveRecordStatus: !!effectiveRecordStatus,
-      effectiveCurrentTimePeriod,
-      currentPeriodRecord: effectiveCurrentTimePeriod ? effectiveRecordStatus?.[effectiveCurrentTimePeriod] : null,
-      isNull: effectiveCurrentTimePeriod ? effectiveRecordStatus?.[effectiveCurrentTimePeriod] === null : false,
-      hasId: effectiveCurrentTimePeriod ? !!effectiveRecordStatus?.[effectiveCurrentTimePeriod]?.id : false,
-      idValue: effectiveCurrentTimePeriod ? effectiveRecordStatus?.[effectiveCurrentTimePeriod]?.id : null,
-      isTempId: effectiveCurrentTimePeriod ? effectiveRecordStatus?.[effectiveCurrentTimePeriod]?.id?.toString().startsWith('temp-') : false,
-      shouldBlink,
-      emotionLogProvided: !!emotionLog
-    });
-  }
   
   // デバッグログ（開発環境のみ）
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 Character shouldBlink 更新:', {
-        shouldBlink,
-        effectiveCurrentTimePeriod,
-        recordStatus: effectiveCurrentTimePeriod ? effectiveRecordStatus?.[effectiveCurrentTimePeriod] : null,
-        recordId: effectiveCurrentTimePeriod ? effectiveRecordStatus?.[effectiveCurrentTimePeriod]?.id : null,
-        recordStatusKeys: effectiveRecordStatus ? Object.keys(effectiveRecordStatus) : [],
-        allRecordIds: effectiveRecordStatus ? {
-          morning: effectiveRecordStatus.morning?.id,
-          afternoon: effectiveRecordStatus.afternoon?.id,
-          evening: effectiveRecordStatus.evening?.id
-        } : {},
-        emotionLogProvided: !!emotionLog
-      });
-    }
-  }, [shouldBlink, effectiveCurrentTimePeriod, effectiveRecordStatus, emotionLog]);
   
   // クリックハンドラー（useMessageDisplay.tsに統一）
   const handleMessageClick = () => {

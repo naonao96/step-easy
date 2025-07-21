@@ -40,7 +40,6 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], habits = [], sel
       completed_at: habit.isCompleted ? new Date().toISOString() : undefined
     }));
     
-    console.log('Calendar - 変換された習慣:', convertedHabits);
     return [...tasks, ...convertedHabits];
   }, [tasks, habits]);
   
@@ -116,8 +115,8 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], habits = [], sel
     
     const filteredTasks = allTasks.filter(task => {
       // カレンダーモードに応じてフィルタリング
-      if (calendarMode === 'tasks' && task.is_habit) return false;
-      if (calendarMode === 'habits' && !task.is_habit) return false;
+      if (calendarMode === 'tasks' && task.habit_status === 'active') return false;
+      if (calendarMode === 'habits' && task.habit_status !== 'active') return false;
       
       // 期間タスクの処理（開始日と期限日の両方がある場合）
       if (task.start_date && task.due_date) {
@@ -181,10 +180,10 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], habits = [], sel
         return false;
       }
       
-      // 開始日も期限日もないタスクの処理
-      if (!task.start_date && !task.due_date) {
-        // 習慣タスクの場合：開始日以降のみ表示
-        if (task.is_habit) {
+              // 開始日も期限日もないタスクの処理
+        if (!task.start_date && !task.due_date) {
+          // 習慣タスクの場合：開始日以降のみ表示
+          if (task.habit_status === 'active') {
           // 習慣の開始日チェック（start_dateまたはcreated_atを基準日とする）
           const baseDate = task.start_date ? new Date(task.start_date) : (task.created_at ? new Date(task.created_at) : null);
           if (baseDate) {
@@ -249,7 +248,7 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], habits = [], sel
 
   // アクティブな習慣を取得
   const activeHabits = useMemo(() => {
-    const habits = allTasks.filter(task => task.is_habit);
+    const habits = allTasks.filter(task => task.habit_status === 'active');
     return habits;
   }, [allTasks]);
 
@@ -344,7 +343,7 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], habits = [], sel
 
   // タスクアイコンを取得
   const getTaskIcon = (task: Task) => {
-    if (task.is_habit) {
+    if (task.habit_status === 'active') {
       return '🔥'; // 習慣は炎アイコン
     }
     
@@ -638,7 +637,7 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], habits = [], sel
                         <div
                           key={task.id}
                           className={`flex items-center gap-1 px-2 py-1 rounded bg-[#f5f5dc] max-w-[6rem] ${
-                            task.status === 'done' ? 'line-through text-[#7c5a2a] bg-[#deb887]' : task.is_habit ? 'text-[#8b4513] bg-[#deb887]' : 'text-[#7c5a2a] bg-[#f5f5dc]'
+                            task.status === 'done' ? 'line-through text-[#7c5a2a] bg-[#deb887]' : task.habit_status === 'active' ? 'text-[#8b4513] bg-[#deb887]' : 'text-[#7c5a2a] bg-[#f5f5dc]'
                           }`}
                           title={task.title}
                           style={{ fontSize: '11px' }}

@@ -151,7 +151,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ task
     // 習慣通知（通知設定が有効な場合のみ）
     if (user.notification_settings.habit) {
       const expiredHabits = tasks.filter(task => {
-        if (!task.is_habit || task.status === 'done') return false;
+        if (task.habit_status !== 'active' || task.status === 'done') return false;
         
         if (task.last_completed_date) {
           const lastCompleted = new Date(task.last_completed_date);

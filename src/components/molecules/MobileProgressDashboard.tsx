@@ -189,7 +189,7 @@ export const MobileProgressDashboard: React.FC<MobileProgressDashboardProps> = (
 
   // 習慣統計を計算
   const habitStats = React.useMemo(() => {
-    const habitTasks = tasks.filter(task => task.is_habit);
+    const habitTasks = tasks.filter(task => task.habit_status === 'active');
     const completedHabits = habitTasks.filter(task => task.status === 'done').length;
     
     const averageStreak = habitTasks.length > 0 ? 

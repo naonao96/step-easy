@@ -1,28 +1,16 @@
 import React, { useState } from 'react';
-import { useTaskStore } from '@/stores/taskStore';
 import { useHabitStore } from '@/stores/habitStore';
 import { type Task } from '@/types/task';
-import { useAuth } from '@/contexts/AuthContext';
-import { Input } from '@/components/atoms/Input';
-import { PrioritySelector } from '@/components/atoms/PrioritySelector';
-import { CategorySelector } from '@/components/atoms/CategorySelector';
-import { DatePicker } from '@/components/atoms/DatePicker';
-import { DurationInput } from '@/components/atoms/DurationInput';
-import { Button } from '@/components/atoms/Button';
-import { TaskTimer } from './TaskTimer';
-import { TaskExecutionHistory } from './TaskExecutionHistory';
-import { FaTimes, FaSave, FaEdit, FaTrash, FaCheck, FaEye, FaChevronDown, FaChevronUp } from 'react-icons/fa';
-import ReactMarkdown from 'react-markdown';
-import { TASK_CONSTANTS } from '@/lib/constants';
+import { type Habit } from '@/types/habit';
 import { isNewHabit } from '@/lib/habitUtils';
-import { toJSTDateString } from '@/lib/timeUtils';
+import { toDateStringOrNull, toTimestampStringOrNull } from '@/lib/timeUtils';
 import { BaseTaskModal } from './BaseTaskModal';
 
 interface TaskPreviewModalProps {
-  task: Task;
+  task: Task | Habit;
   isOpen: boolean;
   onClose: () => void;
-  onEdit: (task: Task) => void;
+  onEdit: (task: Task | Habit) => void;
   onDelete: (id: string) => void;
   onComplete: (id: string) => void;
   onRefresh: () => void;
@@ -41,6 +29,8 @@ export const TaskPreviewModal: React.FC<TaskPreviewModalProps> = ({
   isMobile = false,
   selectedDate
 }) => {
+  // 習慣かどうかを判定
+  const isHabit = isNewHabit(task);
   const { habitCompletions } = useHabitStore();
   const [localCompletionStatus, setLocalCompletionStatus] = useState<'done' | 'todo' | 'doing' | null>(null);
   
@@ -106,11 +96,9 @@ export const TaskPreviewModal: React.FC<TaskPreviewModalProps> = ({
     title: data.title.trim(),
     description: data.content,
     priority: data.priority,
-    is_habit: task.is_habit || false,
-    habit_frequency: task.habit_frequency || 'daily',
     status: 'todo' as const,
-    start_date: data.startDate ? toJSTDateString(data.startDate) : null,
-    due_date: data.dueDate ? toJSTDateString(data.dueDate) : null,
+    start_date: toDateStringOrNull(data.startDate), // DATE型用（YYYY-MM-DD）
+    due_date: toTimestampStringOrNull(data.dueDate), // TIMESTAMP WITH TIME ZONE型用（ISO文字列）
     estimated_duration: data.estimatedDuration,
     category: data.category
   });
@@ -131,7 +119,7 @@ export const TaskPreviewModal: React.FC<TaskPreviewModalProps> = ({
       onEdit={onEdit}
       onRefresh={onRefresh}
       mode="preview"
-      isHabit={task.is_habit}
+      isHabit={isHabit}
       titlePlaceholder="タスクのタイトルを入力"
       contentPlaceholder={`# メモ
 

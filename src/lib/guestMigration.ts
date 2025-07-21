@@ -41,8 +41,8 @@ export const migrateGuestTasks = async (userId: string): Promise<GuestMigrationR
         status: guestTask.status,
         priority: guestTask.priority,
         due_date: guestTask.due_date,
-        is_habit: guestTask.is_habit,
-        habit_frequency: guestTask.habit_frequency,
+        habit_status: guestTask.habit_status,
+        frequency: guestTask.frequency,
         streak_count: guestTask.streak_count || 0,
         completed_at: guestTask.completed_at,
         user_id: userId

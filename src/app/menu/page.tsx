@@ -123,10 +123,8 @@ export default function MenuPage() {
     selectedDateTime.setHours(0, 0, 0, 0);
     
     return tasks.filter(task => {
-      // 習慣タスクは除外
-      if (task.is_habit) {
-        return false;
-      }
+      // 習慣タスクは除外（現在はhabitsテーブルで管理）
+      // 既存のタスクテーブルの習慣は移行済みのため、ここでは除外不要
       
       // 期間タスクの処理（開始日と期限日の両方がある場合）
       if (task.start_date && task.due_date) {
@@ -405,7 +403,7 @@ export default function MenuPage() {
     const task = tasks.find(t => t.id === id);
     const habit = habits.find(h => h.id === id);
     
-    if (habit || (task && task.is_habit)) {
+    if (habit) {
       // 習慣の場合：completeHabit関数を使用
       const { completeHabit: completeHabitFn, toggleHabitCompletion: toggleHabitCompletionFn } = useHabitStore.getState();
       const result = await completeHabit(id, habits, tasks, completeHabitFn, updateTask, fetchHabits, toggleHabitCompletionFn, selectedDate);
@@ -415,7 +413,7 @@ export default function MenuPage() {
       }
       
       await fetchHabits();
-    } else if (task && !task.is_habit) {
+    } else if (task) {
       // 通常のタスクの場合：直接updateTaskを使用
       const newStatus = task.status === 'done' ? 'todo' : 'done';
       
@@ -445,8 +443,7 @@ export default function MenuPage() {
 
   const handleDeleteTask = async (id: string) => {
     // 習慣かどうかを判定
-    const isHabit = habits.some(habit => habit.id === id) || 
-                   tasks.some(task => task.id === id && task.is_habit);
+    const isHabit = habits.some(habit => habit.id === id);
     
     const message = isHabit ? 'この習慣を削除してもよろしいですか？' : 'このタスクを削除してもよろしいですか？';
     
@@ -556,8 +553,10 @@ export default function MenuPage() {
     
     // モーダルが閉じている場合は開く
     if (currentMobileTab === 'habits') {
+      setSelectedTask(null); // 習慣追加時はselectedTaskをクリア
       setShowHabitModal(true);
     } else {
+      setSelectedTask(null); // タスク追加時はselectedTaskをクリア
       setShowTaskModal(true);
     }
   };
@@ -565,19 +564,29 @@ export default function MenuPage() {
   // モーダル表示のイベントリスナー
   useEffect(() => {
     const handleShowTaskModal = (event: CustomEvent) => {
+      setSelectedTask(null); // 新規作成時はselectedTaskをクリア
       setShowTaskModal(true);
     };
 
     const handleShowHabitModal = (event: CustomEvent) => {
+      setSelectedTask(null); // 習慣追加時はselectedTaskをクリア
       setShowHabitModal(true);
+    };
+
+    const handleShowTaskPreviewModal = (event: CustomEvent) => {
+      const { task } = event.detail;
+      setSelectedTask(task);
+      setShowTaskPreviewModal(true);
     };
 
     window.addEventListener('showTaskModal', handleShowTaskModal as EventListener);
     window.addEventListener('showHabitModal', handleShowHabitModal as EventListener);
+    window.addEventListener('showTaskPreviewModal', handleShowTaskPreviewModal as EventListener);
     
     return () => {
       window.removeEventListener('showTaskModal', handleShowTaskModal as EventListener);
       window.removeEventListener('showHabitModal', handleShowHabitModal as EventListener);
+      window.removeEventListener('showTaskPreviewModal', handleShowTaskPreviewModal as EventListener);
     };
   }, []);
 
@@ -699,12 +708,17 @@ export default function MenuPage() {
         isMobile={!isDesktop}
       />
 
-      {/* 習慣作成モーダル */}
+      {/* 習慣作成・編集モーダル */}
       <HabitModal
         ref={habitModalRef}
         isOpen={showHabitModal}
         onClose={() => setShowHabitModal(false)}
+        mode="create"
         isMobile={!isDesktop}
+        onSave={(habit) => {
+          // 習慣作成・編集後にselectedTaskをクリア
+          setSelectedTask(null);
+        }}
       />
 
       {/* タスクプレビュー・編集モーダル */}
@@ -732,7 +746,27 @@ export default function MenuPage() {
             onClose={() => setShowEditModal(false)}
             onSave={async (taskData) => {
               if (selectedTask) {
-                await updateTask(selectedTask.id, taskData);
+                // 習慣かどうかを判定して適切な更新関数を使用
+                if (isNewHabit(selectedTask)) {
+                  // 習慣の場合はupdateHabitを使用
+                  const { updateHabit } = useHabitStore.getState();
+                  // taskDataを習慣用の形式に変換
+                  const habitData = {
+                    title: taskData.title,
+                    description: taskData.description,
+                    category: taskData.category,
+                    priority: taskData.priority,
+                    estimated_duration: taskData.estimated_duration,
+                    start_date: taskData.start_date || undefined,
+                    due_date: taskData.due_date || undefined,
+                    has_deadline: taskData.due_date !== null
+                  };
+                  await updateHabit(selectedTask.id, habitData);
+                  await fetchHabits(); // 習慣データを再取得
+                } else {
+                  // タスクの場合はupdateTaskを使用
+                  await updateTask(selectedTask.id, taskData);
+                }
               }
             }}
             onDelete={handleDeleteTask}

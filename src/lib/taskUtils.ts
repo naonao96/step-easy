@@ -31,7 +31,7 @@ export const separateTasks = (tasks: Task[]) => {
   const habit: Task[] = [];
   
   tasks.forEach(task => {
-    if (task.is_habit) {
+    if (task.habit_status === 'active') {
       habit.push(task);
     } else {
       regular.push(task);

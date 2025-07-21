@@ -6,8 +6,6 @@ export interface Task extends BaseItem, StreakData {
   due_date: string | null;
   start_date: string | null;
   completed_at?: string;
-  is_habit: boolean;
-  habit_frequency?: 'daily' | 'weekly' | 'monthly';
   
   // 時間関連フィールド
   estimated_duration?: number; // 予想所要時間（分）
@@ -21,6 +19,10 @@ export interface Task extends BaseItem, StreakData {
   // 後方互換性のため保持
   streak_count?: number;
   max_streak?: number;
+  
+  // 習慣識別用プロパティ（convertHabitsToTasksで使用）
+  habit_status?: 'active' | 'paused' | 'stopped';
+  frequency?: 'daily';
 }
 
 export interface CreateTaskInput {
@@ -29,8 +31,6 @@ export interface CreateTaskInput {
   priority?: 'low' | 'medium' | 'high';
   due_date?: string;
   start_date?: string;
-  is_habit?: boolean;
-  habit_frequency?: 'daily' | 'weekly' | 'monthly';
   category?: string;
   estimated_duration?: number;
 }
@@ -43,8 +43,6 @@ export interface UpdateTaskInput {
   due_date?: string;
   start_date?: string;
   completed_at?: string;
-  is_habit?: boolean;
-  habit_frequency?: 'daily' | 'weekly' | 'monthly';
   current_streak?: number;
   max_streak?: number;
   last_completed_date?: string;

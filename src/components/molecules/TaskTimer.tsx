@@ -34,7 +34,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({ task, onExecutionComplete,
   const [isLoadingHabitTime, setIsLoadingHabitTime] = useState(false);
 
   const isCurrentTaskActive = activeExecution?.task_id === task.id;
-  const isHabitTask = task.is_habit;
+  const isHabitTask = task.habit_status === 'active';
 
   // 習慣の実行時間を取得
   useEffect(() => {
@@ -196,7 +196,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({ task, onExecutionComplete,
   }, [showResetPopover]);
 
   // 過去日・未来日判定（習慣のみ）- 今日以外は実行不可
-  const isNotToday = task.is_habit && selectedDate && selectedDate.toDateString() !== new Date().toDateString();
+  const isNotToday = task.habit_status === 'active' && selectedDate && selectedDate.toDateString() !== new Date().toDateString();
 
   // 他のタスクが実行中の場合は実行不可
   const isOtherTaskRunning = Boolean(activeExecution && !isCurrentTaskActive);
