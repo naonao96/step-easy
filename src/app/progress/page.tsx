@@ -130,17 +130,24 @@ export default function ProgressPage() {
     const todayHabits = habits.filter(habit => habit.habit_status === 'active');
     const completedHabits = habitCompletions.filter(completion => 
       completion.completed_date === todayString
-    ).length;
+    );
 
-    // カテゴリ別統計（タスクのみ）
+    // --- カテゴリ別統計（タスク＋習慣）---
     const categoryStats = DEFAULT_CATEGORIES.map(category => {
+      // タスク
       const categoryTasks = todayTasks.filter(task => task.category === category.id);
-      const completed = categoryTasks.filter(task => task.status === 'done').length;
+      const completedCategoryTasks = categoryTasks.filter(task => task.status === 'done');
+      // 習慣
+      const categoryHabits = todayHabits.filter(habit => habit.category === category.id);
+      const completedCategoryHabits = categoryHabits.filter(habit => completedHabits.some(c => c.habit_id === habit.id));
+      // 合算
+      const total = categoryTasks.length + categoryHabits.length;
+      const completed = completedCategoryTasks.length + completedCategoryHabits.length;
       return {
         ...category,
-        total: categoryTasks.length,
+        total,
         completed,
-        percentage: categoryTasks.length > 0 ? Math.round((completed / categoryTasks.length) * 100) : 0
+        percentage: total > 0 ? Math.round((completed / total) * 100) : 0
       };
     }).filter(stat => stat.total > 0);
 
@@ -148,7 +155,7 @@ export default function ProgressPage() {
       totalTasks: todayTasks.length,
       completedTasks: todayTasks.filter(task => task.status === 'done').length,
       totalHabits: todayHabits.length,
-      completedHabits,
+      completedHabits: completedHabits.length,
       categoryStats,
       tasks: todayTasks
     };
@@ -817,11 +824,23 @@ export default function ProgressPage() {
                   <h4 className="text-lg font-medium text-[#8b4513] mb-2">習慣の記録</h4>
                   <ul className="space-y-2">
                     <li className="flex justify-between">
-                      <span className="text-[#7c5a2a]">習慣数</span>
+                      <span className="text-[#7c5a2a]">習慣タスク数</span>
                       <span className="font-medium text-[#8b4513]">{overallStats.habitTasks}</span>
                     </li>
+                    <li className="flex justify-between">
+                      <span className="text-[#7c5a2a]">平均継続日数</span>
+                      <span className="font-medium text-[#8b4513]">{overallStats.averageHabitStreak}日</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span className="text-[#7c5a2a]">最長継続記録</span>
+                      <span className="font-medium text-[#8b4513]">{overallStats.longestHabitStreak}日</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span className="text-[#7c5a2a]">平均達成率</span>
+                      <span className="font-medium text-[#8b4513]">{overallStats.averageHabitCompletionRate}%</span>
+                    </li>
                   </ul>
-              </div>
+                </div>
               
                   <div className="wood-frame rounded-xl p-6">
                     <h4 className="text-lg font-medium text-[#8b4513] mb-2">タスクの状態</h4>

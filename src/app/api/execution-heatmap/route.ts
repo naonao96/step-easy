@@ -19,7 +19,8 @@ export async function GET() {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const { data: executionLogs, error } = await supabase
+    // タスクの実行ログを取得
+    const { data: taskLogs, error: taskError } = await supabase
       .from('execution_logs')
       .select(`
         id,
@@ -32,13 +33,45 @@ export async function GET() {
       `)
       .eq('user_id', user.id)
       .eq('is_completed', true)
+      .not('task_id', 'is', null)
       .gte('start_time', thirtyDaysAgo.toISOString())
       .order('start_time', { ascending: true });
 
-    if (error) {
-      console.error('実行ログ取得エラー:', error);
+    if (taskError) {
+      console.error('タスク実行ログ取得エラー:', taskError);
       return NextResponse.json({ error: 'データの取得に失敗しました' }, { status: 500 });
     }
+
+    // 習慣の実行ログを取得
+    const { data: habitLogs, error: habitError } = await supabase
+      .from('execution_logs')
+      .select(`
+        id,
+        habit_id,
+        start_time,
+        end_time,
+        duration,
+        is_completed,
+        habits!inner(title)
+      `)
+      .eq('user_id', user.id)
+      .eq('is_completed', true)
+      .not('habit_id', 'is', null)
+      .gte('start_time', thirtyDaysAgo.toISOString())
+      .order('start_time', { ascending: true });
+
+    if (habitError) {
+      console.error('習慣実行ログ取得エラー:', habitError);
+      return NextResponse.json({ error: 'データの取得に失敗しました' }, { status: 500 });
+    }
+
+    // タスクと習慣のログを統合
+    const executionLogs = [
+      ...(taskLogs || []).map(log => ({ ...log, type: 'task' })),
+      ...(habitLogs || []).map(log => ({ ...log, type: 'habit' }))
+    ];
+
+
 
     // ヒートマップデータを生成
     const heatmapData = generateHeatmapData(executionLogs || []);
@@ -57,12 +90,17 @@ export async function GET() {
 
 interface ExecutionLog {
   id: string;
-  task_id: string;
+  task_id?: string;
+  habit_id?: string;
   start_time: string;
   end_time: string;
   duration: number;
   is_completed: boolean;
-  tasks: {
+  type: 'task' | 'habit';
+  tasks?: {
+    title: string;
+  };
+  habits?: {
     title: string;
   };
 }
@@ -101,10 +139,17 @@ function generateHeatmapData(executionLogs: any[]): HeatmapCell[][] {
     
     matrix[hour][day].count++;
     matrix[hour][day].totalDuration += log.duration || 0;
-    // tasksが配列の場合とオブジェクトの場合の両方に対応
-    const taskTitle = Array.isArray(log.tasks) ? log.tasks[0]?.title : log.tasks?.title;
-    if (taskTitle) {
-      matrix[hour][day].taskTitles.push(taskTitle);
+    
+    // タスクまたは習慣のタイトルを取得
+    let title = '';
+    if (log.type === 'task' && log.tasks) {
+      title = Array.isArray(log.tasks) ? log.tasks[0]?.title : log.tasks.title;
+    } else if (log.type === 'habit' && log.habits) {
+      title = Array.isArray(log.habits) ? log.habits[0]?.title : log.habits.title;
+    }
+    
+    if (title) {
+      matrix[hour][day].taskTitles.push(title);
     }
   });
 

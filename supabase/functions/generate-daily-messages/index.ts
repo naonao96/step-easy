@@ -323,7 +323,7 @@ function getYesterdayData(tasks: Task[], habits: Habit[], habitCompletions: Habi
 }
 
 // 統合されたメッセージ生成関数（朝9時向け）
-async function generateMessage(genAI: GoogleGenerativeAI, userName?: string, tasks?: Task[], habits?: Habit[], habitCompletions?: HabitCompletion[], statistics?: any, promptTrends: string = '', emotions?: any[]): Promise<string> {
+async function generateMessage(genAI: GoogleGenerativeAI, userName?: string, tasks?: Task[], habits?: Habit[], habitCompletions?: HabitCompletion[], statistics?: any, promptTrends: string = '', emotions?: any[], characterName?: string): Promise<string> {
   const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
   
   const today = new Date().toLocaleDateString('ja-JP', {
@@ -354,13 +354,15 @@ async function generateMessage(genAI: GoogleGenerativeAI, userName?: string, tas
   const dayOfWeek = getDayOfWeek();
   
   const userGreeting = userName ? `${userName}さん` : 'ユーザーさん';
+  const birdName = characterName || '小鳥';
   
   // 朝9時向けの新しいプロンプト
   const prompt = `
-あなたは優しく寄り添うタスク管理アプリのキャラクターです。
+あなたは優しく寄り添うタスク管理アプリのキャラクター「${birdName}」です。
 今日は${today}です。朝9時のメッセージです。
 
 ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
+${characterName ? `あなたの名前は「${characterName}」です。` : ''}
 
 【前日までのデータ分析】
 📊 タスク達成状況：
@@ -379,15 +381,16 @@ ${userName ? `ユーザーの名前は「${userName}」です。` : ''}
 - 夜: ${yesterdayData.eveningEmotion} → ${yesterdayData.eveningEmotionAnalysis}
 
 【メッセージ生成条件】
-- 必ず200文字以内
-- 絵文字を適度に使用（親しみやすく）
-- 前日までの実績を褒める
-- 今日への具体的なアドバイス
-- やさしく応援する口調
-- 曜日や季節を考慮
+- あなたはデータを「単なる報告」ではなく「寄り添い・共感・応援」の姿勢で語ります。
+- ユーザーの頑張りをほめつつ、「今日どうしたらいいか」を**1つに絞って**提案します。
+- 固有名詞や曜日・季節感を織り交ぜて、生活感のある言葉にします。
+- 全体は200文字以内。絵文字も使いつつ、押しつけがましくならないように。
 
-例：
-「おはようございます！${userGreeting} 🌅 昨日は${yesterdayData.yesterdayStats.percentage}%の達成率、素晴らしいですね！習慣も${yesterdayData.habitStreak}日連続で継続中です ✨ 今日もその調子で、小さなタスクから始めてみませんか？応援しています 💪」
+【構成例（テンプレではなく“流れ”として）】
+1. 親しみのあるあいさつ（「おはよう！${userName}さん」など）
+2. 昨日の様子への共感・称賛（感情や実績ベース）
+3. 今日へのささやかな提案（習慣 or タスク起点）
+4. 応援・安心させる一言（例：「ぼくはいつも見てるよ🕊️」）
 
 ${promptTrends}
 `;
@@ -458,6 +461,13 @@ serve(async (_req: any) => {
           .eq('user_id', user.id)
           .single();
 
+        // ユーザー情報からキャラクター名を取得
+        const { data: userData } = await supabase
+          .from('users')
+          .select('character_name')
+          .eq('id', user.id)
+          .single();
+
         const { data: tasks } = await supabase
           .from('tasks')
           .select('*')
@@ -467,6 +477,7 @@ serve(async (_req: any) => {
         // ユーザータイプ判定
         const userType = userSettings?.plan_type || 'free';
         const userName = userSettings?.display_name || user.user_metadata?.display_name;
+        const characterName = userData?.character_name || '小鳥';
 
         let message = '';
         let statistics = null;
@@ -565,7 +576,7 @@ serve(async (_req: any) => {
         const promptTrends = `\n【最近の傾向・変化】\n${trendSummary}\n${taskTrend}\n`;
 
         // 統合されたメッセージ生成関数を呼び出す（習慣データも渡す）
-        message = await generateMessage(genAI, userName, tasks || [], habits || [], habitCompletions || [], statistics, promptTrends, emotions || []);
+        message = await generateMessage(genAI, userName, tasks || [], habits || [], habitCompletions || [], statistics, promptTrends, emotions || [], characterName);
 
         // メッセージ文字数の最終チェック（データベース制約に合わせる）
         const finalMessage = message.length > MESSAGE_LIMITS.database 

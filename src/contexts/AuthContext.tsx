@@ -105,7 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .insert([{
             id: userId,
             email: email,
-            display_name: displayName || email.split('@')[0] || 'User',
+            display_name: '', // オンボーディングで設定するため空文字で作成
             plan_type: 'free'
           }]);
 
@@ -136,7 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const sessionUser = {
         id: session.user.id,
         email: session.user.email || '',
-        displayName: session.user.user_metadata?.display_name || '',
+        displayName: '', // データベースから取得するため空文字で初期化
         planType: 'free' as const,
       };
       
@@ -149,7 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ensureUserExists(
           session.user.id,
           session.user.email || '',
-          session.user.user_metadata?.display_name
+          '' // オンボーディングで設定するため空文字で作成
         ).catch(error => {
           console.warn('🔐 Background ensureUserExists failed:', error);
         });
@@ -174,7 +174,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser({
         id: session.user.id,
         email: session.user.email || '',
-        displayName: session.user.user_metadata?.display_name || '',
+        displayName: '', // データベースから取得するため空文字
         planType: 'free',
       });
     }

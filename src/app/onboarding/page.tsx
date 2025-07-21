@@ -17,6 +17,7 @@ const supabase = createClientComponentClient();
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [userName, setUserName] = useState('');
+  const [characterName, setCharacterName] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
   const router = useRouter();
@@ -56,7 +57,7 @@ export default function OnboardingPage() {
   };
 
   const handleComplete = async () => {
-    if (!userName.trim() || !agreedToTerms) {
+    if (!userName.trim() || !characterName.trim() || !agreedToTerms) {
       return;
     }
 
@@ -68,6 +69,7 @@ export default function OnboardingPage() {
           .from('users')
           .update({
             display_name: userName.trim(),
+            character_name: characterName.trim(),
             updated_at: new Date().toISOString()
           })
           .eq('id', user.id);
@@ -78,7 +80,7 @@ export default function OnboardingPage() {
         }
       }
       
-      console.log('Onboarding completed:', { userName, agreedToTerms });
+      console.log('Onboarding completed:', { userName, characterName, agreedToTerms });
       
       // メニュー画面に遷移
       router.push('/menu');
@@ -131,6 +133,8 @@ export default function OnboardingPage() {
           <SetupStep 
             userName={userName}
             setUserName={setUserName}
+            characterName={characterName}
+            setCharacterName={setCharacterName}
             agreedToTerms={agreedToTerms}
             setAgreedToTerms={setAgreedToTerms}
             onComplete={handleComplete}

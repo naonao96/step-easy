@@ -6,8 +6,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTaskStore } from '@/stores/taskStore';
 import { Task } from '@/types/task';
 import { AppLayout } from '@/components/templates/AppLayout';
-import { FaCalendarAlt, FaCheckCircle, FaUndo, FaTrash, FaFilter, FaHistory, FaSearch, FaSort } from 'react-icons/fa';
+import { FaCalendarAlt, FaCheckCircle, FaUndo, FaTrash, FaFilter, FaHistory, FaSearch, FaSort, FaEye } from 'react-icons/fa';
 import { ArchiveExecutionLog } from '@/components/molecules/ArchiveExecutionLog';
+import { TaskPreviewModal } from '@/components/molecules/TaskPreviewModal';
 
 type TabType = 'completed' | 'execution';
 
@@ -18,6 +19,10 @@ export default function ArchivePage() {
   const [dateFilter, setDateFilter] = useState<'all' | '7days' | '14days' | '30days'>('all');
   const [activeTab, setActiveTab] = useState<TabType>('completed');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // プレビューモーダル用の状態
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [showTaskPreviewModal, setShowTaskPreviewModal] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -123,11 +128,28 @@ export default function ArchivePage() {
     if (window.confirm('このタスクを完全に削除しますか？この操作は取り消せません。')) {
       try {
         await deleteTask(taskId);
+        // プレビューモーダルが開いている場合は閉じる
+        if (selectedTask?.id === taskId) {
+          setShowTaskPreviewModal(false);
+          setSelectedTask(null);
+        }
       } catch (error) {
         console.error('削除エラー:', error);
         alert('削除に失敗しました');
       }
     }
+  };
+
+  // タスクプレビューモーダルを開く
+  const handleTaskPreview = (task: Task) => {
+    setSelectedTask(task);
+    setShowTaskPreviewModal(true);
+  };
+
+  // タスクプレビューモーダルを閉じる
+  const handleCloseTaskPreview = () => {
+    setShowTaskPreviewModal(false);
+    setSelectedTask(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -328,8 +350,8 @@ export default function ArchivePage() {
                               {FaCheckCircle ({className:"w-5 h-5 text-[#7c5a2a]"})}
                             </div>
                             
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-medium text-[#8b4513] truncate">
+                            <div className="flex-1 min-w-0 cursor-pointer" onClick={() => handleTaskPreview(task)}>
+                              <h3 className="font-medium text-[#8b4513] truncate hover:text-[#8b4513]">
                                 {task.title}
                               </h3>
                               {task.description && (
@@ -354,6 +376,13 @@ export default function ArchivePage() {
                             </div>
 
                             <div className="flex gap-2">
+                              <button
+                                onClick={() => handleTaskPreview(task)}
+                                className="p-2 text-[#7c5a2a] hover:bg-[#f5f5dc] rounded-lg transition-colors"
+                                title="詳細を表示"
+                              >
+                                {FaEye ({className:"w-4 h-4"})}
+                              </button>
                               <button
                                 onClick={() => handleRestoreTask(task.id)}
                                 className="p-2 text-[#7c5a2a] hover:bg-[#f5f5dc] rounded-lg transition-colors"
@@ -387,6 +416,25 @@ export default function ArchivePage() {
           )}
         </div>
       </div>
+
+      {/* タスクプレビューモーダル */}
+      {selectedTask && (
+        <TaskPreviewModal
+          task={selectedTask}
+          isOpen={showTaskPreviewModal}
+          onClose={handleCloseTaskPreview}
+          onEdit={(task) => {
+            // アーカイブでは編集は無効化（完了済みタスクのため）
+            console.log('アーカイブでは編集できません');
+          }}
+          onDelete={handleDeleteTask}
+          onComplete={(id) => {
+            // アーカイブでは完了処理は無効化（既に完了済みのため）
+            console.log('アーカイブでは完了処理は無効です');
+          }}
+          onRefresh={fetchTasks}
+        />
+      )}
     </AppLayout>
   );
 } 

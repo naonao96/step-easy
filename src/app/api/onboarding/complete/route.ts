@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     // リクエストボディの取得
-    const { user_name } = await request.json();
+    const { user_name, character_name } = await request.json();
     
     // バリデーション
     if (!user_name || typeof user_name !== 'string') {
@@ -33,6 +33,20 @@ export async function POST(request: NextRequest) {
     if (user_name.length < 2 || user_name.length > 50) {
       return NextResponse.json(
         { error: 'ユーザー名は2文字以上50文字以下で入力してください' },
+        { status: 400 }
+      );
+    }
+
+    if (!character_name || typeof character_name !== 'string') {
+      return NextResponse.json(
+        { error: 'キャラクター名は必須です' },
+        { status: 400 }
+      );
+    }
+    
+    if (character_name.length < 1 || character_name.length > 30) {
+      return NextResponse.json(
+        { error: 'キャラクター名は1文字以上30文字以下で入力してください' },
         { status: 400 }
       );
     }
@@ -67,6 +81,7 @@ export async function POST(request: NextRequest) {
       .from('users')
       .update({
         user_name: user_name,
+        character_name: character_name,
         terms_accepted_at: now,
         privacy_accepted_at: now,
         onboarding_completed_at: now,

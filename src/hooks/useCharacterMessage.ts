@@ -28,12 +28,19 @@ const GUEST_MESSAGES = [
   '目標に向かって頑張りましょう',
 ];
 
-// アカウント登録完了時の特別メッセージ
-const REGISTRATION_MESSAGES = [
-  "ようこそStepEasyへ！タスク管理はもうひとりじゃありません。一緒にこっそり頑張っていきましょう。",
-  "登録完了！ここからは、あなたの習慣を全力で見守る係です。サボっても怒らないので安心してくださいね。",
-  "アカウント登録、おめでとうございます🎉今日からは、あなたの\"ちいさな一歩\"を全力応援します！"
-];
+// アカウント登録完了時の統一メッセージ
+const generateRegistrationMessage = (userName: string, characterName: string = '') => 
+`おかえり、じゃなかった、はじめまして${userName}さん！
+
+ぼくは${characterName}。
+これから、あなたの「ちょっとやってみようかな」を
+そっと応援する小鳥です🕊️
+
+毎朝9時には、あなたのペースに合わせてひとこと送るよ。
+うまくいく日も、いかない日も、気にしなくて大丈夫。
+だって、それが"あなたのリズム"だから。
+
+一緒に、少しずつ育てていこうね🌱`;
 
 const supabase = createClientComponentClient();
 
@@ -130,8 +137,24 @@ const generatePersonalizedMessage = async (
     const isNewRegistration = now < nextDay9AM;
     
     if (isNewRegistration) {
-      const messageIndex = user.id.charCodeAt(0) % REGISTRATION_MESSAGES.length;
-      return { message: REGISTRATION_MESSAGES[messageIndex], isNewRegistration: true };
+      // キャラクター名を取得
+      let characterName = '';
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('character_name')
+          .eq('id', user.id)
+          .single();
+        
+        if (!error && data?.character_name) {
+          characterName = data.character_name;
+        }
+      } catch (error) {
+        console.error('Error fetching character name:', error);
+      }
+      
+      const message = generateRegistrationMessage(userName || 'あなた', characterName);
+      return { message, isNewRegistration: true };
     }
   }
 
@@ -197,6 +220,31 @@ export const useCharacterMessage = ({ userType, userName, tasks, statistics, sel
   const [isNewRegistration, setIsNewRegistration] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [characterName, setCharacterName] = useState<string>('');
+
+  // キャラクター名を取得
+  useEffect(() => {
+    const fetchCharacterName = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        
+        const { data, error } = await supabase
+          .from('users')
+          .select('character_name')
+          .eq('id', user.id)
+          .single();
+        
+        if (!error && data?.character_name) {
+          setCharacterName(data.character_name);
+        }
+      } catch (error) {
+        console.error('Error fetching character name:', error);
+      }
+    };
+
+    fetchCharacterName();
+  }, []);
 
   // メッセージ生成と分割を一度だけ実行
   const generateMessage = useCallback(async () => {
