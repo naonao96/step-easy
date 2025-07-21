@@ -8,8 +8,8 @@ import { CloudLayer } from '@/components/CloudLayer';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: "StepEasy - タスクを完了へ導く、心理的サポート付き目標管理アプリ",
-  description: "タスクを完了へ導く、心理的サポート付き目標管理アプリ",
+  title: "StepEasy - 小鳥の一声が、あなたの習慣を運んでいく",
+  description: "小鳥の一声が、あなたの習慣を運んでいく",
   manifest: '/manifest.json',
   icons: {
     icon: '/favicon.ico',
