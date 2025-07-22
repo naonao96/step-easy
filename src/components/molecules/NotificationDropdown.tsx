@@ -52,7 +52,8 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ task
   const [isOpen, setIsOpen] = useState(false);
   const [databaseNotifications, setDatabaseNotifications] = useState<DatabaseNotification[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const mobileDropdownRef = useRef<HTMLDivElement>(null);
+  const desktopDropdownRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
 
   // データベース通知を取得（NotificationBannerと同じロジック）
@@ -139,14 +140,23 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ task
 
   // 外部クリックで閉じる
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node;
+      // どちらか一方でもref内なら閉じない
+      if (
+        (mobileDropdownRef.current && mobileDropdownRef.current.contains(target)) ||
+        (desktopDropdownRef.current && desktopDropdownRef.current.contains(target))
+      ) {
+        return;
       }
+      setIsOpen(false);
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, []);
 
   const getNotificationIcon = (notification: TaskNotification) => {
@@ -202,7 +212,9 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ task
       {isOpen && ReactDOM.createPortal(
         <>
           {/* モバイル用ドロップダウン（中央寄せ） */}
-          <div ref={dropdownRef} className="md:hidden fixed left-1/2 -translate-x-1/2 right-0 top-[5.5rem] w-80 sm:w-[calc(100vw-2rem)] max-w-[320px] sm:max-w-none bg-[#f5f5dc] rounded-lg shadow-lg border border-[#deb887] z-[100000]">
+          <div ref={mobileDropdownRef} className="md:hidden fixed left-1/2 -translate-x-1/2 right-0 top-[5.5rem] w-80 sm:w-[calc(100vw-2rem)] max-w-[320px] sm:max-w-none bg-[#f5f5dc] rounded-lg shadow-lg border border-[#deb887] z-[100000]"
+            onClick={e => e.stopPropagation()} // 内部クリックで閉じないように追加
+          >
             {/* ヘッダー */}
             <div className="px-4 py-3 border-b border-[#deb887]/30 bg-[#f0e8d8] rounded-t-lg">
               <div className="flex items-center justify-between">
@@ -238,7 +250,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ task
                   {allNotifications.map((notification) => (
                     <div
                       key={notification.id}
-                      className={`px-4 py-3 hover:bg-[#f0e8d8] cursor-pointer border-b border-[#deb887]/30 last:border-b-0 relative
+                      className={`px-4 py-3 hover:bg-[#f0e8d8] active:bg-[#f0e8d8] cursor-pointer border-b border-[#deb887]/30 last:border-b-0 relative
                         ${notification.is_read ? 'bg-[#f0e8d8] text-[#b0a18b]' : 'bg-[#f5f5dc] text-[#8b4513] font-semibold'}
                       `}
                       onClick={e => {
@@ -275,7 +287,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ task
           </div>
 
           {/* デスクトップ用ドロップダウン（右寄せ） */}
-          <div ref={dropdownRef} className="hidden md:block fixed right-4 top-20 mt-2 w-80 bg-[#f5f5dc] rounded-lg shadow-lg border border-[#deb887] z-[100000]">
+          <div ref={desktopDropdownRef} className="hidden md:block fixed right-4 top-20 mt-2 w-80 bg-[#f5f5dc] rounded-lg shadow-lg border border-[#deb887] z-[100000]">
             {/* ヘッダー */}
             <div className="px-4 py-3 border-b border-[#deb887]/30 bg-[#f0e8d8] rounded-t-lg">
               <div className="flex items-center justify-between">

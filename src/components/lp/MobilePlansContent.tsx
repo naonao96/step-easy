@@ -196,10 +196,6 @@ export const MobilePlansContent: React.FC<MobilePlansContentProps> = ({
                   {(FaStar as any)({ className: "w-4 h-4 text-[#8b4513] flex-shrink-0" })}
                   <span className="text-[#8b4513] font-medium">習慣機能：無制限</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  {(FaStar as any)({ className: "w-4 h-4 text-[#8b4513] flex-shrink-0" })}
-                  <span className="text-[#8b4513] font-medium">詳細な成長分析</span>
-                </div>
 
                 
                 {/* 詳細プレビューボタン */}
