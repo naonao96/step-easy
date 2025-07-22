@@ -34,6 +34,7 @@ interface TaskNotification {
   taskId?: string;
   category: 'task' | 'habit' | 'subscription' | 'system' | 'ai';
   priority: 'high' | 'medium' | 'low';
+  is_read: boolean; // 追加
 }
 
 export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ tasks }) => {
@@ -54,7 +55,6 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ task
           .from('notifications')
           .select('*')
           .eq('user_id', user.id)
-          .eq('is_read', false)
           .order('created_at', { ascending: false })
           .limit(20);
 
@@ -81,7 +81,10 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ task
         .update({ is_read: true, read_at: new Date().toISOString() })
         .eq('id', notificationId);
 
-      setDatabaseNotifications((prev: DatabaseNotification[]) => prev.filter((n: DatabaseNotification) => n.id !== notificationId));
+      setDatabaseNotifications((prev: DatabaseNotification[]) =>
+        prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
+      );
+      // setIsOpen(false); ← これを呼ばないことでドロップダウンを閉じない
     } catch (error) {
       console.error('通知既読エラー:', error);
     }
@@ -96,105 +99,17 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ task
         .eq('user_id', user?.id)
         .eq('is_read', false);
 
-      setDatabaseNotifications([]);
-      setIsOpen(false);
+      setDatabaseNotifications((prev: DatabaseNotification[]) =>
+        prev.map(n => ({ ...n, is_read: true }))
+      );
+      // setIsOpen(false); ← これを呼ばないことでドロップダウンを閉じない
     } catch (error) {
       console.error('全通知既読エラー:', error);
     }
   };
 
-  // タスクベース通知の生成（通知設定を考慮）
-  const generateTaskNotifications = (): TaskNotification[] => {
-    if (!user?.notification_settings) return [];
-
-    const notifications: TaskNotification[] = [];
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    // タスク通知（通知設定が有効な場合のみ）
-    if (user.notification_settings.task) {
-      // 期限が近いタスクの通知
-      const upcomingTasks = tasks.filter(task => {
-        if (!task.due_date || task.status === 'done') return false;
-        
-        const dueDate = new Date(task.due_date);
-        const timeDiff = dueDate.getTime() - today.getTime();
-        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-        
-        return daysDiff <= 2 && daysDiff >= 0; // 今日～2日後
-      });
-
-      upcomingTasks.forEach(task => {
-        const dueDate = new Date(task.due_date!);
-        const timeDiff = dueDate.getTime() - today.getTime();
-        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-        
-        let timeText = '';
-        if (daysDiff === 0) timeText = '今日';
-        else if (daysDiff === 1) timeText = '明日';
-        else timeText = `${daysDiff}日後`;
-
-        notifications.push({
-          id: `due-${task.id}`,
-          type: daysDiff === 0 ? 'warning' : 'info',
-          title: '期限が近いタスク',
-          message: `${task.title} (期限: ${timeText})`,
-          time: timeText,
-          taskId: task.id,
-          category: 'task',
-          priority: daysDiff === 0 ? 'high' : 'medium'
-        });
-      });
-    }
-
-    // 習慣通知（通知設定が有効な場合のみ）
-    if (user.notification_settings.habit) {
-      const expiredHabits = tasks.filter(task => {
-        if (task.habit_status !== 'active' || task.status === 'done') return false;
-        
-        if (task.last_completed_date) {
-          const lastCompleted = new Date(task.last_completed_date);
-          const daysSinceCompletion = Math.floor((today.getTime() - lastCompleted.getTime()) / (1000 * 3600 * 24));
-          return daysSinceCompletion > 1; // 1日以上経過
-        }
-        
-        return false;
-      });
-
-      expiredHabits.forEach(task => {
-        notifications.push({
-          id: `habit-${task.id}`,
-          type: 'warning',
-          title: '習慣タスクの継続',
-          message: `${task.title} の継続が途切れています`,
-          taskId: task.id,
-          category: 'habit',
-          priority: 'medium'
-        });
-      });
-    }
-
-    return notifications;
-  };
-
-  // 通知設定に基づいてフィルタリング（デフォルトで有効）
-  const filterNotificationsBySettings = (notifications: (DatabaseNotification | TaskNotification)[]) => {
-    if (!user?.notification_settings) return notifications;
-
-    return notifications.filter(notification => {
-      const category = 'category' in notification ? notification.category : 
-                     (notification as any).type?.includes('subscription') ? 'subscription' :
-                     (notification as any).type?.includes('system') ? 'system' :
-                     (notification as any).type?.includes('ai') ? 'ai' : 'task';
-      
-      // 通知設定が未定義の場合は表示する（デフォルトで有効）
-      return user.notification_settings?.[category] !== false;
-    });
-  };
-
   // データベース通知をTaskNotification形式に変換
-  const convertDatabaseNotifications = (): TaskNotification[] => {
+  const convertDatabaseNotifications = (): (TaskNotification & { is_read: boolean })[] => {
     return databaseNotifications.map(dbNotif => ({
       id: dbNotif.id,
       type: dbNotif.priority === 'high' ? 'warning' : 
@@ -202,17 +117,14 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ task
       title: dbNotif.title,
       message: dbNotif.message,
       category: dbNotif.category,
-      priority: dbNotif.priority
+      priority: dbNotif.priority,
+      is_read: dbNotif.is_read
     }));
   };
 
-  // 全通知を統合
-  const allNotifications = filterNotificationsBySettings([
-    ...convertDatabaseNotifications(),
-    ...generateTaskNotifications()
-  ]);
-
-  const notificationCount = allNotifications.length;
+  // DB通知のみを表示
+  const allNotifications = convertDatabaseNotifications();
+  const unreadCount = allNotifications.filter(n => !n.is_read).length;
 
   // 外部クリックで閉じる
   useEffect(() => {
@@ -259,7 +171,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ task
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative">
       {/* 通知ベルアイコン */}
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -268,9 +180,9 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ task
       >
         {MdLocalPostOffice({ className: "w-6 h-6 text-[#7c5a2a] hover:text-[#8b4513] transition-colors" })}
         {/* 通知数バッジ */}
-        {notificationCount > 0 && (
+        {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
-            {notificationCount > 9 ? '9+' : notificationCount}
+            {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
@@ -279,13 +191,13 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ task
       {isOpen && ReactDOM.createPortal(
         <>
           {/* モバイル用ドロップダウン（中央寄せ） */}
-          <div className="md:hidden fixed left-1/2 -translate-x-1/2 right-0 top-[5.5rem] w-80 sm:w-[calc(100vw-2rem)] max-w-[320px] sm:max-w-none bg-[#f5f5dc] rounded-lg shadow-lg border border-[#deb887] z-[100000]">
+          <div ref={dropdownRef} className="md:hidden fixed left-1/2 -translate-x-1/2 right-0 top-[5.5rem] w-80 sm:w-[calc(100vw-2rem)] max-w-[320px] sm:max-w-none bg-[#f5f5dc] rounded-lg shadow-lg border border-[#deb887] z-[100000]">
             {/* ヘッダー */}
             <div className="px-4 py-3 border-b border-[#deb887]/30 bg-[#f0e8d8] rounded-t-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-semibold text-[#8b4513]">
-                    通知 {notificationCount > 0 && `(${notificationCount})`}
+                    通知 {unreadCount > 0 && `(${unreadCount})`}
                   </h3>
                 </div>
                 {databaseNotifications.length > 0 && (
@@ -315,46 +227,34 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ task
                   {allNotifications.map((notification) => (
                     <div
                       key={notification.id}
-                      className={`px-4 py-3 hover:bg-[#f0e8d8] cursor-pointer border-b border-[#deb887]/30 last:border-b-0 relative ${
-                        isReadable(notification) ? 'bg-[#f5f5dc]' : 'bg-[#faf8f0]'
-                      }`}
+                      className={`px-4 py-3 hover:bg-[#f0e8d8] cursor-pointer border-b border-[#deb887]/30 last:border-b-0 relative
+                        ${notification.is_read ? 'bg-[#f0e8d8] text-[#b0a18b]' : 'bg-[#f5f5dc] text-[#8b4513] font-semibold'}
+                      `}
+                      onClick={e => {
+                        if (isReadable(notification)) {
+                          e.stopPropagation();
+                          markAsRead(notification.id);
+                        }
+                      }}
+                      style={{ cursor: isReadable(notification) ? 'pointer' : 'default' }}
                     >
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0 mt-0.5">
                           {getNotificationIcon(notification as TaskNotification)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-[#8b4513]">
+                          <p className={`text-sm ${notification.is_read ? 'font-normal text-[#b0a18b]' : 'font-bold text-[#8b4513]'}`}>
                             {notification.title}
                           </p>
-                          <p className="text-sm text-[#7c5a2a] mt-1">
+                          <p className={`text-sm mt-1 ${notification.is_read ? 'font-normal text-[#b0a18b]' : 'font-bold text-[#8b4513]'}`} style={{ whiteSpace: 'pre-line' }}>
                             {notification.message}
                           </p>
-                          {'time' in notification && notification.time && (
-                            <p className="text-xs text-[#a0522d] mt-1">
-                              {notification.time}
-                            </p>
-                          )}
                           {'created_at' in notification && (
                             <p className="text-xs text-[#a0522d] mt-1">
-                              {new Date(notification.created_at).toLocaleString('ja-JP')}
+                              {new Date(String(notification.created_at)).toLocaleString('ja-JP')}
                             </p>
                           )}
                         </div>
-                        {/* 既読ボタン（データベース通知のみ） */}
-                        {isReadable(notification) && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              markAsRead(notification.id);
-                            }}
-                            className="text-[#8b4513] hover:text-[#7c5a2a] transition-colors flex-shrink-0 p-1 relative z-10"
-                            title="既読にする"
-                          >
-                            {FaCheck ({className:"w-3 h-3"})}
-                          </button>
-                        )}
                       </div>
                     </div>
                   ))}
@@ -364,13 +264,13 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ task
           </div>
 
           {/* デスクトップ用ドロップダウン（右寄せ） */}
-          <div className="hidden md:block fixed right-4 top-20 mt-2 w-80 bg-[#f5f5dc] rounded-lg shadow-lg border border-[#deb887] z-[100000]">
+          <div ref={dropdownRef} className="hidden md:block fixed right-4 top-20 mt-2 w-80 bg-[#f5f5dc] rounded-lg shadow-lg border border-[#deb887] z-[100000]">
             {/* ヘッダー */}
             <div className="px-4 py-3 border-b border-[#deb887]/30 bg-[#f0e8d8] rounded-t-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-semibold text-[#8b4513]">
-                    通知 {notificationCount > 0 && `(${notificationCount})`}
+                    通知 {unreadCount > 0 && `(${unreadCount})`}
                   </h3>
                 </div>
                 {databaseNotifications.length > 0 && (
@@ -403,43 +303,32 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ task
                       className={`px-4 py-3 hover:bg-[#f0e8d8] cursor-pointer border-b border-[#deb887]/30 last:border-b-0 relative ${
                         isReadable(notification) ? 'bg-[#f5f5dc]' : 'bg-[#faf8f0]'
                       }`}
+                      onClick={e => {
+                        if (isReadable(notification)) {
+                          e.stopPropagation();
+                          markAsRead(notification.id);
+                        }
+                      }}
+                      style={{ cursor: isReadable(notification) ? 'pointer' : 'default' }}
                     >
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0 mt-0.5">
                           {getNotificationIcon(notification as TaskNotification)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-[#8b4513]">
+                          <p className={`text-sm ${notification.is_read ? 'font-normal text-[#b0a18b]' : 'font-bold text-[#8b4513]'}`}>
                             {notification.title}
                           </p>
-                          <p className="text-sm text-[#7c5a2a] mt-1">
+                          <p className={`text-sm mt-1 ${notification.is_read ? 'font-normal text-[#b0a18b]' : 'font-bold text-[#8b4513]'}`} style={{ whiteSpace: 'pre-line' }}>
                             {notification.message}
                           </p>
-                          {'time' in notification && notification.time && (
-                            <p className="text-xs text-[#a0522d] mt-1">
-                              {notification.time}
-                            </p>
-                          )}
                           {'created_at' in notification && (
                             <p className="text-xs text-[#a0522d] mt-1">
-                              {new Date(notification.created_at).toLocaleString('ja-JP')}
+                              {new Date(String(notification.created_at)).toLocaleString('ja-JP')}
                             </p>
                           )}
                         </div>
-                        {/* 既読ボタン（データベース通知のみ） */}
-                        {isReadable(notification) && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              markAsRead(notification.id);
-                            }}
-                            className="text-[#8b4513] hover:text-[#7c5a2a] transition-colors flex-shrink-0 p-1 relative z-10"
-                            title="既読にする"
-                          >
-                            {FaCheck ({className:"w-3 h-3"})}
-                          </button>
-                        )}
+                        {/* 既読ボタンは不要なので削除 */}
                       </div>
                     </div>
                   ))}

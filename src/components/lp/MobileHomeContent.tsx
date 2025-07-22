@@ -450,15 +450,13 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
         </div>
       </section>
 
-      {/* 5. UIギャラリー */}
-      <section className="py-16 px-6" ref={uiGalleryAnimation.elementRef}>
+      {/* 5. UIギャラリー - 一時的に非表示 */}
+      {/* <section className="py-16 px-6" ref={uiGalleryAnimation.elementRef}>
         <div className="max-w-2xl mx-auto">
           <div className={`transition-all duration-1000 ${uiGalleryAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <h2 className="text-3xl font-bold text-center mb-12 relative">
-              {/* 背景レイヤー（影効果） */}
               <div className="absolute inset-0 bg-white/30 rounded-2xl transform translate-x-1 translate-y-1 blur-sm"></div>
               
-              {/* メインテキスト */}
               <div className="relative z-10 text-[#4a3728]" 
                    style={{ 
                      textShadow: '1px 1px 2px rgba(255, 255, 255, 0.8), 2px 2px 4px rgba(139, 69, 19, 0.3)',
@@ -512,7 +510,7 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* 6. ターゲット訴求セクション */}
       <section className="py-16 px-6" ref={targetAudienceAnimation.elementRef}>
@@ -614,7 +612,9 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
           
           <div className={`space-y-4 transition-all duration-1000 delay-200 ${externalLinksAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <a
-              href="#"
+              href="https://note.com/preview/n179346d630b0"
+              target="_blank"
+              rel="noopener noreferrer"
               className="block bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-[#deb887] hover:shadow-xl transition-shadow"
             >
               <div className="flex items-center gap-4">
@@ -629,7 +629,9 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
             </a>
 
             <a
-              href="#"
+              href="https://x.com/stepeasyjp"
+              target="_blank"
+              rel="noopener noreferrer"
               className="block bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-[#deb887] hover:shadow-xl transition-shadow"
             >
               <div className="flex items-center gap-4">
@@ -737,10 +739,10 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
               <div>
                 <h4 className="text-sm font-bold mb-2">SNS</h4>
                 <div className="flex justify-center gap-4">
-                  <a href="#" className="text-[#7c5a2a] hover:text-[#8b4513] transition-colors">
+                  <a href="https://x.com/stepeasyjp" target="_blank" rel="noopener noreferrer" className="text-[#7c5a2a] hover:text-[#8b4513] transition-colors">
                     {(FaTwitter as any)({ className: "w-5 h-5" })}
                   </a>
-                  <a href="#" className="text-[#7c5a2a] hover:text-[#8b4513] transition-colors">
+                  <a href="https://note.com/preview/n179346d630b0" target="_blank" rel="noopener noreferrer" className="text-[#7c5a2a] hover:text-[#8b4513] transition-colors">
                     {(FaFileAlt as any)({ className: "w-5 h-5" })}
                   </a>
                 </div>

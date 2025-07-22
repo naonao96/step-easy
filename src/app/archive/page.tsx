@@ -344,13 +344,13 @@ export default function ArchivePage() {
                         {dayTasks.map((task) => (
                           <div
                             key={task.id}
-                            className="flex items-center gap-4 p-4 hover:bg-[#f5f5dc] transition-colors"
+                            className="flex items-center gap-4 p-4 hover:bg-[#f5f5dc] transition-colors cursor-pointer"
+                            onClick={() => handleTaskPreview(task)}
                           >
                             <div className="flex-shrink-0">
-                              {FaCheckCircle ({className:"w-5 h-5 text-[#7c5a2a]"})}
+                              {FaCheckCircle({ className: "w-5 h-5 text-[#7c5a2a]" })}
                             </div>
-                            
-                            <div className="flex-1 min-w-0 cursor-pointer" onClick={() => handleTaskPreview(task)}>
+                            <div className="flex-1 min-w-0">
                               <h3 className="font-medium text-[#8b4513] truncate hover:text-[#8b4513]">
                                 {task.title}
                               </h3>
@@ -360,42 +360,20 @@ export default function ArchivePage() {
                                 </p>
                               )}
                             </div>
-
-                            <div className="flex items-center gap-3 flex-shrink-0">
-                              <span className="text-sm text-[#7c5a2a]">
-                                {formatTime(task.completed_at!)}
-                              </span>
-                              <span className={`px-3 py-1 text-xs rounded-full font-medium ${
-                                task.priority === 'high' ? 'bg-[#f5f5dc] text-[#8b4513] border border-[#deb887]' :
-                                task.priority === 'medium' ? 'bg-[#f5f5dc] text-[#7c5a2a] border border-[#deb887]' :
-                                'bg-[#f5f5dc] text-[#7c5a2a] border border-[#deb887]'
-                              }`}>
-                                {task.priority === 'high' ? '高' : 
-                                 task.priority === 'medium' ? '中' : '低'}
-                              </span>
-                            </div>
-
                             <div className="flex gap-2">
                               <button
-                                onClick={() => handleTaskPreview(task)}
-                                className="p-2 text-[#7c5a2a] hover:bg-[#f5f5dc] rounded-lg transition-colors"
-                                title="詳細を表示"
-                              >
-                                {FaEye ({className:"w-4 h-4"})}
-                              </button>
-                              <button
-                                onClick={() => handleRestoreTask(task.id)}
+                                onClick={e => { e.stopPropagation(); handleRestoreTask(task.id); }}
                                 className="p-2 text-[#7c5a2a] hover:bg-[#f5f5dc] rounded-lg transition-colors"
                                 title="未完了に戻す"
                               >
-                                {FaUndo ({className:"w-4 h-4"})}
+                                {FaUndo({ className: "w-4 h-4" })}
                               </button>
                               <button
-                                onClick={() => handleDeleteTask(task.id)}
+                                onClick={e => { e.stopPropagation(); handleDeleteTask(task.id); }}
                                 className="p-2 text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-colors"
                                 title="完全削除"
                               >
-                                {FaTrash ({className:"w-4 h-4"})}
+                                {FaTrash({ className: "w-4 h-4" })}
                               </button>
                             </div>
                           </div>

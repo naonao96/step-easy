@@ -446,15 +446,13 @@ export const HomeContent: React.FC<HomeContentProps> = ({ onLogin, onRegister, o
         </div>
       </section>
 
-      {/* 5. UIギャラリー */}
-      <section className="py-20 px-8" ref={uiGalleryAnimation.elementRef}>
+      {/* 5. UIギャラリー - 一時的に非表示 */}
+      {/* <section className="py-20 px-8" ref={uiGalleryAnimation.elementRef}>
         <div className="max-w-7xl mx-auto">
           <div className={`transition-all duration-1000 ${uiGalleryAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <h2 className="text-4xl font-bold text-center mb-16 relative">
-              {/* 背景レイヤー（影効果） */}
               <div className="absolute inset-0 bg-white/30 rounded-2xl transform translate-x-1 translate-y-1 blur-sm"></div>
               
-              {/* メインテキスト */}
               <div className="relative z-10 text-[#4a3728]" 
                    style={{ 
                      textShadow: '1px 1px 2px rgba(255, 255, 255, 0.8), 2px 2px 4px rgba(139, 69, 19, 0.3)',
@@ -512,7 +510,7 @@ export const HomeContent: React.FC<HomeContentProps> = ({ onLogin, onRegister, o
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* 6. ターゲット訴求セクション */}
       <section className="py-20 px-8" ref={targetAudienceAnimation.elementRef}>
@@ -606,7 +604,9 @@ export const HomeContent: React.FC<HomeContentProps> = ({ onLogin, onRegister, o
           
           <div className={`grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto transition-all duration-1000 delay-200 ${externalLinksAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <a
-              href="#"
+              href="https://note.com/preview/n179346d630b0"
+              target="_blank"
+              rel="noopener noreferrer"
               className="bg-white/80 backdrop-blur rounded-2xl p-8 shadow-lg border border-[#deb887] hover:shadow-xl transition-shadow group"
             >
               <div className="flex items-center gap-6">
@@ -621,7 +621,9 @@ export const HomeContent: React.FC<HomeContentProps> = ({ onLogin, onRegister, o
             </a>
 
             <a
-              href="#"
+              href="https://x.com/stepeasyjp"
+              target="_blank"
+              rel="noopener noreferrer"
               className="bg-white/80 backdrop-blur rounded-2xl p-8 shadow-lg border border-[#deb887] hover:shadow-xl transition-shadow group"
             >
               <div className="flex items-center gap-6">
@@ -728,10 +730,10 @@ export const HomeContent: React.FC<HomeContentProps> = ({ onLogin, onRegister, o
             <div>
               <h4 className="text-lg font-bold mb-4">SNS</h4>
               <div className="flex gap-4">
-                <a href="#" className="text-[#7c5a2a] hover:text-[#8b4513] transition-colors">
+                <a href="https://x.com/stepeasyjp" target="_blank" rel="noopener noreferrer" className="text-[#7c5a2a] hover:text-[#8b4513] transition-colors">
                   {(FaTwitter as any)({ className: "w-6 h-6" })}
                 </a>
-                <a href="#" className="text-[#7c5a2a] hover:text-[#8b4513] transition-colors">
+                <a href="https://note.com/preview/n179346d630b0" target="_blank" rel="noopener noreferrer" className="text-[#7c5a2a] hover:text-[#8b4513] transition-colors">
                   {(FaFileAlt as any)({ className: "w-6 h-6" })}
                 </a>
               </div>
