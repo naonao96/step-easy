@@ -37,6 +37,17 @@ interface TaskNotification {
   is_read: boolean; // 追加
 }
 
+// ユーティリティ: メッセージ内のURLをリンク化
+function linkify(text: string) {
+  const urlRegex = /(https?:\/\/[\w\-._~:/?#[\]@!$&'()*+,;=%]+)/g;
+  return text.split(urlRegex).map((part, i) => {
+    if (urlRegex.test(part)) {
+      return <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="underline text-blue-700 break-all">{part}</a>;
+    }
+    return part;
+  });
+}
+
 export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ tasks }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [databaseNotifications, setDatabaseNotifications] = useState<DatabaseNotification[]>([]);
@@ -247,7 +258,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ task
                             {notification.title}
                           </p>
                           <p className={`text-sm mt-1 ${notification.is_read ? 'font-normal text-[#b0a18b]' : 'font-bold text-[#8b4513]'}`} style={{ whiteSpace: 'pre-line' }}>
-                            {notification.message}
+                            {linkify(notification.message)}
                           </p>
                           {'created_at' in notification && (
                             <p className="text-xs text-[#a0522d] mt-1">
@@ -320,7 +331,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ task
                             {notification.title}
                           </p>
                           <p className={`text-sm mt-1 ${notification.is_read ? 'font-normal text-[#b0a18b]' : 'font-bold text-[#8b4513]'}`} style={{ whiteSpace: 'pre-line' }}>
-                            {notification.message}
+                            {linkify(notification.message)}
                           </p>
                           {'created_at' in notification && (
                             <p className="text-xs text-[#a0522d] mt-1">

@@ -1,7 +1,7 @@
 {
-  "name": "StepEasy - スマートタスク管理",
+  "name": "StepEasy",
   "short_name": "StepEasy",
-  "description": "AIがサポートするスマートなタスク管理アプリ",
+  "description": "小鳥の一声が、あなたの習慣を運んでいく。",
   "start_url": "/lp",
   "display": "standalone",
   "background_color": "#f0f9ff",
