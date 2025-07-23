@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation';
 import { Task } from '@/types/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { getHabitLimits, getFrequencyLabel, getHabitStatus, isNewHabit } from '@/lib/habitUtils';
+import { generateDateTitle, getIncompleteTaskCount } from '@/lib/commonUtils';
 
 import { ToggleSwitch } from '../atoms/ToggleSwitch';
 import { SortOption } from '../atoms/SortDropdown';
@@ -83,12 +84,8 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
   }, [tasks, sortOption]);
 
   // 未完了タスク数の計算
-  const getIncompleteCount = (taskList: any[]) => {
-    return taskList.filter(task => task.status !== 'done').length;
-  };
-
-  const regularIncompleteCount = getIncompleteCount(regularTasks);
-  const habitIncompleteCount = getIncompleteCount(habitTasks);
+  const regularIncompleteCount = getIncompleteTaskCount(regularTasks);
+  const habitIncompleteCount = getIncompleteTaskCount(habitTasks);
 
   const { maxHabits, maxStreakDays } = getHabitLimits(planType);
 
@@ -103,42 +100,7 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
 
   // 選択日に応じたタイトルを生成
   const getTitle = () => {
-    if (!selectedDate) return activeTab === 'habits' ? '今日の習慣' : '今日のタスク';
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const selected = new Date(selectedDate);
-    selected.setHours(0, 0, 0, 0);
-    
-    if (selected.toDateString() === today.toDateString()) {
-      return activeTab === 'habits' ? '今日の習慣' : '今日のタスク';
-    }
-    
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    if (selected.toDateString() === tomorrow.toDateString()) {
-      return activeTab === 'habits' ? '明日の習慣' : '明日のタスク';
-    }
-    
-    if (selected.toDateString() === yesterday.toDateString()) {
-      return activeTab === 'habits' ? '昨日の習慣' : '昨日のタスク';
-    }
-    
-    // その他の日付
-    const month = selected.getMonth() + 1;
-    const day = selected.getDate();
-    const year = selected.getFullYear();
-    const currentYear = today.getFullYear();
-    
-    if (year === currentYear) {
-      return activeTab === 'habits' ? `${month}月${day}日の習慣` : `${month}月${day}日のタスク`;
-    } else {
-      return activeTab === 'habits' ? `${year}年${month}月${day}日の習慣` : `${year}年${month}月${day}日のタスク`;
-    }
+    return generateDateTitle(selectedDate || null, activeTab);
   };
 
   // タスク追加の制限チェック

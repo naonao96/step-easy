@@ -133,57 +133,90 @@ export const integrateHabitData = (habits: Habit[], tasks: Task[]) => {
 };
 
 /**
+ * 日付文字列を日本時間で正規化する統一関数
+ */
+export const normalizeDateToJST = (dateString: string | null | undefined): string | null => {
+  if (!dateString) return null;
+  
+  if (dateString.includes('T')) {
+    // TIMESTAMP WITH TIME ZONE形式の場合、日本時間で日付を取得
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      console.warn('Invalid date string:', dateString);
+      return null;
+    }
+    return date.toLocaleDateString('en-CA', {timeZone: 'Asia/Tokyo'});
+  } else {
+    // DATE形式の場合はそのまま使用
+    return dateString;
+  }
+};
+
+/**
+ * 日付比較用の統一関数
+ */
+export const compareDates = (date1: string, date2: string): number => {
+  return date1.localeCompare(date2);
+};
+
+/**
+ * 習慣の表示期間内かどうかを判定する統一関数
+ */
+export const isHabitInDisplayPeriod = (
+  habit: Habit, 
+  selectedDateString: string
+): boolean => {
+  // 開始日の制御
+  if (habit.start_date && selectedDateString < habit.start_date) {
+    return false;
+  }
+  
+  // 期限日の制御
+  if (habit.due_date) {
+    const normalizedDueDate = normalizeDateToJST(habit.due_date);
+    if (normalizedDueDate && selectedDateString > normalizedDueDate) {
+      return false;
+    }
+  }
+  
+  return true;
+};
+
+/**
+ * 習慣の完了状態を判定する統一関数
+ */
+export const isHabitCompletedOnDate = (
+  habit: Habit,
+  targetDate: string,
+  habitCompletions?: any[]
+): boolean => {
+  if (habitCompletions) {
+    // habit_completionsテーブルから完了状態を確認
+    return habitCompletions.some(
+      completion => completion.habit_id === habit.id && completion.completed_date === targetDate
+    );
+  } else {
+    // フォールバック: last_completed_dateを使用（日本時間で比較）
+    const lastCompletedJST = habit.last_completed_date ? getJSTDateString(new Date(habit.last_completed_date)) : null;
+    return lastCompletedJST === targetDate;
+  }
+};
+
+/**
  * 新しい習慣データをTask型に変換
  */
 export const convertHabitsToTasks = (habits: Habit[], selectedDate?: Date, habitCompletions?: any[]): Task[] => {
   const targetDate = selectedDate ? getJSTDateString(selectedDate) : getJSTDateString();
+  
   return habits
     .filter(habit => habit.habit_status === 'active')
     .filter(habit => {
-      // 開始日と期限日の表示制御（文字列比較で統一）
       const selectedDateString = selectedDate ? getJSTDateString(selectedDate) : getJSTDateString();
-      
-      // 開始日の制御
-      if (habit.start_date) {
-        // データベースのDATE型はYYYY-MM-DD形式なので、そのまま文字列比較
-        if (selectedDateString < habit.start_date) {
-          return false; // 開始日より前は表示しない
-        }
-      }
-      
-      // 期限日の制御
-      if (habit.due_date) {
-        // due_dateの形式を統一（YYYY-MM-DD形式に変換）
-        let dueDateString: string;
-        if (habit.due_date.includes('T')) {
-          // TIMESTAMP WITH TIME ZONE形式の場合、日本時間で日付を取得
-          const dueDate = new Date(habit.due_date);
-          dueDateString = dueDate.toLocaleDateString('en-CA', {timeZone: 'Asia/Tokyo'});
-        } else {
-          // DATE形式の場合はそのまま使用
-          dueDateString = habit.due_date;
-        }
-        
-        if (selectedDateString > dueDateString) {
-          return false; // 期限日より後は表示しない
-        }
-      }
-      return true; // 表示期間内
+      return isHabitInDisplayPeriod(habit, selectedDateString);
     })
     .map(habit => {
       // 選択された日付で完了済みかどうかを判定
-      let isCompletedOnSelectedDate = false;
-      
-      if (habitCompletions) {
-        // habit_completionsテーブルから完了状態を確認
-        isCompletedOnSelectedDate = habitCompletions.some(
-          completion => completion.habit_id === habit.id && completion.completed_date === targetDate
-        );
-      } else {
-        // フォールバック: last_completed_dateを使用（日本時間で比較）
-        const lastCompletedJST = habit.last_completed_date ? getJSTDateString(new Date(habit.last_completed_date)) : null;
-        isCompletedOnSelectedDate = lastCompletedJST === targetDate;
-      }
+      const isCompletedOnSelectedDate = isHabitCompletedOnDate(habit, targetDate, habitCompletions);
       
       const result = {
         id: habit.id,
@@ -191,7 +224,7 @@ export const convertHabitsToTasks = (habits: Habit[], selectedDate?: Date, habit
         description: habit.description || '',
         status: isCompletedOnSelectedDate ? 'done' as const : 'todo' as const,
         priority: habit.priority || 'medium',
-        due_date: habit.due_date || null,
+        due_date: normalizeDateToJST(habit.due_date),
         start_date: habit.start_date || null,
         completed_at: isCompletedOnSelectedDate ? new Date(targetDate + 'T00:00:00+09:00').toISOString() : undefined,
         created_at: habit.created_at,
@@ -206,7 +239,7 @@ export const convertHabitsToTasks = (habits: Habit[], selectedDate?: Date, habit
         streak_start_date: habit.streak_start_date,
         category: habit.category || 'other',
         estimated_duration: habit.estimated_duration,
-        actual_duration: habit.all_time_total ? Math.floor(habit.all_time_total / 60) : undefined, // 秒を分に変換
+        actual_duration: habit.all_time_total ? Math.floor(habit.all_time_total / 60) : undefined,
         streak_count: habit.current_streak,
         session_time: undefined,
         today_total: habit.today_total,
@@ -214,6 +247,7 @@ export const convertHabitsToTasks = (habits: Habit[], selectedDate?: Date, habit
         last_execution_date: habit.last_execution_date,
         execution_count: undefined
       };
+      
       return result;
     });
 }; 

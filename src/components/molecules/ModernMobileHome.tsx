@@ -5,6 +5,7 @@ import { CategoryBadge } from '@/components/atoms/CategoryBadge';
 import { Character } from './Character';
 import { getEmotionTimePeriodLabel } from '@/lib/timeUtils';
 import { isNewHabit } from '@/lib/habitUtils';
+import { isToday, getIncompleteTaskCount, getPlanLimits, generateDateTitle } from '@/lib/commonUtils';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { MobileTaskTimer } from './MobileTaskTimer';
@@ -153,11 +154,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   });
 
   // 今日かどうかの判定
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const selectedDateTime = new Date(selectedDate);
-  selectedDateTime.setHours(0, 0, 0, 0);
-  const isToday = selectedDateTime.getTime() === today.getTime();
+  const isTodaySelected = isToday(selectedDate);
 
   // 通常タスクと習慣タスクの分離
   const { regularTasks, habitTasks } = useMemo(() => {
@@ -176,57 +173,20 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   }, [selectedDateTasks]);
 
   // 未完了タスク数の計算
-  const getIncompleteCount = (taskList: Task[]) => {
-    return taskList.filter(task => task.status !== 'done').length;
-  };
-
-  const regularIncompleteCount = getIncompleteCount(regularTasks);
-  const habitIncompleteCount = getIncompleteCount(habitTasks);
+  const regularIncompleteCount = getIncompleteTaskCount(regularTasks);
+  const habitIncompleteCount = getIncompleteTaskCount(habitTasks);
 
   // プラン別習慣制限
-  const getHabitLimits = () => {
-    switch (planType) {
-      case 'guest': return { maxHabits: 0, maxStreakDays: 0 };
-      case 'free': return { maxHabits: 3, maxStreakDays: 14 };
-      case 'premium': return { maxHabits: Infinity, maxStreakDays: Infinity };
-      default: return { maxHabits: 0, maxStreakDays: 0 };
-    }
-  };
-
-  const { maxHabits } = getHabitLimits();
+  const { maxHabits } = getPlanLimits(planType);
 
   // 現在のタブに応じたタスクリストを取得
   const getCurrentTasks = () => {
     return activeTab === 'habits' ? habitTasks : regularTasks;
   };
 
-  // 日付フォーマット
-  const formatDate = (date: Date) => {
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
-    const weekday = weekdays[date.getDay()];
-    return `${month}月${day}日 (${weekday})`;
-  };
-
-  // 習慣タスクの頻度表示
-  const getFrequencyLabel = (frequency?: string) => {
-    switch (frequency) {
-      case 'daily': return '毎日';
-      case 'weekly': return '週1回';
-      case 'monthly': return '月1回';
-      default: return '毎日';
-    }
-  };
-
   // 選択日に応じたタイトルを生成
   const getTitle = () => {
-    if (isToday) {
-      return activeTab === 'habits' ? '今日の習慣' : '今日のタスク';
-    }
-    
-    const formattedDate = formatDate(selectedDate);
-    return activeTab === 'habits' ? `${formattedDate}の習慣` : `${formattedDate}のタスク`;
+    return generateDateTitle(selectedDate, activeTab);
   };
 
   // 日付操作関数
