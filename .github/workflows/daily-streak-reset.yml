@@ -24,8 +24,8 @@ jobs:
       
     - name: Run daily streak reset
       run: |
-        curl -X POST ${{ secrets.SUPABASE_URL }}/functions/v1/daily-streak-reset \
-          -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+        curl -X POST ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}/functions/v1/daily-streak-reset \
+          -H "Authorization: Bearer ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
           -H "Content-Type: application/json"
           
     - name: Log completion
