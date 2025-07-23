@@ -408,17 +408,10 @@ export const Calendar: React.FC<CalendarProps> = ({ tasks = [], habits = [], sel
                 <div className="space-y-2">
                   {/* 習慣モードの凡例 */}
                   {calendarMode === 'habits' && (
-                    <>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-[#D2691E] rounded-full flex-shrink-0"></div>
-                        <span className="text-sm text-[#7c5a2a]">習慣あり</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm text-[#7c5a2a]">📅 毎日</span>
-                        <span className="text-sm text-[#7c5a2a]">📊 毎週</span>
-                        <span className="text-sm text-[#7c5a2a]">🗓️ 毎月</span>
-                      </div>
-                    </>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-[#D2691E] rounded-full flex-shrink-0"></div>
+                      <span className="text-sm text-[#7c5a2a]">習慣あり</span>
+                    </div>
                   )}
                   {/* タスクモードの凡例 */}
                   {calendarMode === 'tasks' && (

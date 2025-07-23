@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Habit, HabitCompletion, HabitFormData, HabitCompletionError, HabitCompletionResult } from '@/types/habit';
+import { getJSTDateString } from '@/lib/habitUtils';
 
 const supabase = createClientComponentClient();
 
@@ -305,10 +306,8 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
 
   getHabitsWithCompletion: () => {
     const { habits, habitCompletions } = get();
-    // 日本時間での今日の日付を取得
-    const now = new Date();
-    const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
-    const today = japanTime.toISOString().split('T')[0];
+    // 日本時間での今日の日付を取得（統一実装）
+    const today = getJSTDateString();
     const todayCompletions = habitCompletions.filter(c => c.completed_date === today);
 
     return habits.map(habit => ({
@@ -319,7 +318,7 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
 
   getHabitsWithCompletionForDate: (targetDate: Date) => {
     const { habits, habitCompletions } = get();
-    const dateString = targetDate.toISOString().split('T')[0];
+    const dateString = getJSTDateString(targetDate);
     const dateCompletions = habitCompletions.filter(c => c.completed_date === dateString);
 
     return habits.map(habit => ({
@@ -334,10 +333,8 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
     const habit = habits.find(h => h.id === habitId);
     if (!habit) return 0;
 
-    // 今日の完了状態を確認
-    const now = new Date();
-    const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
-    const today = japanTime.toISOString().split('T')[0];
+    // 今日の完了状態を確認（統一実装）
+    const today = getJSTDateString();
     const isCompletedToday = habitCompletions.some(
       completion => completion.habit_id === habitId && completion.completed_date === today
     );

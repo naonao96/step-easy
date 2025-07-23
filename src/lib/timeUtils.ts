@@ -276,13 +276,14 @@ export function getDayBasedMessage(userName?: string): string {
 } 
 
 /**
- * 日付をJSTで統一してYYYY-MM-DD形式の文字列に変換
+ * 日付をJSTで統一してYYYY-MM-DD形式の文字列に変換（統一実装）
  * @param date 変換対象の日付
  * @returns JST基準のYYYY-MM-DD形式文字列
  */
 export function toJSTDateString(date: Date): string {
-  const jstDate = new Date(date.getTime() + (9 * 60 * 60 * 1000));
-  return jstDate.toISOString().split('T')[0];
+  // より正確な日本時間変換（タイムゾーン指定）
+  const jstTime = new Date(date.toLocaleString("en-US", {timeZone: "Asia/Tokyo"}));
+  return jstTime.toISOString().split('T')[0];
 }
 
 /**

@@ -1,6 +1,6 @@
 import { Habit, HabitCompletionResult } from '@/types/habit';
 import { Task } from '@/types/task';
-import { isNewHabit, isHabitCompleted } from './habitUtils';
+import { isNewHabit, isHabitCompleted, getJSTDateString } from './habitUtils';
 import { useHabitStore } from '@/stores/habitStore';
 
 // 習慣の完了処理
@@ -19,10 +19,9 @@ export const completeHabit = async (
   if (newHabit) {
     // 切り替え機能が利用可能な場合
     if (toggleHabitCompletionFn) {
-      // 選択日付または今日の日付を取得（日本時間）
+      // 選択日付または今日の日付を取得（統一実装）
       const targetDate = selectedDate || new Date();
-      const japanTime = new Date(targetDate.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
-      const dateString = japanTime.toISOString().split('T')[0];
+      const dateString = getJSTDateString(targetDate);
       
       // 現在の完了状態を確認（habit_completionsテーブルから）
       const { habitCompletions } = useHabitStore.getState();

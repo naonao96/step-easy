@@ -7,7 +7,8 @@ import { useTaskStore } from '@/stores/taskStore';
 import { Button } from '../atoms/Button';
 import {
   isNewHabit,
-  isHabitCompleted
+  isHabitCompleted,
+  getJSTDateString
 } from '@/lib/habitUtils';
 
 interface HabitCardProps {
@@ -33,10 +34,9 @@ export const HabitCard: React.FC<HabitCardProps> = ({
         const { toggleHabitCompletion } = useHabitStore.getState();
         const isCurrentlyCompleted = isHabitCompleted(habit);
         
-        // 選択日付または今日の日付を取得（日本時間）
+        // 選択日付または今日の日付を取得（統一実装）
         const targetDate = selectedDate || new Date();
-        const japanTime = new Date(targetDate.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
-        const dateString = japanTime.toISOString().split('T')[0];
+        const dateString = getJSTDateString(targetDate);
         
         const result = await toggleHabitCompletion(habit.id, !isCurrentlyCompleted, dateString);
         if (!result.success) {

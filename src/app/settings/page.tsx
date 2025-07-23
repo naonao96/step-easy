@@ -39,6 +39,7 @@ export default function SettingsPage() {
     displayName: '',
     email: '',
     bio: '',
+    characterName: '', // 小鳥の名前を追加
   });
 
   const [notificationSettings, setNotificationSettings] = useState<{ [key: string]: boolean }>({
@@ -95,6 +96,7 @@ export default function SettingsPage() {
         displayName: user.displayName || '',
         email: user.email || '',
         bio: '', // bio情報は後で実装予定
+        characterName: user.characterName || '', // 小鳥の名前を追加
       });
     }
   }, [user]);
@@ -118,6 +120,7 @@ export default function SettingsPage() {
     
     try {
       const displayName = profileData.displayName.trim();
+      const characterName = profileData.characterName.trim();
       
       // 入力値の検証
       if (!displayName) {
@@ -130,11 +133,17 @@ export default function SettingsPage() {
         return;
       }
 
-      // Usersテーブルのdisplay_nameのみを更新（Auth更新は不要）
+      if (characterName.length > 15) {
+        toast.error('小鳥の名前は15文字以内で入力してください');
+        return;
+      }
+
+      // Usersテーブルのdisplay_nameとcharacter_nameを更新
       const { error: dbError } = await supabase
         .from('users')
         .update({
           display_name: displayName,
+          character_name: characterName,
           updated_at: new Date().toISOString()
         })
         .eq('id', user?.id);
@@ -652,6 +661,13 @@ export default function SettingsPage() {
                       value={profileData.displayName}
                       onChange={(e) => setProfileData({ ...profileData, displayName: e.target.value })}
                       placeholder="キャラクターが呼びかける名前"
+                    />
+                    <Input
+                      label="小鳥の名前"
+                      value={profileData.characterName}
+                      onChange={(e) => setProfileData({ ...profileData, characterName: e.target.value })}
+                      placeholder="例: ピヨちゃん"
+                      maxLength={15}
                     />
                     <Input
                       label="メールアドレス"

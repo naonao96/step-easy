@@ -12,7 +12,8 @@ import {
   FaArchive,
   FaTrophy,
   FaFire,
-  FaTasks
+  FaTasks,
+  FaTimes
 } from 'react-icons/fa';
 
 interface BottomNavItem {
@@ -27,13 +28,15 @@ interface MobileBottomNavigationProps {
   showAddButton?: boolean;
   onAddClick?: () => void;
   currentTab?: 'tasks' | 'habits';
+  isModalOpen?: boolean; // モーダルの開閉状態を追加
 }
 
 export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
   className = '',
   showAddButton = true,
   onAddClick,
-  currentTab = 'tasks'
+  currentTab = 'tasks',
+  isModalOpen = false
 }) => {
   const router = useRouter();
   const pathname = usePathname();
@@ -168,13 +171,17 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
             className={`w-16 h-16 bg-gradient-to-br from-[#8b4513] via-[#7c5a2a] to-[#6b4423] hover:from-[#7c5a2a] hover:via-[#8b4513] hover:to-[#7c5a2a] text-white rounded-full shadow-2xl hover:shadow-3xl border-2 border-[#deb887]/30 hover:border-[#deb887]/50 transition-all duration-300 transform hover:scale-110 active:scale-95 flex items-center justify-center group relative overflow-hidden ${
               isFABPressed ? 'scale-95 shadow-lg' : ''
             }`}
-            title={currentTab === 'habits' ? '新しい習慣を追加' : '新しいタスクを追加'}
+            title={isModalOpen ? 'モーダルを閉じる' : (currentTab === 'habits' ? '新しい習慣を追加' : '新しいタスクを追加')}
           >
             {/* メインアイコン */}
             <div className="relative z-10 transition-all duration-300">
               {isFABHovered ? (
                 React.createElement(FaPlus as React.ComponentType<any>, { 
                   className: "w-7 h-7 transition-all duration-300 group-hover:rotate-90" 
+                })
+              ) : isModalOpen ? (
+                React.createElement(FaTimes as React.ComponentType<any>, { 
+                  className: "w-7 h-7 transition-all duration-300 group-hover:scale-110" 
                 })
               ) : currentTab === 'habits' ? (
                 React.createElement(FaFire as React.ComponentType<any>, { 

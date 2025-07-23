@@ -602,7 +602,7 @@ export default function MenuPage() {
   };
 
   return (
-    <AppLayout variant="home" tasks={tasks as any} showNotifications={true} showFAB={true} onFABClick={handleFABClick} currentTab={currentMobileTab}>
+    <AppLayout variant="home" tasks={tasks as any} showNotifications={true} showFAB={true} onFABClick={handleFABClick} currentTab={currentMobileTab} isModalOpen={showTaskModal || showHabitModal}>
       {/* モダンなモバイル専用レイアウト */}
       <div className="lg:hidden">
         <ModernMobileHome

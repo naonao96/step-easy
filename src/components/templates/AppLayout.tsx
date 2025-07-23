@@ -35,6 +35,7 @@ interface AppLayoutProps {
   showFAB?: boolean;
   onFABClick?: () => void;
   currentTab?: 'tasks' | 'habits';
+  isModalOpen?: boolean; // モーダルの開閉状態を追加
 }
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ 
@@ -53,7 +54,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   showBottomNav = true,
   showFAB = false,
   onFABClick,
-  currentTab = 'tasks'
+  currentTab = 'tasks',
+  isModalOpen = false
 }) => {
   // モバイルメニュー関連のstateを削除（ボトムナビゲーションを使用）
 
@@ -85,6 +87,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             showAddButton={showFAB}
             onAddClick={onFABClick}
             currentTab={currentTab}
+            isModalOpen={isModalOpen}
           />
         )}
       </div>

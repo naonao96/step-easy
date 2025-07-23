@@ -12,6 +12,7 @@ interface AuthUser {
   id: string;
   email: string;
   displayName?: string;
+  characterName?: string;
   isGuest?: boolean;
   isPremium?: boolean;
   planType?: 'guest' | 'free' | 'premium';
@@ -59,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           id,
           email,
           display_name,
+          character_name,
           plan_type,
           notification_settings
         `)
@@ -74,6 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: userData.id as string,
         email: userData.email as string,
         displayName: userData.display_name as string,
+        characterName: userData.character_name as string,
         planType: (userData.plan_type as 'guest' | 'free' | 'premium') || 'free',
         notification_settings: userData.notification_settings as { [key: string]: boolean } || {
           task: true,

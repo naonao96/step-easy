@@ -105,13 +105,23 @@ export const isHabitCompleted = (habit: HabitWithCompletion | Task): boolean => 
 };
 
 /**
- * 日本時間での日付文字列を取得
+ * 日本時間での日付文字列を取得（統一実装）
  */
 export const getJSTDateString = (date?: Date): string => {
   const targetDate = date ? new Date(date) : new Date();
-  const jstOffset = 9 * 60; // 分単位
-  const jstTime = new Date(targetDate.getTime() + (jstOffset * 60 * 1000));
-  return jstTime.toISOString().split('T')[0];
+  
+  // 日本時間での日付文字列を直接取得
+  const jstDateString = targetDate.toLocaleDateString("en-CA", {timeZone: "Asia/Tokyo"});
+  return jstDateString;
+};
+
+/**
+ * 日本時間変換のテスト用関数（デバッグ用）
+ */
+export const testJSTConversion = () => {
+  const now = new Date();
+  const jstString = getJSTDateString(now);
+  return jstString;
 };
 
 /**
@@ -127,21 +137,39 @@ export const integrateHabitData = (habits: Habit[], tasks: Task[]) => {
  */
 export const convertHabitsToTasks = (habits: Habit[], selectedDate?: Date, habitCompletions?: any[]): Task[] => {
   const targetDate = selectedDate ? getJSTDateString(selectedDate) : getJSTDateString();
-  
-  // デバッグログを追加
-  console.log('🔍 convertHabitsToTasks 入力データ:', {
-    habits_count: habits.length,
-    habits_start_dates: habits.map(h => ({
-      id: h.id,
-      title: h.title,
-      start_date: h.start_date,
-      due_date: h.due_date
-    })),
-    timestamp: new Date().toISOString()
-  });
-  
   return habits
     .filter(habit => habit.habit_status === 'active')
+    .filter(habit => {
+      // 開始日と期限日の表示制御（文字列比較で統一）
+      const selectedDateString = selectedDate ? getJSTDateString(selectedDate) : getJSTDateString();
+      
+      // 開始日の制御
+      if (habit.start_date) {
+        // データベースのDATE型はYYYY-MM-DD形式なので、そのまま文字列比較
+        if (selectedDateString < habit.start_date) {
+          return false; // 開始日より前は表示しない
+        }
+      }
+      
+      // 期限日の制御
+      if (habit.due_date) {
+        // due_dateの形式を統一（YYYY-MM-DD形式に変換）
+        let dueDateString: string;
+        if (habit.due_date.includes('T')) {
+          // TIMESTAMP WITH TIME ZONE形式の場合、日本時間で日付を取得
+          const dueDate = new Date(habit.due_date);
+          dueDateString = dueDate.toLocaleDateString('en-CA', {timeZone: 'Asia/Tokyo'});
+        } else {
+          // DATE形式の場合はそのまま使用
+          dueDateString = habit.due_date;
+        }
+        
+        if (selectedDateString > dueDateString) {
+          return false; // 期限日より後は表示しない
+        }
+      }
+      return true; // 表示期間内
+    })
     .map(habit => {
       // 選択された日付で完了済みかどうかを判定
       let isCompletedOnSelectedDate = false;
@@ -169,8 +197,6 @@ export const convertHabitsToTasks = (habits: Habit[], selectedDate?: Date, habit
         created_at: habit.created_at,
         updated_at: habit.updated_at,
         user_id: habit.user_id,
-
-        // 習慣識別用プロパティを保持
         habit_status: habit.habit_status,
         frequency: habit.frequency,
         habit_frequency: 'daily' as const,
@@ -188,18 +214,6 @@ export const convertHabitsToTasks = (habits: Habit[], selectedDate?: Date, habit
         last_execution_date: habit.last_execution_date,
         execution_count: undefined
       };
-      
-      // デバッグログを追加
-      console.log('🔍 convertHabitsToTasks 変換結果:', {
-        habit_id: habit.id,
-        habit_title: habit.title,
-        original_start_date: habit.start_date,
-        original_due_date: habit.due_date,
-        converted_start_date: result.start_date,
-        converted_due_date: result.due_date,
-        timestamp: new Date().toISOString()
-      });
-      
       return result;
     });
 }; 
