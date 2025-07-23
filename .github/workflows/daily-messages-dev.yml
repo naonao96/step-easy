@@ -13,6 +13,6 @@ jobs:
     steps:
     - name: Trigger Daily Messages (Dev)
       run: |
-        curl -X POST ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}/functions/v1/generate-daily-messages \
-          -H "Authorization: Bearer ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
+        curl -X POST ${{ secrets.API_URL }}/functions/v1/generate-daily-messages \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
           -H "Content-Type: application/json" 
