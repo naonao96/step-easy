@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Task } from '@/stores/taskStore';
+import { Task } from '@/types/task';
 import { DEFAULT_CATEGORIES } from '@/types/task';
 import { CategoryBadge } from '../atoms/CategoryBadge';
 

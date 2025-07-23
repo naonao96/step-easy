@@ -1,253 +1,302 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { FaBell, FaUsers, FaEnvelope, FaCheck, FaExclamationTriangle, FaSpinner } from 'react-icons/fa';
-
-interface NotificationResult {
-  message: string;
-  sent: number;
-  failed: number;
-  total: number;
-  timestamp: string;
-  failedEmails?: Array<{
-    email: string;
-    error: string;
-  }>;
-}
-
-interface RecipientInfo {
-  recipientCount: number;
-  timestamp: string;
-}
+import React, { useState } from 'react';
+import { Button } from '@/components/atoms/Button';
+import { Input } from '@/components/atoms/Input';
+import { ToggleSwitch } from '@/components/atoms/ToggleSwitch';
+import { FaBell, FaUsers, FaCrown, FaUser, FaUserFriends, FaPaperPlane } from 'react-icons/fa';
 
 export default function AdminNotificationsPage() {
+  const [title, setTitle] = useState('');
+  const [message, setMessage] = useState('');
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
+  const [category, setCategory] = useState<'system' | 'task' | 'habit' | 'subscription' | 'ai'>('system');
+  const [targetUsers, setTargetUsers] = useState<'all' | 'premium' | 'free' | 'guest'>('all');
+  const [adminKey, setAdminKey] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<NotificationResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [recipientInfo, setRecipientInfo] = useState<RecipientInfo | null>(null);
-  const [loadingRecipients, setLoadingRecipients] = useState(false);
+  const [result, setResult] = useState<{
+    success: boolean;
+    message: string;
+    totalUsers?: number;
+    successful?: number;
+    failed?: number;
+  } | null>(null);
 
-  // 管理者認証キー（環境変数から取得）
-  const adminSecret = process.env.NEXT_PUBLIC_ADMIN_SECRET;
-
-  // 通知対象者数を取得
-  const fetchRecipientCount = async () => {
-    if (!adminSecret) {
-      setError('管理者認証キーが設定されていません');
-      return;
-    }
-
-    setLoadingRecipients(true);
-    try {
-      const response = await fetch('/api/admin/send-premium-notifications', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${adminSecret}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data: RecipientInfo = await response.json();
-      setRecipientInfo(data);
-    } catch (err) {
-      console.error('通知対象者取得エラー:', err);
-      setError(err instanceof Error ? err.message : '通知対象者の取得に失敗しました');
-    } finally {
-      setLoadingRecipients(false);
-    }
-  };
-
-  // ページ読み込み時に通知対象者数を取得
-  useEffect(() => {
-    fetchRecipientCount();
-  }, []);
-
-  // リリース通知送信
-  const sendNotifications = async () => {
-    if (!adminSecret) {
-      setError('管理者認証キーが設定されていません');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!title.trim() || !message.trim() || !adminKey.trim()) {
+      alert('すべての必須フィールドを入力してください');
       return;
     }
 
     setIsLoading(true);
-    setError(null);
     setResult(null);
 
     try {
-      const response = await fetch('/api/admin/send-premium-notifications', {
+      const response = await fetch('/api/admin/send-notifications', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${adminSecret}`
         },
         body: JSON.stringify({
-          subject: 'StepEasy プレミアム機能 ベータ版リリース！',
-          message: `
-StepEasyをご利用いただき、ありがとうございます！
-
-お待たせいたしました！StepEasyプレミアム機能のベータ版がついにリリースされました🎉
-
-🚀 新機能のご紹介:
-✨ 週次・月次詳細レポート - あなたの成長を可視化
-🤖 AI専属コーチ強化 - より深い分析とアドバイス
-🧠 行動パターン分析 - 最適な習慣形成をサポート
-📈 成長の可視化 - 進歩を実感できるグラフ表示
-
-今すぐログインして、新しい機能をお試しください！
-${process.env.NEXT_PUBLIC_SITE_URL || 'https://step-easy.vercel.app'}/login
-
-ベータ版期間中は特別価格でご提供いたします。
-ご質問やフィードバックがございましたら、お気軽にお知らせください。
-
-StepEasyチーム
-          `,
-          features: ['analytics', 'ai_coach', 'pattern_analysis', 'growth_visualization']
-        })
+          title: title.trim(),
+          message: message.trim(),
+          priority,
+          category,
+          targetUsers,
+          adminKey: adminKey.trim()
+        }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
-      }
+      const data = await response.json();
 
-      const data: NotificationResult = await response.json();
-      setResult(data);
-      
-      // 成功時は通知対象者数を再取得
-      if (data.sent > 0) {
-        await fetchRecipientCount();
+      if (response.ok) {
+        setResult({
+          success: true,
+          message: data.message,
+          totalUsers: data.totalUsers,
+          successful: data.successful,
+          failed: data.failed
+        });
+        
+        // 成功時はフォームをクリア
+        setTitle('');
+        setMessage('');
+      } else {
+        setResult({
+          success: false,
+          message: data.error || '通知送信に失敗しました'
+        });
       }
-
-    } catch (err) {
-      console.error('通知送信エラー:', err);
-      setError(err instanceof Error ? err.message : '通知の送信に失敗しました');
+    } catch (error) {
+      console.error('通知送信エラー:', error);
+      setResult({
+        success: false,
+        message: 'ネットワークエラーが発生しました'
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
+  const getTargetUsersLabel = () => {
+    switch (targetUsers) {
+      case 'all': return '全ユーザー';
+      case 'premium': return 'プレミアムユーザーのみ';
+      case 'free': return '無料ユーザーのみ';
+      case 'guest': return 'ゲストユーザーのみ';
+      default: return '全ユーザー';
+    }
+  };
+
+  const getTargetUsersIcon = () => {
+    switch (targetUsers) {
+      case 'all': return <span className="text-lg">👥</span>;
+      case 'premium': return <span className="text-lg">👑</span>;
+      case 'free': return <span className="text-lg">👤</span>;
+      case 'guest': return <span className="text-lg">👥</span>;
+      default: return <span className="text-lg">👥</span>;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-[#f5f5dc] py-8">
       <div className="max-w-4xl mx-auto px-4">
-        {/* ヘッダー */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              {FaBell ({className:"w-6 h-6 text-blue-600"})}
+        <div className="bg-[#faf8f0] rounded-lg shadow-md p-6 border border-[#deb887]">
+          <div className="flex items-center gap-3 mb-6">
+            <span className="text-3xl">🐦</span>
+            <h1 className="text-2xl font-bold text-[#8b4513]">管理者通知送信</h1>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* 管理者キー */}
+            <div className="bg-[#f5f5dc] border border-[#deb887] rounded-lg p-4">
+              <label className="block text-sm font-medium text-[#8b4513] mb-2">
+                🔐 管理者キー *
+              </label>
+              <Input
+                type="password"
+                value={adminKey}
+                onChange={(e) => setAdminKey(e.target.value)}
+                placeholder="管理者キーを入力"
+                required
+                className="w-full border-[#deb887] focus:border-[#8b4513] focus:ring-[#8b4513]"
+              />
             </div>
+
+            {/* 通知内容 */}
+            <div className="bg-[#f5f5dc] border border-[#deb887] rounded-lg p-4">
+              <h3 className="text-lg font-medium text-[#8b4513] mb-3">📝 通知内容</h3>
+
+            {/* タイトル */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-[#8b4513] mb-2">
+                通知タイトル *
+              </label>
+              <Input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="通知のタイトルを入力"
+                required
+                  className="w-full border-[#deb887] focus:border-[#8b4513] focus:ring-[#8b4513]"
+              />
+            </div>
+
+            {/* メッセージ */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-[#8b4513] mb-2">
+                通知メッセージ *
+              </label>
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="通知の内容を入力"
+                required
+                rows={4}
+                  className="w-full px-3 py-2 border border-[#deb887] rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b4513] focus:border-[#8b4513] bg-[#faf8f0]"
+              />
+              </div>
+            </div>
+
+            {/* 通知設定 */}
+            <div className="bg-[#f5f5dc] border border-[#deb887] rounded-lg p-4">
+              <h3 className="text-lg font-medium text-[#8b4513] mb-3">⚙️ 通知設定</h3>
+
+            {/* 優先度 */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-[#8b4513] mb-2">
+                優先度
+              </label>
+              <div className="flex gap-4">
+                {(['low', 'medium', 'high'] as const).map((p) => (
+                  <label key={p} className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="priority"
+                      value={p}
+                      checked={priority === p}
+                      onChange={(e) => setPriority(e.target.value as any)}
+                        className="text-[#8b4513] focus:ring-[#8b4513]"
+                    />
+                      <span className="text-sm text-[#7c5a2a] capitalize">
+                      {p === 'low' ? '低' : p === 'medium' ? '中' : '高'}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* カテゴリ */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-[#8b4513] mb-2">
+                カテゴリ
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value as any)}
+                  className="w-full px-3 py-2 border border-[#deb887] rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b4513] focus:border-[#8b4513] bg-[#faf8f0]"
+              >
+                  <option value="system">🛡️ システム</option>
+                  <option value="task">📝 タスク</option>
+                  <option value="habit">🔥 習慣</option>
+                  <option value="subscription">👑 サブスクリプション</option>
+                  <option value="ai">🤖 AI</option>
+              </select>
+            </div>
+
+            {/* 対象ユーザー */}
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">プレミアム機能リリース通知</h1>
-              <p className="text-gray-600">登録ユーザーにベータ版リリースをお知らせします</p>
-            </div>
-          </div>
-
-          {/* 通知対象者情報 */}
-          <div className="bg-blue-50 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              {FaUsers ({className:"w-4 h-4 text-blue-600"})}
-              <span className="font-medium text-blue-900">通知対象者</span>
-              {loadingRecipients && FaSpinner ({className:"w-4 h-4 text-blue-600 animate-spin"})}
-            </div>
-            {recipientInfo ? (
-              <p className="text-blue-800">
-                {recipientInfo.recipientCount}名のユーザーが通知を受け取ります
-              </p>
-            ) : (
-              <p className="text-blue-600">読み込み中...</p>
-            )}
-          </div>
-        </div>
-
-        {/* 送信ボタン */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <button
-            onClick={sendNotifications}
-            disabled={isLoading || !recipientInfo}
-            className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {isLoading ? (
-              <>
-                {FaSpinner ({className:"w-5 h-5 animate-spin"})}
-                <span>送信中...</span>
-              </>
-            ) : (
-              <>
-                {FaEnvelope ({className:"w-5 h-5"})}
-                <span>リリース通知を送信</span>
-              </>
-            )}
-          </button>
-
-          <p className="text-sm text-gray-500 text-center mt-3">
-            ※ この操作は取り消すことができません。慎重に実行してください。
-          </p>
-        </div>
-
-        {/* エラー表示 */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center gap-2 mb-2">
-              {FaExclamationTriangle ({className:"w-4 h-4 text-red-600"})}
-              <span className="font-medium text-red-900">エラー</span>
-            </div>
-            <p className="text-red-800">{error}</p>
-          </div>
-        )}
-
-        {/* 送信結果 */}
-        {result && (
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center gap-2 mb-4">
-              {FaCheck ({className:"w-5 h-5 text-green-600"})}
-              <h2 className="text-lg font-semibold text-gray-900">送信結果</h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="bg-green-50 rounded-lg p-4">
-                <div className="text-2xl font-bold text-green-900">{result.sent}</div>
-                <div className="text-sm text-green-700">送信成功</div>
-              </div>
-              <div className="bg-red-50 rounded-lg p-4">
-                <div className="text-2xl font-bold text-red-900">{result.failed}</div>
-                <div className="text-sm text-red-700">送信失敗</div>
-              </div>
-              <div className="bg-blue-50 rounded-lg p-4">
-                <div className="text-2xl font-bold text-blue-900">{result.total}</div>
-                <div className="text-sm text-blue-700">総対象者数</div>
-              </div>
-            </div>
-
-            <div className="text-sm text-gray-600 mb-4">
-              送信完了時刻: {new Date(result.timestamp).toLocaleString('ja-JP')}
-            </div>
-
-            {/* 失敗したメール一覧 */}
-            {result.failedEmails && result.failedEmails.length > 0 && (
-              <div className="bg-red-50 rounded-lg p-4">
-                <h3 className="font-medium text-red-900 mb-2">送信失敗一覧</h3>
-                <div className="space-y-2">
-                  {result.failedEmails.map((failed, index) => (
-                    <div key={index} className="text-sm">
-                      <span className="text-red-800">{failed.email}</span>
-                      <span className="text-red-600 ml-2">- {failed.error}</span>
+                <label className="block text-sm font-medium text-[#8b4513] mb-2">
+                対象ユーザー
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {(['all', 'premium', 'free', 'guest'] as const).map((target) => (
+                  <button
+                    key={target}
+                    type="button"
+                    onClick={() => setTargetUsers(target)}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      targetUsers === target
+                          ? 'border-[#8b4513] bg-[#f0e8d8] text-[#8b4513]'
+                          : 'border-[#deb887] bg-[#faf8f0] text-[#7c5a2a] hover:border-[#8b4513] hover:bg-[#f0e8d8]'
+                    }`}
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      {getTargetUsersIcon()}
+                      <span className="text-xs font-medium">
+                        {target === 'all' ? '全ユーザー' :
+                         target === 'premium' ? 'プレミアム' :
+                         target === 'free' ? '無料' : 'ゲスト'}
+                      </span>
                     </div>
-                  ))}
+                  </button>
+                ))}
                 </div>
               </div>
-            )}
-          </div>
-        )}
+            </div>
 
-        {/* 使用方法 */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mt-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">使用方法</h2>
-          <div className="space-y-2 text-sm text-gray-600">
-            <p>1. 通知対象者数を確認してください</p>
-            <p>2. 「リリース通知を送信」ボタンをクリックします</p>
-            <p>3. 送信結果を確認し、必要に応じて失敗したメールを個別対応してください</p>
+            {/* 送信ボタン */}
+            <div className="pt-4">
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                isLoading={isLoading}
+                leftIcon={FaPaperPlane}
+                fullWidth
+                disabled={!title.trim() || !message.trim() || !adminKey.trim()}
+                className="bg-[#7c5a2a] hover:bg-[#8b4513] text-white border-[#deb887]"
+              >
+                {isLoading ? '送信中...' : '📤 通知を送信'}
+              </Button>
+            </div>
+          </form>
+
+          {/* 結果表示 */}
+          {result && (
+            <div className={`mt-6 p-4 rounded-lg border ${
+              result.success 
+                ? 'bg-[#f0f8f0] border-[#90ee90] text-[#006400]' 
+                : 'bg-[#fff0f0] border-[#ffcccb] text-[#8b0000]'
+            }`}>
+              <div className="font-medium flex items-center gap-2">
+                {result.success ? <span>✅</span> : <span>❌</span>}
+                {result.message}
+              </div>
+              {result.success && result.totalUsers && (
+                <div className="mt-2 text-sm space-y-1">
+                  <div>👥 対象ユーザー数: {result.totalUsers}人</div>
+                  <div>✅ 成功: {result.successful}件</div>
+                  <div>❌ 失敗: {result.failed}件</div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 使用例 */}
+          <div className="mt-8 p-4 bg-[#f0e8d8] rounded-lg border border-[#deb887]">
+            <h3 className="text-sm font-medium text-[#8b4513] mb-3 flex items-center gap-2">
+              <span>💡</span>
+              使用例
+            </h3>
+            <div className="space-y-3 text-sm text-[#7c5a2a]">
+              <div className="bg-[#faf8f0] p-3 rounded border border-[#deb887]/50">
+                <div className="font-medium text-[#8b4513] mb-1">🛠️ メンテナンス通知:</div>
+                <div className="text-xs space-y-1">
+                  <div><strong>タイトル:</strong> 「システムメンテナンスのお知らせ」</div>
+                  <div><strong>メッセージ:</strong> 「明日の午前2時から4時までメンテナンスを実施します。ご不便をおかけしますが、ご理解ください。」</div>
+                </div>
+              </div>
+              <div className="bg-[#faf8f0] p-3 rounded border border-[#deb887]/50">
+                <div className="font-medium text-[#8b4513] mb-1">✨ 新機能のお知らせ:</div>
+                <div className="text-xs space-y-1">
+                  <div><strong>タイトル:</strong> 「新機能が追加されました！」</div>
+                  <div><strong>メッセージ:</strong> 「タスクの一括編集機能が追加されました。より効率的にタスク管理ができるようになりました。」</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

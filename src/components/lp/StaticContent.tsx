@@ -3,7 +3,7 @@ import React from 'react';
 // プライバシーポリシーコンテンツ
 export const PrivacyPolicyContent: React.FC = () => {
   return (
-    <div className="p-8">
+    <div className="p-8 pb-20">
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-lg shadow-md p-8">
           <div className="mb-6">
@@ -102,7 +102,7 @@ export const PrivacyPolicyContent: React.FC = () => {
 // 利用規約コンテンツ
 export const TermsOfServiceContent: React.FC = () => {
   return (
-    <div className="p-8">
+    <div className="p-8 pb-20">
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-lg shadow-md p-8">
           <div className="mb-6">
@@ -207,7 +207,7 @@ export const FAQContent: React.FC = () => {
   const faqs = [
     {
       question: 'StepEasyは無料で使えますか？',
-      answer: 'はい、基本的な機能は全て無料でご利用いただけます。プレミアム機能（月額400円）は現在開発中です。'
+      answer: 'はい、基本的な機能は全て無料でご利用いただけます。プレミアム機能（月額200円）は準備中です。'
     },
     {
       question: 'ゲストモードと登録ユーザーの違いは？',
@@ -227,7 +227,7 @@ export const FAQContent: React.FC = () => {
     },
     {
       question: 'データのエクスポートはできますか？',
-      answer: '現在開発中の機能です。将来的にはタスクデータや統計情報のエクスポート機能を提供予定です。'
+      answer: '現在準備中の機能です。将来的にはタスクデータや統計情報のエクスポート機能を提供予定です。'
     },
     {
       question: 'モバイルアプリはありますか？',
@@ -240,25 +240,25 @@ export const FAQContent: React.FC = () => {
   ];
 
   return (
-    <div className="p-8">
+    <div className="p-8 pb-20">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">よくある質問</h2>
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-8 border border-[#deb887]/30">
+          <h2 className="text-2xl font-bold text-[#8b4513] mb-6">よくある質問</h2>
           <div className="space-y-6">
             {faqs.map((faq, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-                <h3 className="font-semibold text-gray-900 mb-2">{faq.question}</h3>
-                <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
+              <div key={index} className="border border-[#deb887]/40 rounded-lg p-6 hover:shadow-md transition-all duration-200 bg-[#f5f5dc]/60 hover:bg-[#f5f5dc]/80">
+                <h3 className="font-semibold text-[#8b4513] mb-2">{faq.question}</h3>
+                <p className="text-[#4a3728] leading-relaxed">{faq.answer}</p>
               </div>
             ))}
           </div>
           
-          <div className="mt-12 bg-slate-50 rounded-lg p-6">
-            <h3 className="font-semibold text-slate-900 mb-2">他にご質問がありますか？</h3>
-            <p className="text-slate-600 mb-4">
+          <div className="mt-12 bg-[#f5f5dc]/60 rounded-lg p-6 border border-[#deb887]/30">
+            <h3 className="font-semibold text-[#8b4513] mb-2">他にご質問がありますか？</h3>
+            <p className="text-[#4a3728] mb-4">
               上記以外のご質問やサポートが必要な場合は、お気軽にお問い合わせください。
             </p>
-            <div className="text-sm text-slate-500">
+            <div className="text-sm text-[#7c5a2a]">
               <p>※ お問い合わせ機能は今後実装予定です</p>
             </div>
           </div>

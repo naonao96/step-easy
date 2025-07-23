@@ -3,16 +3,26 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTaskStore, Task } from '@/stores/taskStore';
+import { useTaskStore } from '@/stores/taskStore';
+import { Task } from '@/types/task';
 import { AppLayout } from '@/components/templates/AppLayout';
-import { Button } from '@/components/atoms/Button';
-import { FaCalendarAlt, FaCheckCircle, FaUndo, FaTrash, FaFilter } from 'react-icons/fa';
+import { FaCalendarAlt, FaCheckCircle, FaUndo, FaTrash, FaFilter, FaHistory, FaSearch, FaSort, FaEye } from 'react-icons/fa';
+import { ArchiveExecutionLog } from '@/components/molecules/ArchiveExecutionLog';
+import { TaskPreviewModal } from '@/components/molecules/TaskPreviewModal';
+
+type TabType = 'completed' | 'execution';
 
 export default function ArchivePage() {
   const router = useRouter();
   const { user, isGuest, planType } = useAuth();
   const { tasks, fetchTasks, updateTask, deleteTask } = useTaskStore();
   const [dateFilter, setDateFilter] = useState<'all' | '7days' | '14days' | '30days'>('all');
+  const [activeTab, setActiveTab] = useState<TabType>('completed');
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // プレビューモーダル用の状態
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [showTaskPreviewModal, setShowTaskPreviewModal] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -33,9 +43,17 @@ export default function ArchivePage() {
   const completedTasks = useMemo(() => {
     const completed = tasks.filter(task => task.status === 'done' && task.completed_at);
     
+    // 検索フィルター適用
+    const searchFiltered = searchQuery 
+      ? completed.filter(task => 
+          task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase()))
+        )
+      : completed;
+    
     // 日付フィルター適用
     const now = new Date();
-    const filteredTasks = completed.filter(task => {
+    const filteredTasks = searchFiltered.filter(task => {
       const completedDate = new Date(task.completed_at!);
       const daysDiff = Math.floor((now.getTime() - completedDate.getTime()) / (1000 * 60 * 60 * 24));
       
@@ -51,19 +69,19 @@ export default function ArchivePage() {
       }
     });
 
-         // プラン別データ表示制限（実際のデータ削除は別途バックグラウンドで実行）
-     // 無料ユーザーは30日間のみ表示
-     if (!isGuest && planType === 'free') {
-       const thirtyDaysAgo = new Date();
-       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-       
-       return filteredTasks.filter(task => 
-         new Date(task.completed_at!) >= thirtyDaysAgo
-       );
-     }
+    // プラン別データ表示制限（実際のデータ削除は別途バックグラウンドで実行）
+    // 無料ユーザーは30日間のみ表示
+    if (!isGuest && planType === 'free') {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      return filteredTasks.filter(task => 
+        new Date(task.completed_at!) >= thirtyDaysAgo
+      );
+    }
 
     return filteredTasks;
-  }, [tasks, dateFilter]);
+  }, [tasks, dateFilter, searchQuery, isGuest, planType]);
 
   // 日付別にグループ化
   const groupedTasks = useMemo(() => {
@@ -110,11 +128,28 @@ export default function ArchivePage() {
     if (window.confirm('このタスクを完全に削除しますか？この操作は取り消せません。')) {
       try {
         await deleteTask(taskId);
+        // プレビューモーダルが開いている場合は閉じる
+        if (selectedTask?.id === taskId) {
+          setShowTaskPreviewModal(false);
+          setSelectedTask(null);
+        }
       } catch (error) {
         console.error('削除エラー:', error);
         alert('削除に失敗しました');
       }
     }
+  };
+
+  // タスクプレビューモーダルを開く
+  const handleTaskPreview = (task: Task) => {
+    setSelectedTask(task);
+    setShowTaskPreviewModal(true);
+  };
+
+  // タスクプレビューモーダルを閉じる
+  const handleCloseTaskPreview = () => {
+    setShowTaskPreviewModal(false);
+    setSelectedTask(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -147,35 +182,84 @@ export default function ArchivePage() {
     return null; // ゲストはアクセス不可
   }
 
+  const tabs = [
+    { id: 'completed', label: '完了タスク', icon: FaCheckCircle },
+    { id: 'execution', label: '実行ログ', icon: FaHistory }
+  ];
+
   return (
     <AppLayout
-      title="完了タスク"
+      title="アーカイブ"
       showBackButton={true}
       backUrl="/menu"
-      backLabel="メニュー"
+      backLabel="メニューに戻る"
       tasks={tasks as any}
     >
-      <div className="px-4 sm:px-6 py-4 sm:py-6">
+      <div className="px-4 sm:px-6 py-4 sm:py-6 mt-4">
         <div className="max-w-7xl mx-auto">
           {/* ヘッダー */}
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                  完了タスク アーカイブ
+                <h1 className="text-2xl font-bold text-[#8b4513] mb-2">
+                  アーカイブ
                 </h1>
-                <p className="text-gray-600 text-sm">
-                  完了したタスクの履歴を確認できます（無料プランは30日間保存）
+                <p className="text-[#7c5a2a] text-sm">
+                  完了したタスクと実行履歴を確認できます
                 </p>
               </div>
-              
+            </div>
+
+            {/* StepEasyらしいタブナビゲーション */}
+            <div className="border-b border-[#deb887]">
+              <nav className="flex space-x-1">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id as TabType)}
+                      className={`
+                        flex items-center gap-2 py-3 px-4 rounded-lg font-medium text-sm transition-all duration-200
+                        ${isActive
+                          ? 'bg-[#7c5a2a] text-white shadow-sm'
+                          : 'text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc]'
+                        }
+                      `}
+                    >
+                      {Icon ({className:`w-4 h-4 ${isActive ? 'text-white' : 'text-[#7c5a2a]'}`})}
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+
+            {/* 検索とフィルター */}
+            <div className="flex flex-col sm:flex-row gap-4 mt-6">
+              {/* 検索バー */}
+              <div className="flex-1 relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  {FaSearch ({className:"h-4 w-4 text-[#7c5a2a]"})}
+                </div>
+                <input
+                  type="text"
+                  placeholder="タスクを検索..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="block w-full pl-10 pr-3 py-2 border border-[#deb887] rounded-lg focus:ring-2 focus:ring-[#7c5a2a] focus:border-[#7c5a2a] text-sm bg-white"
+                />
+              </div>
+
               {/* フィルター */}
               <div className="flex items-center gap-2">
-                {FaFilter ({className: "w-4 h-4 text-gray-400"})}
+                {FaFilter ({className:"w-4 h-4 text-[#7c5a2a]"})}
                 <select
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value as any)}
-                  className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                  className="rounded-lg border-[#deb887] shadow-sm focus:border-[#7c5a2a] focus:ring-[#7c5a2a] text-sm bg-white"
                 >
                   <option value="all">すべて</option>
                   <option value="7days">過去7日間</option>
@@ -184,120 +268,151 @@ export default function ArchivePage() {
                 </select>
               </div>
             </div>
-
-            {/* 統計 */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-200">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {completedTasks.length}
-                </div>
-                <div className="text-sm text-gray-600">完了タスク</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">
-                  {Object.keys(groupedTasks).length}
-                </div>
-                <div className="text-sm text-gray-600">活動日数</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">
-                  {Object.keys(groupedTasks).length > 0 ? 
-                    Math.round(completedTasks.length / Object.keys(groupedTasks).length * 10) / 10 : 0}
-                </div>
-                <div className="text-sm text-gray-600">1日平均</div>
-              </div>
-            </div>
           </div>
 
-          {/* タスクリスト */}
-          {Object.keys(groupedTasks).length === 0 ? (
-            <div className="bg-white rounded-lg shadow-md p-8 text-center">
-              {FaCheckCircle ({className: "w-16 h-16 text-gray-300 mx-auto mb-4"})}
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                完了タスクがありません
-              </h3>
-              <p className="text-gray-600 mb-4">
-                タスクを完了すると、ここに履歴が表示されます
-              </p>
-              <Button
-                variant="primary"
-                onClick={() => router.push('/tasks')}
-              >
-                新しいタスクを作成
-              </Button>
-            </div>
-          ) : (
+          {/* タブコンテンツ */}
+          {activeTab === 'completed' && (
             <div className="space-y-6">
-              {Object.entries(groupedTasks).map(([dateKey, dayTasks]) => (
-                <div key={dateKey} className="bg-white rounded-lg shadow-md p-6">
-                  <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-200">
-                    {FaCalendarAlt ({className:"w-5 h-5 text-blue-600"})}
-                    <h2 className="text-lg font-semibold text-gray-900">
-                      {formatDate(dateKey)}
-                    </h2>
-                    <span className="text-sm text-gray-500">
-                      {dayTasks.length}件完了
-                    </span>
-                  </div>
-
-                  <div className="space-y-3">
-                    {dayTasks.map((task) => (
-                      <div
-                        key={task.id}
-                        className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                      >
-                        {FaCheckCircle ({className:"w-5 h-5 text-green-500 flex-shrink-0"})}
-                        
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-gray-900 truncate">
-                            {task.title}
-                          </h3>
-                          {task.description && (
-                            <p className="text-sm text-gray-600 truncate">
-                              {task.description}
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className="text-xs text-gray-500">
-                            {formatTime(task.completed_at!)}
-                          </span>
-                          <span className={`px-2 py-1 text-xs rounded ${
-                            task.priority === 'high' ? 'bg-red-100 text-red-700' :
-                            task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-green-100 text-green-700'
-                          }`}>
-                            {task.priority === 'high' ? '高' : 
-                             task.priority === 'medium' ? '中' : '低'}
-                          </span>
-                        </div>
-
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => handleRestoreTask(task.id)}
-                            className="p-2 text-blue-600 hover:bg-blue-100 rounded transition-colors"
-                            title="未完了に戻す"
-                          >
-                            {FaUndo ({className:"w-3 h-3"})}
-                          </button>
-                          <button
-                            onClick={() => handleDeleteTask(task.id)}
-                            className="p-2 text-red-600 hover:bg-red-100 rounded transition-colors"
-                            title="完全削除"
-                          >
-                            {FaTrash ({className:"w-3 h-3"})}
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+              {/* StepEasyらしい統計カード */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="wood-frame rounded-xl p-6">
+                  <div className="flex items-center">
+                    <div className="p-2 bg-[#f5f5dc] rounded-lg">
+                      {FaCheckCircle ({className:"w-6 h-6 text-[#7c5a2a]"})}
+                    </div>
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-[#7c5a2a]">完了タスク</p>
+                      <p className="text-2xl font-bold text-[#8b4513]">{completedTasks.length}</p>
+                    </div>
                   </div>
                 </div>
-              ))}
+                <div className="wood-frame rounded-xl p-6">
+                  <div className="flex items-center">
+                    <div className="p-2 bg-[#f5f5dc] rounded-lg">
+                      {FaCalendarAlt ({className:"w-6 h-6 text-[#7c5a2a]"})}
+                    </div>
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-[#7c5a2a]">活動日数</p>
+                      <p className="text-2xl font-bold text-[#8b4513]">{Object.keys(groupedTasks).length}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="wood-frame rounded-xl p-6">
+                  <div className="flex items-center">
+                    <div className="p-2 bg-[#f5f5dc] rounded-lg">
+                      {FaHistory ({className:"w-6 h-6 text-[#7c5a2a]"})}
+                    </div>
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-[#7c5a2a]">1日平均</p>
+                      <p className="text-2xl font-bold text-[#8b4513]">
+                        {Object.keys(groupedTasks).length > 0 ? 
+                          Math.round(completedTasks.length / Object.keys(groupedTasks).length * 10) / 10 : 0}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* タスクリスト */}
+              {Object.keys(groupedTasks).length === 0 ? (
+                <div className="wood-frame rounded-xl p-12 text-center">
+                  {FaCheckCircle ({className:"w-16 h-16 text-[#deb887] mx-auto mb-4"})}
+                  <h3 className="text-lg font-semibold text-[#8b4513] mb-2">
+                    完了タスクがありません
+                  </h3>
+                  <p className="text-[#7c5a2a]">
+                    タスクを完了すると、ここに履歴が表示されます
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {Object.entries(groupedTasks).map(([dateKey, dayTasks]) => (
+                    <div key={dateKey} className="wood-frame rounded-xl overflow-hidden">
+                      <div className="px-6 py-4 bg-[#f5f5dc] border-b border-[#deb887]">
+                        <div className="flex items-center gap-3">
+                          {FaCalendarAlt ({className:"w-5 h-5 text-[#7c5a2a]"})}
+                          <h2 className="text-lg font-semibold text-[#8b4513]">
+                            {formatDate(dateKey)}
+                          </h2>
+                          <span className="text-sm text-[#7c5a2a] bg-white px-3 py-1 rounded-full border border-[#deb887]">
+                            {dayTasks.length}件完了
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="divide-y divide-[#deb887]">
+                        {dayTasks.map((task) => (
+                          <div
+                            key={task.id}
+                            className="flex items-center gap-4 p-4 hover:bg-[#f5f5dc] transition-colors cursor-pointer"
+                            onClick={() => handleTaskPreview(task)}
+                          >
+                            <div className="flex-shrink-0">
+                              {FaCheckCircle({ className: "w-5 h-5 text-[#7c5a2a]" })}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-medium text-[#8b4513] truncate hover:text-[#8b4513]">
+                                {task.title}
+                              </h3>
+                              {task.description && (
+                                <p className="text-sm text-[#7c5a2a] truncate mt-1">
+                                  {task.description}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={e => { e.stopPropagation(); handleRestoreTask(task.id); }}
+                                className="p-2 text-[#7c5a2a] hover:bg-[#f5f5dc] rounded-lg transition-colors"
+                                title="未完了に戻す"
+                              >
+                                {FaUndo({ className: "w-4 h-4" })}
+                              </button>
+                              <button
+                                onClick={e => { e.stopPropagation(); handleDeleteTask(task.id); }}
+                                className="p-2 text-[#8b4513] hover:bg-[#f5f5dc] rounded-lg transition-colors"
+                                title="完全削除"
+                              >
+                                {FaTrash({ className: "w-4 h-4" })}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
+          )}
+
+          {activeTab === 'execution' && (
+            <ArchiveExecutionLog 
+              dateFilter={dateFilter}
+              searchQuery={searchQuery}
+            />
           )}
         </div>
       </div>
+
+      {/* タスクプレビューモーダル */}
+      {selectedTask && (
+        <TaskPreviewModal
+          task={selectedTask}
+          isOpen={showTaskPreviewModal}
+          onClose={handleCloseTaskPreview}
+          onEdit={(task) => {
+            // アーカイブでは編集は無効化（完了済みタスクのため）
+            console.log('アーカイブでは編集できません');
+          }}
+          onDelete={handleDeleteTask}
+          onComplete={(id) => {
+            // アーカイブでは完了処理は無効化（既に完了済みのため）
+            console.log('アーカイブでは完了処理は無効です');
+          }}
+          onRefresh={fetchTasks}
+        />
+      )}
     </AppLayout>
   );
 } 

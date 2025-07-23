@@ -1,8 +1,9 @@
 import React from 'react';
 import { MobileStatsCard } from './MobileStatsCard';
-import { Task } from '@/stores/taskStore';
+import { Task } from '@/types/task';
 import { DEFAULT_CATEGORIES } from '@/types/task';
 import { FaCalendarCheck, FaFolderOpen, FaFire, FaChartLine } from 'react-icons/fa';
+import { useHabitStore } from '@/stores/habitStore';
 
 interface MobileProgressDashboardProps {
   tasks: Task[];
@@ -13,10 +14,12 @@ export const MobileProgressDashboard: React.FC<MobileProgressDashboardProps> = (
   tasks,
   onNavigateToTab
 }) => {
+  const { habits, habitCompletions } = useHabitStore();
+  
   // 今日の統計を計算
   const todayStats = React.useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
     
     const todayTasks = tasks.filter(task => {
       // 期間タスクの処理
@@ -26,15 +29,15 @@ export const MobileProgressDashboard: React.FC<MobileProgressDashboardProps> = (
         taskStartDate.setHours(0, 0, 0, 0);
         taskDueDate.setHours(0, 0, 0, 0);
         
-        if (today.getTime() >= taskStartDate.getTime() && 
-            today.getTime() <= taskDueDate.getTime()) {
+        if (todayDate.getTime() >= taskStartDate.getTime() && 
+            todayDate.getTime() <= taskDueDate.getTime()) {
           if (task.status !== 'done') {
             return true;
           }
           if (task.status === 'done' && task.completed_at) {
             const completedDate = new Date(task.completed_at);
             completedDate.setHours(0, 0, 0, 0);
-            return completedDate.getTime() === today.getTime();
+            return completedDate.getTime() === todayDate.getTime();
           }
         }
         return false;
@@ -45,13 +48,13 @@ export const MobileProgressDashboard: React.FC<MobileProgressDashboardProps> = (
         const taskStartDate = new Date(task.start_date);
         taskStartDate.setHours(0, 0, 0, 0);
         
-        if (today.getTime() >= taskStartDate.getTime() && task.status !== 'done') {
+        if (todayDate.getTime() >= taskStartDate.getTime() && task.status !== 'done') {
           return true;
         }
         if (task.status === 'done' && task.completed_at) {
           const completedDate = new Date(task.completed_at);
           completedDate.setHours(0, 0, 0, 0);
-          return completedDate.getTime() === today.getTime();
+          return completedDate.getTime() === todayDate.getTime();
         }
         return false;
       }
@@ -61,13 +64,13 @@ export const MobileProgressDashboard: React.FC<MobileProgressDashboardProps> = (
         const taskDueDate = new Date(task.due_date);
         taskDueDate.setHours(0, 0, 0, 0);
         
-        if (today.getTime() <= taskDueDate.getTime() && task.status !== 'done') {
+        if (todayDate.getTime() <= taskDueDate.getTime() && task.status !== 'done') {
           return true;
         }
         if (task.status === 'done' && task.completed_at) {
           const completedDate = new Date(task.completed_at);
           completedDate.setHours(0, 0, 0, 0);
-          return completedDate.getTime() === today.getTime();
+          return completedDate.getTime() === todayDate.getTime();
         }
         return false;
       }
@@ -77,7 +80,7 @@ export const MobileProgressDashboard: React.FC<MobileProgressDashboardProps> = (
         if (task.status === 'done' && task.completed_at) {
           const completedDate = new Date(task.completed_at);
           completedDate.setHours(0, 0, 0, 0);
-          return completedDate.getTime() === today.getTime();
+          return completedDate.getTime() === todayDate.getTime();
         }
         
         if (task.status !== 'done') {
@@ -90,14 +93,31 @@ export const MobileProgressDashboard: React.FC<MobileProgressDashboardProps> = (
 
     const completedToday = todayTasks.filter(task => task.status === 'done').length;
     const totalToday = todayTasks.length;
-    const percentage = totalToday > 0 ? Math.round((completedToday / totalToday) * 100) : 0;
+    
+    // 今日の習慣を取得
+    const todayDateForHabits = new Date();
+    const japanTime = new Date(todayDateForHabits.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+    const todayString = japanTime.toISOString().split('T')[0];
+    
+    const todayHabits = habits.filter(habit => habit.habit_status === 'active');
+    const completedHabits = habitCompletions.filter(completion => 
+      completion.completed_date === todayString
+    ).length;
+    
+    const totalCompleted = completedToday + completedHabits;
+    const totalItems = totalToday + todayHabits.length;
+    const percentage = totalItems > 0 ? Math.round((totalCompleted / totalItems) * 100) : 0;
 
     return {
-      completed: completedToday,
-      total: totalToday,
-      percentage
+      completed: totalCompleted,
+      total: totalItems,
+      percentage,
+      taskCompleted: completedToday,
+      taskTotal: totalToday,
+      habitCompleted: completedHabits,
+      habitTotal: todayHabits.length
     };
-  }, [tasks]);
+  }, [tasks, habits, habitCompletions]);
 
   // カテゴリ統計を計算
   const categoryStats = React.useMemo(() => {
@@ -165,11 +185,29 @@ export const MobileProgressDashboard: React.FC<MobileProgressDashboardProps> = (
     return streak;
   }, [tasks]);
 
+
+
+  // 習慣統計を計算
+  const habitStats = React.useMemo(() => {
+    const habitTasks = tasks.filter(task => task.habit_status === 'active');
+    const completedHabits = habitTasks.filter(task => task.status === 'done').length;
+    
+    const averageStreak = habitTasks.length > 0 ? 
+      Math.round(habitTasks.reduce((sum, habit) => sum + (habit.current_streak || 0), 0) / habitTasks.length) : 0;
+
+    return {
+      total: habitTasks.length,
+      completed: completedHabits,
+      averageStreak,
+      percentage: habitTasks.length > 0 ? Math.round((completedHabits / habitTasks.length) * 100) : 0
+    };
+  }, [tasks]);
+
   return (
     <div className="md:hidden px-4 py-6 space-y-4">
       <div className="mb-6">
-        <h1 className="text-xl font-bold text-gray-900 mb-2">進捗ダッシュボード</h1>
-        <p className="text-sm text-gray-600">カードをタップして詳細を確認</p>
+        <h1 className="text-xl font-bold text-[#8b4513] mb-2">進捗ダッシュボード</h1>
+        <p className="text-sm text-[#7c5a2a]">カードをタップして詳細を確認</p>
       </div>
 
       <div className="grid grid-cols-1 gap-3">
@@ -178,7 +216,7 @@ export const MobileProgressDashboard: React.FC<MobileProgressDashboardProps> = (
           title="今日の達成度"
           icon={React.createElement(FaCalendarCheck as React.ComponentType<any>, { className: "w-5 h-5" })}
           value={`${todayStats.completed}/${todayStats.total}`}
-          subtitle={`${todayStats.percentage}% 完了`}
+          subtitle={`${todayStats.percentage}% 完了 (タスク: ${todayStats.taskCompleted}/${todayStats.taskTotal}, 習慣: ${todayStats.habitCompleted}/${todayStats.habitTotal})`}
           progress={todayStats.percentage}
           onClick={() => onNavigateToTab('today')}
         />
@@ -214,6 +252,22 @@ export const MobileProgressDashboard: React.FC<MobileProgressDashboardProps> = (
           progress={overallStats.percentage}
           onClick={() => onNavigateToTab('overall')}
         />
+
+
+
+        {/* 習慣統計カード */}
+        {habitStats.total > 0 && (
+          <MobileStatsCard
+            title="習慣統計"
+            icon={<span className="text-lg">🔄</span>}
+            value={`${habitStats.completed}/${habitStats.total}`}
+            subtitle={`平均継続 ${habitStats.averageStreak}日 (${habitStats.percentage}%)`}
+            progress={habitStats.percentage}
+            onClick={() => onNavigateToTab('overall')}
+          />
+        )}
+
+
       </div>
     </div>
   );

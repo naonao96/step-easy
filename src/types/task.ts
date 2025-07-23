@@ -1,33 +1,28 @@
-export interface Task {
-  id: string;
-  title: string;
-  description?: string;
+import { BaseItem, StreakData } from './habit';
+
+export interface Task extends BaseItem, StreakData {
   status: 'todo' | 'doing' | 'done';
-  priority?: 'low' | 'medium' | 'high'; // 既存のTEXT型に合わせる
-  due_date?: string;
-  start_date?: string;
+  priority: 'low' | 'medium' | 'high';
+  due_date: string | null;
+  start_date: string | null;
   completed_at?: string;
-  created_at: string;
-  updated_at: string;
-  user_id: string;
-  is_habit?: boolean;
-  habit_frequency?: 'daily' | 'weekly' | 'monthly';
-  current_streak?: number;
-  max_streak?: number;
-  last_completed_date?: string;
-  category?: string; // カテゴリ（work, health, study, personal, hobby, other）
+  
+  // 時間関連フィールド
   estimated_duration?: number; // 予想所要時間（分）
-  actual_duration?: number; // 実際の所要時間（分） - 後方互換性のため保持
-  
-  // 継続日数関連フィールド
-  streak_count?: number;
-  
-  // 新しい時間管理フィールド
+  actual_duration?: number; // 実際の所要時間（分）
   session_time?: number; // 現在セッション時間（秒）
   today_total?: number; // 今日の累計時間（秒）
   all_time_total?: number; // 全期間累計時間（秒）
   last_execution_date?: string; // 最終実行日（YYYY-MM-DD）
   execution_count?: number; // 実行回数
+  
+  // 後方互換性のため保持
+  streak_count?: number;
+  max_streak?: number;
+  
+  // 習慣識別用プロパティ（convertHabitsToTasksで使用）
+  habit_status?: 'active' | 'paused' | 'stopped';
+  frequency?: 'daily';
 }
 
 export interface CreateTaskInput {
@@ -36,8 +31,6 @@ export interface CreateTaskInput {
   priority?: 'low' | 'medium' | 'high';
   due_date?: string;
   start_date?: string;
-  is_habit?: boolean;
-  habit_frequency?: 'daily' | 'weekly' | 'monthly';
   category?: string;
   estimated_duration?: number;
 }
@@ -50,8 +43,6 @@ export interface UpdateTaskInput {
   due_date?: string;
   start_date?: string;
   completed_at?: string;
-  is_habit?: boolean;
-  habit_frequency?: 'daily' | 'weekly' | 'monthly';
   current_streak?: number;
   max_streak?: number;
   last_completed_date?: string;
@@ -123,12 +114,14 @@ export interface ActiveTaskExecution {
 export interface ExecutionLog {
   id: string;
   user_id: string;
-  task_id: string;
+  task_id?: string; // オプショナル（習慣の場合はNULL）
+  habit_id?: string; // オプショナル（タスクの場合はNULL）
+  execution_type: 'task' | 'habit'; // 新しいフィールド
   start_time: string; // ISO string
   end_time?: string; // ISO string
   duration: number; // 実行時間（秒）
   device_type: 'mobile' | 'desktop' | 'unknown';
-  session_type: 'normal' | 'habit';
+  session_type: 'normal' | 'habit'; // 後方互換性のため保持
   is_completed: boolean;
   created_at: string;
   updated_at: string;
@@ -137,7 +130,9 @@ export interface ExecutionLog {
 export interface ActiveExecution {
   id: string;
   user_id: string;
-  task_id: string;
+  task_id?: string; // オプショナル（習慣の場合はNULL）
+  habit_id?: string; // オプショナル（タスクの場合はNULL）
+  execution_type: 'task' | 'habit'; // 新しいフィールド
   start_time: string; // ISO string
   device_type: 'mobile' | 'desktop' | 'unknown';
   is_paused: boolean;

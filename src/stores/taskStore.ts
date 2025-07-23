@@ -1,42 +1,10 @@
 import { create } from 'zustand';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { useAuth } from '@/contexts/AuthContext';
 import { getExpiredStreakTasks } from '@/lib/streakUtils';
+import { Task } from '@/types/task';
 
 // モジュールレベルでSupabaseクライアントを一度だけ作成
 const supabase = createClientComponentClient();
-
-export interface Task {
-  id: string;
-  title: string;
-  description: string;
-  status: 'todo' | 'doing' | 'done';
-  priority: 'low' | 'medium' | 'high';
-  due_date: string | null;
-  start_date: string | null;  // 開始日
-  created_at: string;
-  updated_at: string;
-  user_id: string;
-  is_habit: boolean;
-  habit_frequency?: 'daily' | 'weekly' | 'monthly';
-  
-  // 継続日数関連フィールド
-  current_streak: number;        // 現在の継続日数
-  longest_streak: number;        // 最長継続日数
-  last_completed_date: string | null;  // 最後に完了した日付
-  streak_start_date: string | null;    // 現在のストリーク開始日
-  
-  // 実行時間関連フィールド
-  estimated_duration?: number;   // 予想所要時間（分）
-  actual_duration?: number;      // 実際の所要時間（分）
-  
-  // カテゴリ
-  category?: string;             // カテゴリ（work, health, study, personal, hobby, other）
-  
-  // 互換性のために残す（後で削除予定）
-  streak_count?: number;
-  completed_at?: string;
-}
 
 interface TaskStore {
   tasks: Task[];
@@ -46,12 +14,9 @@ interface TaskStore {
   createTask: (task: Omit<Task, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => Promise<void>;
   updateTask: (id: string, task: Partial<Task>) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
-  // 開発用のダミーデータ作成
-  createDummyTasks: () => Promise<void>;
+
   // 期限切れストリークの自動リセット
   resetExpiredStreaks: () => Promise<void>;
-  // 無料ユーザーの30日経過データクリーンアップ
-  cleanupExpiredData: () => Promise<void>;
 }
 
 const GUEST_TASK_LIMIT = 3;
@@ -65,18 +30,15 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      console.log('fetchTasks - 認証ユーザー情報:', user);
+  
       
       // ゲストユーザーの場合はローカルストレージから取得
       if (!user) {
-        console.log('ゲストユーザー - ローカルストレージから取得');
         const guestTasks = JSON.parse(localStorage.getItem('guestTasks') || '[]');
-        console.log('ゲストタスク:', guestTasks);
         set({ tasks: guestTasks });
         return;
       }
       
-      console.log('認証済みユーザー - Supabaseから取得');
       const isGuest = user?.user_metadata?.is_guest;
 
       const { data, error } = await supabase
@@ -84,13 +46,10 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         .select('*')
         .order('created_at', { ascending: false });
 
-      console.log('Supabase select結果:', { data, error });
-
       if (error) throw error;
 
       // ゲストユーザーの場合は3件までに制限
       const limitedTasks = isGuest ? data.slice(0, GUEST_TASK_LIMIT) : data;
-      console.log('設定するタスク:', limitedTasks);
       set({ tasks: limitedTasks as unknown as Task[] });
     } catch (error) {
       console.error('fetchTasks エラー:', error);
@@ -101,18 +60,14 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
 
   createTask: async (task) => {
-    console.log('createTask開始:', task);
     set({ loading: true, error: null });
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      console.log('認証ユーザー情報:', user);
       
       // ゲストユーザーの場合の処理
       if (!user) {
-        console.log('ゲストユーザーとしてローカルストレージに保存');
         // ローカルストレージからゲストタスクを取得
         const guestTasks = JSON.parse(localStorage.getItem('guestTasks') || '[]');
-        console.log('既存ゲストタスク数:', guestTasks.length);
         
         if (guestTasks.length >= GUEST_TASK_LIMIT) {
           throw new Error('ゲストユーザーは3件までしかタスクを作成できません。アカウントを作成して続けるには、ログインしてください。');
@@ -135,20 +90,15 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
           streak_start_date: null
         };
         
-        console.log('保存するゲストタスク:', newTask);
         guestTasks.push(newTask);
         localStorage.setItem('guestTasks', JSON.stringify(guestTasks));
-        console.log('ローカルストレージ保存完了');
         
         // ローカルタスクを再読み込み
         await get().fetchTasks();
-        console.log('fetchTasks完了');
         return;
       }
       
-      console.log('認証済みユーザーとしてSupabaseに保存');
       const isGuest = user?.user_metadata?.is_guest;
-      console.log('isGuest:', isGuest);
 
       if (isGuest && get().tasks.length >= GUEST_TASK_LIMIT) {
         throw new Error('ゲストユーザーは3件までしかタスクを作成できません。アカウントを作成して続けるには、ログインしてください。');
@@ -159,20 +109,14 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         user_id: user.id
       };
 
-      console.log('保存するタスクデータ:', taskWithUserId);
-
       const { data, error } = await supabase
         .from('tasks')
         .insert([taskWithUserId])
         .select();
 
-      console.log('Supabase insert結果:', { data, error });
-
       if (error) throw error;
       
-      console.log('fetchTasks開始');
       await get().fetchTasks();
-      console.log('createTask完了');
     } catch (error) {
       console.error('createTask エラー:', error);
       set({ error: (error as Error).message });
@@ -283,70 +227,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }
   },
 
-  // 開発用のダミーデータ作成
-  createDummyTasks: async () => {
-    const dummyTasks = [
-      {
-        title: '朝の運動',
-        description: '30分のジョギングまたはストレッチ',
-        status: 'todo' as const,
-        priority: 'medium' as const,
-        due_date: null,
-        start_date: new Date().toISOString().split('T')[0], // 今日
-        is_habit: true,
-        habit_frequency: 'daily' as const,
-        current_streak: 5,
-        longest_streak: 12,
-        last_completed_date: '2024-12-18',
-        streak_start_date: '2024-12-14'
-      },
-      {
-        title: '読書タイム',
-        description: '技術書を30分読む',
-        status: 'done' as const,
-        priority: 'low' as const,
-        due_date: null,
-        start_date: new Date().toISOString().split('T')[0], // 今日
-        is_habit: true,
-        habit_frequency: 'daily' as const,
-        current_streak: 3,
-        longest_streak: 8,
-        last_completed_date: new Date().toISOString().split('T')[0],
-        streak_start_date: '2024-12-17',
-        completed_at: new Date().toISOString()
-      },
-      {
-        title: 'プロジェクト資料作成',
-        description: '来週のプレゼン用資料を準備',
-        status: 'doing' as const,
-        priority: 'high' as const,
-        due_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 明日
-        start_date: new Date().toISOString().split('T')[0], // 今日
-        is_habit: false,
-        current_streak: 0,
-        longest_streak: 0,
-        last_completed_date: null,
-        streak_start_date: null
-      },
-      {
-        title: '今日のタスク完了テスト',
-        description: 'このタスクを完了して円グラフの動作確認',
-        status: 'todo' as const,
-        priority: 'high' as const,
-        due_date: null,
-        start_date: new Date().toISOString().split('T')[0], // 今日
-        is_habit: false,
-        current_streak: 0,
-        longest_streak: 0,
-        last_completed_date: null,
-        streak_start_date: null
-      }
-    ];
 
-    for (const task of dummyTasks) {
-      await get().createTask(task);
-    }
-  },
 
   // 期限切れストリークの自動リセット
   resetExpiredStreaks: async () => {
@@ -373,53 +254,5 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }
   },
 
-  // 無料ユーザーの30日経過データクリーンアップ
-  cleanupExpiredData: async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      // ゲストユーザーは処理不要（ローカルストレージ管理）
-      if (!user) {
-        console.log('ゲストユーザー - データクリーンアップは不要');
-        return;
-      }
 
-      // プレミアムユーザーは無制限保存なので処理不要
-      const isGuest = user?.user_metadata?.is_guest;
-      const isPremium = user?.user_metadata?.is_premium;
-      
-      if (isPremium) {
-        console.log('プレミアムユーザー - データクリーンアップは不要');
-        return;
-      }
-
-      // 無料ユーザーのみ30日経過データを削除
-      console.log('無料ユーザー - 30日経過データのクリーンアップを開始');
-      
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const cutoffDate = thirtyDaysAgo.toISOString();
-
-      // 30日以上前に作成されたタスクを削除
-      const { error: deleteError } = await supabase
-        .from('tasks')
-        .delete()
-        .eq('user_id', user.id)
-        .lt('created_at', cutoffDate);
-
-      if (deleteError) {
-        console.error('データクリーンアップエラー:', deleteError);
-        throw deleteError;
-      }
-
-      console.log('データクリーンアップ完了');
-      
-      // タスクリストを再取得
-      await get().fetchTasks();
-      
-    } catch (error) {
-      console.error('データクリーンアップエラー:', error);
-      set({ error: (error as Error).message });
-    }
-  },
 })); 

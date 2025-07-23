@@ -2,52 +2,15 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/atoms/Button';
-import { Input } from '@/components/atoms/Input';
-import { FaGoogle, FaEye, FaEyeSlash, FaUser, FaLock, FaArrowLeft } from 'react-icons/fa';
-import { toast } from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Layout } from '@/components/templates/Layout';
 import Image from 'next/image';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-
-// Supabaseクライアントはシングルトンとしてモジュールレベルで一度だけ生成
-const supabase = createClientComponentClient();
+import { FaGoogle } from 'react-icons/fa';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const { signInWithGoogle, signInWithEmail } = useAuth();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setIsLoading(true);
-
-    console.log('🔐 ログイン処理開始:', { email, passwordLength: password.length });
-
-    try {
-      console.log('📧 AuthContext signInWithEmail呼び出し...');
-      await signInWithEmail(email, password);
-      
-      console.log('✅ ログイン成功・画面遷移完了');
-    } catch (error: any) {
-      console.error('❌ ログインエラー詳細:', {
-        message: error.message,
-        status: error.status,
-        statusText: error.statusText,
-        error: error
-      });
-      setError(`ログインに失敗しました: ${error.message || 'メールアドレスとパスワードを確認してください。'}`);
-    } finally {
-      setIsLoading(false);
-      console.log('🏁 ログイン処理終了');
-    }
-  };
+  const { signInWithGoogle } = useAuth();
 
   const handleGoogleSignIn = async () => {
     setError(null);
@@ -63,48 +26,49 @@ export default function LoginPage() {
   };
 
   return (
-    <Layout>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          {/* ロゴ・ブランディングセクション */}
-          <div className="text-center">
-            <div className="flex justify-center mb-6">
-              <div className="relative">
-                {/* 小鳥キャラクター */}
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center shadow-lg border-4 border-white">
-                  <Image 
-                    src="/TalkToTheBird.png" 
-                    alt="StepEasy小鳥" 
-                    width={48} 
-                    height={48}
-                    className="rounded-full"
-                  />
-                </div>
-                {/* 吹き出し */}
-                <div className="absolute -top-2 -right-16 bg-white border border-slate-200 rounded-lg px-3 py-1 shadow-sm">
-                  <div className="text-xs text-slate-600 whitespace-nowrap">おかえり！</div>
-                  <div className="absolute left-2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
-                </div>
+    <div className="min-h-screen bg-transparent flex items-center justify-center p-4">
+      <div className="w-full max-w-md mx-auto">
+        <div className="p-8 rounded-3xl border border-gray-200 shadow-2xl hover:shadow-3xl transition-shadow duration-300">
+          {/* ヘッダー */}
+          <div className="text-center mb-8">
+            <h1 className="text-2xl lg:text-3xl font-bold mb-4 relative">
+              {/* 背景レイヤー（影効果） */}
+              <div className="absolute inset-0 bg-white/30 rounded-2xl transform translate-x-1 translate-y-1 blur-sm"></div>
+              
+              {/* メインテキスト */}
+              <div className="relative z-10 text-[#4a3728]" 
+                   style={{ 
+                     textShadow: '1px 1 2px rgba(255,255, 255,0.8), 2px 2 4px rgba(139, 69, 19, 0.3)',
+                     filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.1))'
+                   }}>
+                <span className="relative z-20 text-[#8b4513] font-extrabold"
+                      style={{ 
+                        textShadow: '1px 1 2px rgba(255,255, 255,0.9), 2px 2 6px rgba(139, 69, 19, 0.4)',
+                        filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))'
+                      }}>StepEasy</span>へようこそ
               </div>
-            </div>
-            <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
-              おかえりなさい
-            </h2>
-            <p className="mt-2 text-sm text-slate-600">
-              小鳥と一緒にタスク管理を続けましょう
+            </h1>
+            <p className="text-lg text-[#7c5a2a] leading-relaxed">
+              今日もあなたの一歩を応援します
             </p>
           </div>
 
-          {/* メインフォーム */}
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-            {/* Googleログインボタン */}
-            <button
-              onClick={handleGoogleSignIn}
-              disabled={isGoogleLoading || isLoading}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-slate-300 rounded-xl text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isGoogleLoading ? (
-                <div className="w-5 h-5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></div>
+          {/* エラーメッセージ */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+          )}
+
+          {/* Googleログイン */}
+          <div className="space-y-6">
+          <button
+            onClick={handleGoogleSignIn}
+              disabled={isGoogleLoading}
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-[#deb887] rounded-2xl text-[#8b4513] bg-white/80 hover:bg-white hover:shadow-lg hover:-translate-y-1 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+                          {isGoogleLoading ? (
+                <div className="w-5 h-5 border-2 border-[#deb887] border-t-[#8b4513] rounded-full animate-spin"></div>
               ) : (
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -113,87 +77,12 @@ export default function LoginPage() {
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                 </svg>
               )}
-              Googleでログイン
-            </button>
+            Googleでログイン
+          </button>
 
-            {/* 区切り線 */}
-            <div className="my-6 flex items-center">
-              <div className="flex-1 border-t border-slate-200"></div>
-              <div className="mx-4 text-sm text-slate-500 bg-white px-2">または</div>
-              <div className="flex-1 border-t border-slate-200"></div>
-            </div>
-
-            {/* メールログインフォーム */}
-            <form className="space-y-5" onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              <Input
-                label="メールアドレス"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your@email.com"
-                required
-              />
-              <Input
-                label="パスワード"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                  placeholder="パスワードを入力"
-                required
-              />
-            </div>
-
-            {error && (
-                <div className="p-3 rounded-lg bg-red-50 border border-red-200">
-                  <p className="text-red-600 text-sm">{error}</p>
-                </div>
-            )}
-
-            <div className="flex items-center justify-between">
-              <div className="text-sm">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={true}
-                    className="font-medium text-gray-400 cursor-not-allowed line-through"
-                  >
-                    パスワードをお忘れですか？
-                  </button>
-                  <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">
-                    ベータ版では利用不可
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-3 rounded-xl shadow-sm"
-              isLoading={isLoading}
-                disabled={isGoogleLoading}
-            >
-              ログイン
-            </Button>
-          </form>
-
-            {/* 新規登録リンク */}
-            <div className="mt-6 text-center">
-              <p className="text-sm text-slate-600">
-                アカウントをお持ちでないですか？{' '}
-                <button
-                  onClick={() => router.push('/register')}
-                  className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
-                >
-                  新規登録
-                </button>
-              </p>
-            </div>
           </div>
         </div>
       </div>
-    </Layout>
+    </div>
   );
 } 

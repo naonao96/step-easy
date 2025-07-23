@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/atoms/Button';
 import { NotificationDropdown } from '@/components/molecules/NotificationDropdown';
-import { HelpPanel } from '@/components/molecules/HelpPanel';
-import { FaArrowLeft, FaSignOutAlt, FaUser, FaQuestionCircle, FaUserPlus, FaSignInAlt } from 'react-icons/fa';
+import { FaArrowLeft, FaSignOutAlt, FaUser, FaUserPlus, FaSignInAlt, FaGem } from 'react-icons/fa';
 import { Task } from '@/types/task';
+import Image from 'next/image';
 
 interface AppHeaderProps {
   // ページ固有の設定
@@ -48,9 +48,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   className = ''
 }) => {
   const router = useRouter();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isPremium } = useAuth();
   const [showAccountMenu, setShowAccountMenu] = useState(false);
-  const [showHelpPanel, setShowHelpPanel] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const mobileAccountMenuRef = useRef<HTMLDivElement>(null);
 
@@ -90,33 +89,20 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
     };
   }, [showAccountMenu]);
 
-  // ヘルプパネル開く指示をリッスン
-  useEffect(() => {
-    const handleOpenHelp = (event: any) => {
-      setShowHelpPanel(true);
-      // タブの切り替えは実装後に対応
-    };
-
-    window.addEventListener('openHelp', handleOpenHelp);
-    return () => {
-      window.removeEventListener('openHelp', handleOpenHelp);
-    };
-  }, []);
-
   // バリアント別のスタイル
   const getHeaderStyles = () => {
     switch (variant) {
       case 'minimal':
-        return 'bg-white border-b border-gray-200';
+        return '';
       case 'transparent':
         return 'bg-transparent';
       default:
-        return 'bg-white border-b border-gray-200';
+        return '';
     }
   };
 
   return (
-    <header className={`h-20 flex justify-between items-center px-4 sm:px-6 flex-shrink-0 shadow-sm ${getHeaderStyles()} ${className}`}>
+    <header className={`h-16 md:h-20 flex justify-between items-center px-4 sm:px-6 flex-shrink-0 bg-gradient-to-b from-[#f7ecd7] to-[#f5e9da] border-b border-[#deb887]/30 backdrop-blur-sm shadow-none ${getHeaderStyles()} ${className} fixed top-0 left-0 right-0 z-40 pt-safe`}>
       {/* 左側：モバイルハンバーガー + 戻るボタン + タイトル/ロゴ */}
       <div className="flex items-center gap-3">
         {/* ハンバーガーボタンを削除 - ボトムナビゲーションを使用 */}
@@ -128,7 +114,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             size="sm"
             onClick={onBackClick || handleBack}
             leftIcon={FaArrowLeft}
-            className="hidden md:flex text-gray-600 hover:text-gray-800"
+            className="hidden md:flex text-[#7c5a2a] hover:text-[#8b4513]"
           >
             <span className="text-sm">{backLabel}</span>
           </Button>
@@ -139,30 +125,41 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           className="cursor-pointer flex items-center gap-3"
           onClick={() => router.push('/menu')}
         >
-          <img src="/logo.png" alt="StepEasy" className="h-8 sm:h-10" style={{ width: 'auto' }} />
+          <img 
+            src="/logo.png" 
+            alt="StepEasy" 
+            className="h-8 sm:h-10 w-auto"
+            style={{ width: 'auto' }}
+            loading="eager"
+            decoding="sync"
+          />
           {title && (
-          <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
+          <h1 className="text-lg sm:text-xl font-bold text-[#8b4513] truncate">
             {title}
           </h1>
           )}
           </div>
       </div>
 
-      {/* 右側：通知 + デスクトップアクション + ユーザー情報 */}
+      {/* 右側：通知 + プレミアム + デスクトップアクション + ユーザー情報 */}
       <div className="flex items-center gap-2 sm:gap-3">
         {/* 通知ドロップダウン */}
         {showNotifications && (
-          <NotificationDropdown tasks={tasks} />
+          <div className="text-[#7c5a2a] hover:text-[#8b4513] transition-colors duration-200">
+            <NotificationDropdown tasks={tasks} />
+          </div>
         )}
 
-        {/* ヘルプボタン */}
-        <button
-          onClick={() => setShowHelpPanel(true)}
-          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-          title="ヘルプ"
-        >
-          {FaQuestionCircle({ className: "w-5 h-5" })}
-        </button>
+        {/* プレミアムアイコン（ログインユーザー全員） */}
+        {!user?.isGuest && (
+          <button
+            onClick={() => router.push('/settings?tab=subscription')}
+            className="p-2 text-[#7c5a2a] hover:text-[#8b4513] transition-colors duration-200 hover:scale-105"
+            title="プレミアム設定"
+          >
+            {FaGem({ className: "w-5 h-5" })}
+          </button>
+        )}
 
         {/* カスタムアクション（デスクトップのみ） */}
         {rightActions && (
@@ -172,45 +169,39 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         )}
 
         {/* アカウントドロップダウン（デスクトップのみ） */}
-        <div className="relative hidden lg:flex" ref={accountMenuRef}>
+        <div className="relative hidden lg:block" ref={accountMenuRef}>
           <button
             onClick={() => setShowAccountMenu(!showAccountMenu)}
-            className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="flex items-center gap-2 p-2 text-[#7c5a2a] hover:text-[#8b4513] transition-colors duration-200 font-medium bg-transparent border-none shadow-none group"
           >
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-medium">
-                {user?.isGuest ? 'G' : (user?.email?.[0]?.toUpperCase() || 'U')}
-              </span>
+            <div className="relative">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7c5a2a] to-[#4b2e0e] flex items-center justify-center text-white text-sm font-medium transition-colors duration-200 group-hover:from-[#a67c52] group-hover:to-[#c9b29b]">
+                {user?.isGuest ? 'G' : (user?.displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U')}
+              </div>
+              {isPremium && (
+                <div className="absolute -top-0.5 -right-0.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white w-4 h-4 rounded-full flex items-center justify-center shadow-sm border border-white">
+                  {FaGem({ className: "w-2 h-2" })}
+                </div>
+              )}
             </div>
-            <span className="text-sm text-gray-700 font-medium max-w-32 truncate">
-              {user?.isGuest ? 'ゲストユーザー' : (user?.displayName || user?.email?.split('@')[0] || 'ユーザー')}
+            <span className="text-sm hidden xl:block">
+              {user?.isGuest ? 'ゲスト' : (user?.displayName || user?.email?.split('@')[0] || 'ユーザー')}
             </span>
           </button>
 
-          {/* ドロップダウンメニュー */}
           {showAccountMenu && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+            <div className="absolute right-0 top-full mt-2 w-48 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-[#deb887]/20 py-1 z-50">
               {user?.isGuest ? (
                 <>
                   <button
                     onClick={() => {
                       setShowAccountMenu(false);
-                      router.push('/register');
-                    }}
-                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                  >
-                    {FaUserPlus({ className: "w-4 h-4" })}
-                    新規登録
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowAccountMenu(false);
                       router.push('/login');
                     }}
-                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-[#7c5a2a] hover:bg-[#deb887]/10 transition-all duration-200"
                   >
-                    {FaSignInAlt({ className: "w-4 h-4" })}
-                    ログイン
+                    {FaSignInAlt({ className: "w-4 h-4 flex-shrink-0" })}
+                    <span>ログイン</span>
                   </button>
                 </>
               ) : (
@@ -219,48 +210,45 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                     setShowAccountMenu(false);
                     handleSignOut();
                   }}
-                  className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="flex items-center gap-3 w-full px-4 py-2 text-sm text-[#7c5a2a] hover:bg-[#deb887]/10 transition-all duration-200"
                 >
-                  {FaSignOutAlt({ className: "w-4 h-4" })}
-                  ログアウト
+                  {FaSignOutAlt({ className: "w-4 h-4 flex-shrink-0" })}
+                  <span>ログアウト</span>
                 </button>
               )}
             </div>
           )}
         </div>
 
-        {/* ユーザーアバター（モバイル用） */}
-        <button
-          onClick={() => setShowAccountMenu(!showAccountMenu)}
-          className="lg:hidden p-1 w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center hover:shadow-md transition-all"
-          title="アカウントメニュー"
-        >
-          <span className="text-white text-sm font-medium">
-            {user?.isGuest ? 'G' : (user?.email?.[0]?.toUpperCase() || 'U')}
-          </span>
-        </button>
+        {/* モバイル用アカウントボタン */}
+        <div className="relative lg:hidden">
+          <button
+            onClick={() => setShowAccountMenu(!showAccountMenu)}
+            className="p-1 w-10 h-10 bg-gradient-to-br from-[#7c5a2a] to-[#4b2e0e] rounded-full flex items-center justify-center hover:shadow-lg transition-all duration-200 hover:scale-105"
+            title="アカウントメニュー"
+          >
+            <span className="text-white text-sm font-medium">
+              {user?.isGuest ? 'G' : (user?.displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U')}
+            </span>
+          </button>
+          {isPremium && (
+            <div className="absolute -top-0.5 -right-0.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white w-4 h-4 rounded-full flex items-center justify-center shadow-sm border border-white">
+              {FaGem({ className: "w-2 h-2" })}
+            </div>
+          )}
+        </div>
 
         {/* モバイル用ドロップダウンメニュー */}
         {showAccountMenu && (
-          <div className="absolute lg:hidden right-2 top-16 w-44 sm:w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-[9999]" ref={mobileAccountMenuRef}>
+          <div className="absolute lg:hidden right-2 top-16 w-44 sm:w-48 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-[#deb887]/20 py-1 z-[9999]" ref={mobileAccountMenuRef}>
             {user?.isGuest ? (
               <>
                 <button
                   onClick={() => {
                     setShowAccountMenu(false);
-                    router.push('/register');
-                  }}
-                  className="flex items-center gap-3 w-full px-3 sm:px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  {FaUserPlus({ className: "w-4 h-4 flex-shrink-0" })}
-                  <span>新規登録</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setShowAccountMenu(false);
                     router.push('/login');
                   }}
-                  className="flex items-center gap-3 w-full px-3 sm:px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="flex items-center gap-3 w-full px-3 sm:px-4 py-2 text-sm text-[#7c5a2a] hover:bg-[#deb887]/10 transition-all duration-200"
                 >
                   {FaSignInAlt({ className: "w-4 h-4 flex-shrink-0" })}
                   <span>ログイン</span>
@@ -272,7 +260,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                   setShowAccountMenu(false);
                   handleSignOut();
                 }}
-                className="flex items-center gap-3 w-full px-3 sm:px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-3 w-full px-3 sm:px-4 py-2 text-sm text-[#7c5a2a] hover:bg-[#deb887]/10 transition-all duration-200"
               >
                 {FaSignOutAlt({ className: "w-4 h-4 flex-shrink-0" })}
                 <span>ログアウト</span>
@@ -281,12 +269,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           </div>
         )}
       </div>
-
-      {/* ヘルプパネル */}
-      <HelpPanel 
-        isOpen={showHelpPanel} 
-        onClose={() => setShowHelpPanel(false)} 
-      />
     </header>
   );
 }; 

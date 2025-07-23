@@ -1,196 +1,305 @@
+'use client';
+
 import React from 'react';
+import { useRouter } from 'next/navigation';
+import { CloudLayer } from '@/components/CloudLayer';
+import { FaHome, FaShieldAlt, FaFileContract } from 'react-icons/fa';
+import Image from 'next/image';
 
 export const PrivacyPolicyContent: React.FC = () => {
+  const router = useRouter();
+
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="bg-white rounded-lg shadow-lg p-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">プライバシーポリシー</h1>
-          <div className="text-sm text-gray-600">
-            <span>公開日：{new Date().toLocaleDateString('ja-JP')} | バージョン：Ver1.0.0</span>
+    <div className="min-h-screen bg-gradient-to-b from-sky-200 to-sky-50 relative overflow-hidden">
+      {/* 青空と雲の背景 */}
+      <CloudLayer />
+      
+      {/* ヘッダー */}
+      <header className="h-16 md:h-20 flex justify-between items-center px-4 sm:px-6 flex-shrink-0 bg-gradient-to-b from-[#f7ecd7] to-[#f5e9da] border-b border-[#deb887]/30 backdrop-blur-sm shadow-none fixed top-0 left-0 right-0 z-40 pt-safe">
+        {/* 左側：ロゴ */}
+        <div className="flex items-center gap-3">
+          <div 
+            className="cursor-pointer flex items-center gap-3"
+            onClick={() => router.push('/menu')}
+          >
+            <img 
+              src="/logo.png" 
+              alt="StepEasy" 
+              className="h-8 sm:h-10 w-auto"
+              style={{ width: 'auto' }}
+              loading="eager"
+              decoding="sync"
+            />
+            <h1 className="text-lg sm:text-xl font-bold text-[#8b4513] truncate">
+              プライバシーポリシー
+            </h1>
+          </div>
+        </div>
+
+        {/* 右側：ナビゲーションボタン */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            onClick={() => router.push('/terms')}
+            className="p-2 text-[#7c5a2a] hover:text-[#8b4513] transition-colors duration-200 hover:scale-105"
+            title="利用規約"
+          >
+            {FaFileContract({ className: "w-5 h-5" })}
+          </button>
+          <button
+            onClick={() => router.push('/lp')}
+            className="p-2 text-[#7c5a2a] hover:text-[#8b4513] transition-colors duration-200 hover:scale-105"
+            title="ホーム"
+          >
+            {FaHome({ className: "w-5 h-5" })}
+          </button>
+        </div>
+      </header>
+      
+      <div className="relative z-10 py-8 pt-24 md:pt-28">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-8 border border-white/30">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-[#8b4513] mb-4">プライバシーポリシー</h1>
+              <div className="text-sm text-[#7c5a2a]">
+                <span>公開日：{new Date().toLocaleDateString('ja-JP')} | バージョン：Ver1.0.0</span>
           </div>
         </div>
 
         <div className="prose prose-lg max-w-none space-y-8">
-          {/* 第1条 定義 */}
+              {/* 基本方針 */}
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">第1条（定義）</h2>
-            <div className="space-y-4 text-gray-700">
+                <h2 className="text-xl font-semibold text-[#8b4513] mb-4">基本方針</h2>
+                <div className="space-y-4 text-[#4a3728]">
               <p>
-                本プライバシーポリシー（以下「本ポリシー」）は、naonao96（以下「当方」）が運営するタスク管理アプリケーション「StepEasy」（以下「本サービス」）において、
-                ユーザーの個人情報をどのように収集、利用、管理するかについて定めるものです。
+                    naonao96（以下「当方」）は、タスク管理アプリケーション「StepEasy」（以下「本サービス」）において、
+                    ユーザーの個人情報の保護を最重要事項と考えています。
               </p>
               <p>
-                本ポリシーにおいて「個人情報」とは、個人情報保護法に定める個人情報を指し、生存する個人に関する情報であって、
-                当該情報に含まれる氏名、メールアドレス、その他の記述により特定の個人を識別できるもの、
-                または個人識別符号が含まれるものを指します。
+                    本プライバシーポリシーでは、本サービスにおける個人情報の収集、利用、管理について定めています。
+                    ユーザーは、本サービスを利用することにより、本プライバシーポリシーに同意したものとみなします。
               </p>
             </div>
           </section>
 
-          {/* 第2条 収集する情報 */}
+              {/* 事業者情報 */}
+              <section>
+                <h2 className="text-xl font-semibold text-[#8b4513] mb-4">事業者情報</h2>
+                <div className="space-y-4 text-[#4a3728]">
+                  <div className="bg-[#f5f5dc]/60 p-4 rounded-lg border border-[#deb887]/20">
+                    <p><strong>運営者名：</strong> naonao96</p>
+                    <p><strong>連絡先：</strong> stepeasytasks@gmail.com</p>
+                    <p><strong>サービス名：</strong> StepEasy</p>
+                    <p><strong>サービス内容：</strong> タスク管理アプリケーション</p>
+                  </div>
+                </div>
+              </section>
+
+              {/* 収集する情報 */}
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">第2条（収集する情報）</h2>
-            <div className="space-y-4 text-gray-700">
-              <p>当方は、ユーザーから以下の情報を収集する場合があります：</p>
-              <div className="ml-6">
-                <h3 className="font-medium mb-2">1. アカウント情報</h3>
+                <h2 className="text-xl font-semibold text-[#8b4513] mb-4">収集する情報</h2>
+                <div className="space-y-4 text-[#4a3728]">
+                  <p>本サービスでは、以下の情報を収集します：</p>
+                  
+                  <h3 className="font-medium text-[#8b4513] mt-6 mb-3">1. アカウント情報（無料・プレミアムユーザー）</h3>
+                  <ul className="list-disc ml-6 space-y-1">
+                    <li>メールアドレス（認証・連絡用）</li>
+                    <li>パスワード（ハッシュ化して保存）</li>
+                    <li>ユーザー名（表示名）</li>
+                    <li>アカウント作成日時</li>
+                    <li>最終ログイン日時</li>
+                  </ul>
+
+                  <h3 className="font-medium text-[#8b4513] mt-6 mb-3">2. タスク・習慣データ</h3>
+                  <ul className="list-disc ml-6 space-y-1">
+                    <li>タスクのタイトル、説明、期限、優先度</li>
+                    <li>タスクの実行履歴（開始・完了時刻）</li>
+                    <li>習慣の設定情報</li>
+                    <li>習慣の実行記録</li>
+                    <li>感情記録（プレミアム機能）</li>
+                  </ul>
+
+                  <h3 className="font-medium text-[#8b4513] mt-6 mb-3">3. 利用統計情報</h3>
                 <ul className="list-disc ml-6 space-y-1">
-                  <li>メールアドレス</li>
-                  <li>表示名（ユーザーが設定する名前）</li>
-                  <li>パスワード（暗号化して保存）</li>
+                    <li>ページビュー、機能利用回数</li>
+                    <li>エラー発生時のログ</li>
+                    <li>デバイス情報（ブラウザ、OS等）</li>
+                    <li>IPアドレス（セキュリティ目的）</li>
                 </ul>
                 
-                <h3 className="font-medium mb-2 mt-4">2. サービス利用情報</h3>
+                  <h3 className="font-medium text-[#8b4513] mt-6 mb-3">4. 決済情報（プレミアムユーザー）</h3>
                 <ul className="list-disc ml-6 space-y-1">
-                  <li>作成したタスクの内容、カテゴリ、優先度</li>
-                  <li>タスクの実行履歴、完了状況</li>
-                  <li>アプリの使用統計情報</li>
-                  <li>AIアシスタント機能との会話履歴</li>
+                    <li>サブスクリプション状態</li>
+                    <li>支払い履歴（Stripe経由）</li>
+                    <li>決済方法（カード情報はStripeが管理）</li>
                 </ul>
                 
-                <h3 className="font-medium mb-2 mt-4">3. 技術情報</h3>
+                  <h3 className="font-medium text-[#8b4513] mt-6 mb-3">5. ゲストユーザー</h3>
                 <ul className="list-disc ml-6 space-y-1">
-                  <li>IPアドレス</li>
-                  <li>ブラウザの種類とバージョン</li>
-                  <li>デバイス情報</li>
-                  <li>アクセス日時</li>
+                    <li>ブラウザセッション中のタスクデータ</li>
+                    <li>IPアドレス（セキュリティ目的）</li>
                 </ul>
-              </div>
             </div>
           </section>
 
-          {/* 第3条 利用目的 */}
+              {/* 情報の利用目的 */}
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">第3条（利用目的）</h2>
-            <div className="space-y-4 text-gray-700">
-              <p>当方は、収集した個人情報を以下の目的で利用します：</p>
+                <h2 className="text-xl font-semibold text-[#8b4513] mb-4">情報の利用目的</h2>
+                <div className="space-y-4 text-[#4a3728]">
+                  <p>収集した情報は、以下の目的で利用します：</p>
               <ul className="list-disc ml-6 space-y-2">
-                <li>本サービスの提供、運営、維持、改善</li>
-                <li>ユーザーアカウントの管理と認証</li>
-                <li>タスク管理機能、進捗追跡機能の提供</li>
-                <li>AIによる個人化されたタスク提案とアドバイス</li>
-                <li>サービスの利用状況分析と機能改善</li>
-                <li>カスタマーサポートの提供</li>
-                <li>重要なお知らせやサービス変更の通知</li>
-                <li>不正利用の防止とセキュリティの確保</li>
+                    <li>本サービスの提供・運営</li>
+                    <li>ユーザー認証・セキュリティ確保</li>
+                    <li>タスク・習慣データの保存・同期</li>
+                    <li>AI機能による分析・提案（プレミアム機能）</li>
+                    <li>サービス改善・新機能開発</li>
+                    <li>お問い合わせ対応</li>
+                    <li>不正利用の防止</li>
+                    <li>法的要件への対応</li>
               </ul>
             </div>
           </section>
 
-          {/* 第4条 保存期間 */}
+              {/* 情報の共有 */}
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">第4条（情報の保存期間）</h2>
-            <div className="space-y-4 text-gray-700">
-              <p>当方は、以下の期間、ユーザーの個人情報を保存します：</p>
-              <div className="bg-gray-50 p-4 rounded-lg">
+                <h2 className="text-xl font-semibold text-[#8b4513] mb-4">情報の共有</h2>
+                <div className="space-y-4 text-[#4a3728]">
+                  <p>
+                    当方は、以下の場合を除き、ユーザーの個人情報を第三者に提供しません：
+                  </p>
+                  <ul className="list-disc ml-6 space-y-2">
+                    <li>ユーザーの事前の同意がある場合</li>
+                    <li>法令に基づく場合</li>
+                    <li>人の生命、身体、財産の保護のために必要な場合</li>
+                    <li>公衆衛生の向上または児童の健全な育成の推進のために特に必要な場合</li>
+                  </ul>
+                  
+                  <h3 className="font-medium text-[#8b4513] mt-6 mb-3">外部サービスとの連携</h3>
+                  <p>本サービスでは、以下の外部サービスを利用しています：</p>
+                  <div className="bg-[#f5f5dc]/60 p-4 rounded-lg border border-[#deb887]/20">
                 <ul className="space-y-2">
-                  <li><strong>無料ユーザー：</strong> アカウント作成から30日間</li>
-                  <li><strong>プレミアムユーザー：</strong> サブスクリプション有効期間中および解約後1年間</li>
-                  <li><strong>ゲストユーザー：</strong> ブラウザセッション中のみ（ブラウザ終了と同時に削除）</li>
+                      <li><strong>Supabase：</strong> データベース・認証サービス</li>
+                      <li><strong>Stripe：</strong> 決済処理サービス</li>
+                      <li><strong>Google：</strong> 認証・分析サービス</li>
+                      <li><strong>Vercel：</strong> ホスティングサービス</li>
                 </ul>
               </div>
               <p>
-                ただし、法令により保存が義務付けられている場合や、紛争解決のために必要な場合は、
-                上記期間を超えて保存することがあります。
+                    これらのサービスは、当方との間で適切なデータ保護契約を締結しており、
+                    ユーザーの個人情報を適切に保護します。
               </p>
             </div>
           </section>
 
-          {/* 第5条 第三者提供 */}
+              {/* データの保存期間 */}
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">第5条（第三者への提供）</h2>
-            <div className="space-y-4 text-gray-700">
-              <p>当方は、以下の外部サービスと連携してサービスを提供しています：</p>
-              <div className="ml-6">
-                <h3 className="font-medium mb-2">1. データベース・認証基盤</h3>
-                <ul className="list-disc ml-6 space-y-1">
-                  <li><strong>Supabase：</strong> ユーザーデータの保存、認証機能</li>
-                </ul>
-                
-                <h3 className="font-medium mb-2 mt-4">2. 決済処理</h3>
-                <ul className="list-disc ml-6 space-y-1">
-                  <li><strong>Stripe：</strong> プレミアム機能の課金処理</li>
-                </ul>
-                
-                <h3 className="font-medium mb-2 mt-4">3. AI機能</h3>
-                <ul className="list-disc ml-6 space-y-1">
-                  <li><strong>Google Gemini：</strong> AIアシスタント機能、タスク分析</li>
-                </ul>
-                
-                <h3 className="font-medium mb-2 mt-4">4. ホスティング</h3>
-                <ul className="list-disc ml-6 space-y-1">
-                  <li><strong>Vercel：</strong> アプリケーションの配信・運営</li>
+                <h2 className="text-xl font-semibold text-[#8b4513] mb-4">データの保存期間</h2>
+                <div className="space-y-4 text-[#4a3728]">
+                  <p>データの保存期間は、利用形態により異なります：</p>
+                  
+                  <div className="bg-[#f5f5dc]/60 p-4 rounded-lg border border-[#deb887]/20">
+                    <ul className="space-y-2">
+                      <li><strong>ゲストユーザー：</strong> ブラウザセッション終了時まで</li>
+                      <li><strong>無料ユーザー：</strong> アカウント作成から30日間</li>
+                      <li><strong>プレミアムユーザー：</strong> 退会後1年間（復旧可能期間）</li>
+                      <li><strong>決済情報：</strong> 法的要件により7年間保存</li>
                 </ul>
               </div>
-              <p className="mt-4">
-                これらのサービスは、それぞれのプライバシーポリシーに従って個人情報を取り扱います。
-                当方は、信頼できるサービスプロバイダーのみと連携し、適切なデータ保護措置を講じています。
+                  
+                  <p>
+                    保存期間を経過したデータは、自動的に削除されます。
+                    ただし、法的要件により保存が必要な場合は、この限りではありません。
               </p>
             </div>
           </section>
 
-          {/* 第6条 Cookie等の利用 */}
+              {/* ユーザーの権利 */}
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">第6条（Cookie等の利用）</h2>
-            <div className="space-y-4 text-gray-700">
-              <p>本サービスでは、以下の目的でCookieおよび類似技術を使用します：</p>
+                <h2 className="text-xl font-semibold text-[#8b4513] mb-4">ユーザーの権利</h2>
+                <div className="space-y-4 text-[#4a3728]">
+                  <p>ユーザーは、以下の権利を有します：</p>
               <ul className="list-disc ml-6 space-y-2">
-                <li>ユーザー認証状態の維持</li>
-                <li>ログイン情報の保存（JWTトークン）</li>
-                <li>ユーザー設定の記憶</li>
-                <li>サービス利用状況の分析</li>
+                    <li>個人情報の開示請求</li>
+                    <li>個人情報の訂正・追加・削除請求</li>
+                    <li>個人情報の利用停止・消去請求</li>
+                    <li>個人情報の第三者提供停止請求</li>
+                    <li>データの可搬性（エクスポート）</li>
               </ul>
               <p>
-                ユーザーは、ブラウザの設定によりCookieを無効にすることができますが、
-                その場合、本サービスの一部機能が利用できなくなる可能性があります。
+                    これらの権利の行使については、stepeasytasks@gmail.comまでご連絡ください。
+                    本人確認の上、適切に対応いたします。
               </p>
             </div>
           </section>
 
-          {/* 第7条 ユーザーの権利 */}
+              {/* セキュリティ対策 */}
+              <section>
+                <h2 className="text-xl font-semibold text-[#8b4513] mb-4">セキュリティ対策</h2>
+                <div className="space-y-4 text-[#4a3728]">
+                  <p>当方は、ユーザーの個人情報を保護するため、以下の対策を実施しています：</p>
+                  <ul className="list-disc ml-6 space-y-2">
+                    <li>SSL暗号化通信の使用</li>
+                    <li>パスワードのハッシュ化保存</li>
+                    <li>データベースアクセス制御</li>
+                    <li>定期的なセキュリティ監査</li>
+                    <li>外部サービスの適切な選択・監視</li>
+                    <li>従業員への個人情報保護教育</li>
+                  </ul>
+                </div>
+              </section>
+
+              {/* Cookieの使用 */}
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">第7条（ユーザーの権利）</h2>
-            <div className="space-y-4 text-gray-700">
-              <p>ユーザーは、自身の個人情報について以下の権利を有します：</p>
+                <h2 className="text-xl font-semibold text-[#8b4513] mb-4">Cookieの使用</h2>
+                <div className="space-y-4 text-[#4a3728]">
+                  <p>
+                    本サービスでは、ユーザーエクスペリエンスの向上とセキュリティ確保のため、
+                    Cookieを使用しています。
+                  </p>
+                  <p>使用するCookieの種類：</p>
               <ul className="list-disc ml-6 space-y-2">
-                <li><strong>開示請求：</strong> 保存されている個人情報の開示を求める権利</li>
-                <li><strong>訂正・削除：</strong> 個人情報の訂正・削除を求める権利</li>
-                <li><strong>利用停止：</strong> 個人情報の利用停止を求める権利</li>
-                <li><strong>データポータビリティ：</strong> 個人情報の他サービスへの移行を求める権利</li>
+                    <li><strong>認証Cookie：</strong> ログイン状態の維持</li>
+                    <li><strong>セッションCookie：</strong> セキュリティ確保</li>
+                    <li><strong>分析Cookie：</strong> サービス改善（Google Analytics）</li>
               </ul>
               <p>
-                これらの権利を行使したい場合は、本ポリシー末尾記載の連絡先までお問い合わせください。
-                当方は、法令に従い、合理的な期間内に対応いたします。
+                    ブラウザの設定でCookieを無効にすることも可能ですが、
+                    その場合、一部の機能が正常に動作しない可能性があります。
               </p>
             </div>
           </section>
 
-          {/* 第8条 本ポリシーの変更 */}
+              {/* プライバシーポリシーの変更 */}
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">第8条（本ポリシーの変更）</h2>
-            <div className="space-y-4 text-gray-700">
-              <p>
-                当方は、法令の変更やサービスの改善等に伴い、本ポリシーを変更することがあります。
-                重要な変更については、本サービス内での通知またはメールにてユーザーにお知らせします。
+                <h2 className="text-xl font-semibold text-[#8b4513] mb-4">プライバシーポリシーの変更</h2>
+                <div className="space-y-4 text-[#4a3728]">
+                  <p>
+                    当方は、法令の変更やサービスの改善等に伴い、
+                    本プライバシーポリシーを変更することがあります。
+                  </p>
+                  <p>
+                    重要な変更については、本サービス内での通知またはメールにて
+                    ユーザーにお知らせします。
               </p>
               <p>
-                変更後のプライバシーポリシーは、本サービス内に掲載した時点で効力を生じるものとします。
+                    変更後のプライバシーポリシーは、本サービス内に掲載した時点で
+                    効力を生じるものとします。
               </p>
             </div>
           </section>
 
           {/* お問い合わせ */}
-          <section className="bg-blue-50 p-6 rounded-lg">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">お問い合わせ</h2>
-            <div className="space-y-2 text-gray-700">
-              <p>本ポリシーに関するお問い合わせは、以下までご連絡ください：</p>
+              <section className="bg-[#f5f5dc]/60 p-6 rounded-lg border border-[#deb887]/20">
+                <h2 className="text-xl font-semibold text-[#8b4513] mb-4">お問い合わせ</h2>
+                <div className="space-y-2 text-[#4a3728]">
+                  <p>本プライバシーポリシーに関するお問い合わせは、以下までご連絡ください：</p>
               <div className="mt-4">
                 <p><strong>運営者：</strong> naonao96</p>
                 <p><strong>連絡先：</strong> stepeasytasks@gmail.com</p>
               </div>
             </div>
           </section>
+            </div>
+          </div>
         </div>
       </div>
     </div>

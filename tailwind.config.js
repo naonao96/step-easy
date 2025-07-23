@@ -33,6 +33,23 @@ module.exports = {
       height: {
         'screen-safe': 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
       },
+      width: {
+        '70': '280px',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        blink: {
+          '0%, 50%': { opacity: '1' },
+          '51%, 100%': { opacity: '0' },
+        },
+      },
+      animation: {
+        'fadeIn': 'fadeIn 0.5s ease-out forwards',
+        'blink': 'blink 1s infinite',
+      },
     },
   },
   plugins: [],

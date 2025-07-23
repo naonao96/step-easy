@@ -1,16 +1,22 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Task } from '@/stores/taskStore';
+import { Task } from '@/types/task';
 import { CategoryBadge } from '@/components/atoms/CategoryBadge';
 import { Character } from './Character';
-import { StreakBadge } from '@/components/atoms/StreakBadge';
+import { getEmotionTimePeriodLabel } from '@/lib/timeUtils';
+import { isNewHabit } from '@/lib/habitUtils';
+import { isToday, getIncompleteTaskCount, getPlanLimits, generateDateTitle } from '@/lib/commonUtils';
+
 import { useAuth } from '@/contexts/AuthContext';
 import { MobileTaskTimer } from './MobileTaskTimer';
 import { MobileTaskHistory } from './MobileTaskHistory';
-import { PremiumComingSoonBanner } from './PremiumComingSoonBanner';
-import { PremiumPreviewModal } from './PremiumPreviewModal';
-import { NotificationSignupForm } from './NotificationSignupForm';
-import ReactMarkdown from 'react-markdown';
+
+  import { useEmotionStore } from '@/stores/emotionStore';
+  import { useMessageDisplay } from '@/hooks/useMessageDisplay';
+  import ReactMarkdown from 'react-markdown';
+import { MobileTaskCarousel } from './MobileTaskCarousel';
+import { TaskPreviewModal } from './TaskPreviewModal';
+import { TaskEditModal } from './TaskEditModal';
 import { 
   FaPlus, 
   FaCalendarAlt, 
@@ -28,6 +34,9 @@ import {
   FaChartBar,
   FaCrown
 } from 'react-icons/fa';
+import { EmotionHoverMenu } from '@/components/molecules/EmotionHoverMenu';
+import Image from 'next/image';
+
 
 interface ModernMobileHomeProps {
   selectedDate: Date;
@@ -41,13 +50,29 @@ interface ModernMobileHomeProps {
     todayTotalTasks: number;
     todayPercentage: number;
   };
-  characterMood: 'happy' | 'normal' | 'sad';
   characterMessage: string;
+  messageParts?: string[];
   onCompleteTask: (id: string) => void;
   onDeleteTask: (id: string) => void;
+  onEditTask?: (task: Task) => void;
   onDateSelect: (date: Date) => void;
   onTabChange?: (tab: 'tasks' | 'habits') => void;
   onTaskUpdate?: () => Promise<void>; // データ更新関数を追加
+  onMessageClick?: () => void; // メッセージクリック用
+  emotionLog: {
+    todayEmotions: any[];
+    recordStatus: {
+      morning: any | null;
+      afternoon: any | null;
+      evening: any | null;
+    };
+    currentTimePeriod: 'morning' | 'afternoon' | 'evening';
+    isComplete: boolean;
+    isLoading: boolean;
+    error: string | null;
+    recordEmotion: (emotionType: any, timePeriod?: any) => Promise<boolean>;
+    refreshTodayEmotions: () => Promise<void>;
+  }; // 感情記録の状態をpropsで受け取る
 }
 
 type TabType = 'tasks' | 'habits';
@@ -57,29 +82,79 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   selectedDateTasks,
   tasks,
   statistics,
-  characterMood,
   characterMessage,
+  messageParts = [],
   onCompleteTask,
   onDeleteTask,
+  onEditTask,
   onDateSelect,
   onTabChange,
-  onTaskUpdate
+  onTaskUpdate,
+  onMessageClick,
+  emotionLog
 }) => {
   const router = useRouter();
-  const { isGuest, isPremium, planType, canAddTaskOnDate } = useAuth();
-  const [activeTab, setActiveTab] = useState<TabType>('tasks');
+  const { isGuest, isPremium, planType, canAddTaskOnDate, user } = useAuth();
+  const [activeTab, setActiveTab] = useState<TabType>('habits');
+
+  // タブ変更時の処理
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    // 親コンポーネントにタブ変更を通知
+    if (onTabChange) {
+      onTabChange(tab);
+    }
+  };
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   
-  // プレミアム機能モーダル関連の状態
-  const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [showNotificationForm, setShowNotificationForm] = useState(false);
+  // 感情記録の状態をpropsから取得（一元管理）
+  const recordStatus = useMemo(() => {
+    return emotionLog.recordStatus;
+  }, [emotionLog.recordStatus]);
+  const currentTimePeriod = useMemo(() => {
+    return emotionLog.currentTimePeriod;
+  }, [emotionLog.currentTimePeriod]);
+  
+  // タスクプレビュー・編集モーダル関連の状態
+  const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [showTaskPreviewModal, setShowTaskPreviewModal] = useState(false);
+  const [showTaskEditModal, setShowTaskEditModal] = useState(false);
+
+  // 感情記録UIの状態管理（データ取得による再レンダリングの影響を受けない）
+  const characterRef = useRef<HTMLImageElement>(null);
+  const showEmotionMenuRef = useRef(false);
+  const [, forceUpdate] = useState({});
+  
+  // 感情メニューの開閉状態を管理
+  const setShowEmotionMenu = (value: boolean) => {
+    showEmotionMenuRef.current = value;
+    forceUpdate({});
+  };
+  
+  const showEmotionMenu = showEmotionMenuRef.current;
+  
+  // 統一されたメッセージ表示状態管理（デスクトップ版と同じ）
+  const {
+    showMessage,
+    isTyping,
+    displayedMessage,
+    isShowingParts,
+    currentPartIndex,
+    handleAutoDisplay,
+    handleManualDisplay,
+    handleMessageClick,
+    handleCharacterClick,
+    clearMessage
+  } = useMessageDisplay({
+    characterMessage,
+    messageParts,
+    isGuest,
+    user,
+    mounted: true
+  });
 
   // 今日かどうかの判定
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const selectedDateTime = new Date(selectedDate);
-  selectedDateTime.setHours(0, 0, 0, 0);
-  const isToday = selectedDateTime.getTime() === today.getTime();
+  const isTodaySelected = isToday(selectedDate);
 
   // 通常タスクと習慣タスクの分離
   const { regularTasks, habitTasks } = useMemo(() => {
@@ -87,7 +162,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
     const habit: Task[] = [];
     
     selectedDateTasks.forEach(task => {
-      if (task.is_habit) {
+      if (isNewHabit(task)) {
         habit.push(task);
       } else {
         regular.push(task);
@@ -98,57 +173,20 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   }, [selectedDateTasks]);
 
   // 未完了タスク数の計算
-  const getIncompleteCount = (taskList: Task[]) => {
-    return taskList.filter(task => task.status !== 'done').length;
-  };
-
-  const regularIncompleteCount = getIncompleteCount(regularTasks);
-  const habitIncompleteCount = getIncompleteCount(habitTasks);
+  const regularIncompleteCount = getIncompleteTaskCount(regularTasks);
+  const habitIncompleteCount = getIncompleteTaskCount(habitTasks);
 
   // プラン別習慣制限
-  const getHabitLimits = () => {
-    switch (planType) {
-      case 'guest': return { maxHabits: 0, maxStreakDays: 0 };
-      case 'free': return { maxHabits: 3, maxStreakDays: 14 };
-      case 'premium': return { maxHabits: Infinity, maxStreakDays: Infinity };
-      default: return { maxHabits: 0, maxStreakDays: 0 };
-    }
-  };
-
-  const { maxHabits } = getHabitLimits();
+  const { maxHabits } = getPlanLimits(planType);
 
   // 現在のタブに応じたタスクリストを取得
   const getCurrentTasks = () => {
-    return activeTab === 'tasks' ? regularTasks : habitTasks;
-  };
-
-  // 日付フォーマット
-  const formatDate = (date: Date) => {
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
-    const weekday = weekdays[date.getDay()];
-    return `${month}月${day}日 (${weekday})`;
-  };
-
-  // 習慣タスクの頻度表示
-  const getFrequencyLabel = (frequency?: string) => {
-    switch (frequency) {
-      case 'daily': return '毎日';
-      case 'weekly': return '週1回';
-      case 'monthly': return '月1回';
-      default: return '毎日';
-    }
+    return activeTab === 'habits' ? habitTasks : regularTasks;
   };
 
   // 選択日に応じたタイトルを生成
   const getTitle = () => {
-    if (isToday) {
-      return activeTab === 'tasks' ? '今日のタスク' : '今日の習慣';
-    }
-    
-    const formattedDate = formatDate(selectedDate);
-    return activeTab === 'tasks' ? `${formattedDate}のタスク` : `${formattedDate}の習慣`;
+    return generateDateTitle(selectedDate, activeTab);
   };
 
   // 日付操作関数
@@ -173,100 +211,194 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
     setExpandedTaskId(expandedTaskId === taskId ? null : taskId);
   };
 
+  // タスククリック時の処理
+  const handleTaskClick = (task: any) => {
+    setSelectedTask(task);
+    setShowTaskPreviewModal(true);
+  };
+
+  // タスク削除処理
+  const handleDeleteTask = async (id: string) => {
+    try {
+      await onDeleteTask(id);
+      setShowTaskPreviewModal(false);
+      setShowTaskEditModal(false);
+      setSelectedTask(null);
+    } catch (error) {
+      console.error('タスク削除エラー:', error);
+      alert('タスクの削除に失敗しました');
+    }
+  };
+
+  // タスク完了処理
+  const handleCompleteTask = async (id: string) => {
+    try {
+      await onCompleteTask(id);
+      if (onTaskUpdate) {
+        await onTaskUpdate();
+      }
+    } catch (error) {
+      console.error('タスク完了エラー:', error);
+      alert('タスクの完了処理に失敗しました');
+    }
+  };
+
   // 進捗ページに移動
   const handleNavigateToProgress = () => {
     router.push('/progress');
   };
 
+
+
+  // 感情記録メニューを閉じる
+  const handleCloseEmotionMenu = () => {
+    setShowEmotionMenu(false);
+  };
+
+  // 感情メニューの外部クリック処理
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      
+      // キャラクター画像自体かどうかを判定
+      const isCharacterImage = target.tagName === 'IMG' && 
+        target.getAttribute('alt') === 'StepEasy Bird Character';
+      
+      // 感情メニュー内の要素かどうかを判定
+      const isEmotionMenuElement = target.closest('[data-emotion-menu]') !== null;
+      
+      // ハートボタンかどうかを判定
+      const isEmotionButton = target.closest('[data-emotion-button]') !== null;
+      
+      if (showEmotionMenu && !isCharacterImage && !isEmotionMenuElement && !isEmotionButton) {
+        setShowEmotionMenu(false);
+      }
+    };
+    
+    if (showEmotionMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showEmotionMenu]);
+
+  // メッセージの外部クリック処理（デスクトップ版と同じ）
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showMessage) {
+        const target = event.target as HTMLElement;
+        
+        if (!target.closest('.character-container')) {
+          clearMessage();
+        }
+      }
+    };
+    if (showMessage) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showMessage, clearMessage]);
+
+  // 自動表示の実行
+  useEffect(() => {
+    handleAutoDisplay();
+  }, [handleAutoDisplay]);
+
+  // タスクプレビューモーダル表示のイベントリスナー
+  useEffect(() => {
+    const handleShowTaskPreviewModal = (event: CustomEvent) => {
+      const { task } = event.detail;
+      setSelectedTask(task);
+      setShowTaskPreviewModal(true);
+    };
+
+    window.addEventListener('showTaskPreviewModal', handleShowTaskPreviewModal as EventListener);
+    
+    return () => {
+      window.removeEventListener('showTaskPreviewModal', handleShowTaskPreviewModal as EventListener);
+    };
+  }, []);
+
+
   return (
-    <div className="md:hidden min-h-screen bg-gray-50">
-      {/* Header with Date Navigation */}
-      <div className="bg-white px-4 pt-6 pb-4 shadow-sm">
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-2">
+    <div className="min-h-screen mt-4">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-center">
             <button
               onClick={goToPreviousDay}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              title="前日"
+              className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
             >
-              {React.createElement(FaChevronLeft as React.ComponentType<any>, { className: "w-4 h-4 text-gray-600" })}
+              {FaChevronLeft ({className:"w-4 h-4"})}
             </button>
             
-            <div className="text-center flex-1">
-              <h1 className="text-xl font-bold text-gray-800">
-                {formatDate(selectedDate)}
+            <div className="text-center mx-4">
+              <h1 className="text-lg font-semibold text-[#8b4513]">
+                {getTitle()}
               </h1>
-              <p className="text-sm text-gray-600 mt-1">
-                {isToday ? '今日の予定' : 'スケジュール'}
-              </p>
+              {!isTodaySelected && (
+                <button
+                  onClick={goToToday}
+                  className="text-sm text-[#7c5a2a] hover:text-[#8b4513] transition-colors mt-1"
+                >
+                  今日に戻る
+                </button>
+              )}
             </div>
             
             <button
               onClick={goToNextDay}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              title="翌日"
+              className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
             >
-              {React.createElement(FaChevronRight as React.ComponentType<any>, { className: "w-4 h-4 text-gray-600" })}
+              {FaChevronRight ({className:"w-4 h-4"})}
             </button>
           </div>
-          
-          {/* 今日に戻るボタン（今日以外の日付の場合のみ表示） */}
-          {!isToday && (
-            <div className="flex justify-center">
-              <button
-                onClick={goToToday}
-                className="flex items-center space-x-1 px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm hover:bg-blue-100 transition-colors"
-              >
-                {React.createElement(FaHome as React.ComponentType<any>, { className: "w-3 h-3" })}
-                <span>今日に戻る</span>
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
       {/* Tab Navigation */}
-      <div className="bg-white shadow-sm">
+      <div className="bg-white border-b border-gray-200">
         <div className="flex">
           <button
-            onClick={() => {
-              setActiveTab('tasks');
-              onTabChange?.('tasks');
-            }}
-            className={`flex-1 py-3 px-4 text-sm font-medium text-center border-b-2 transition-colors ${
-              activeTab === 'tasks'
-                ? 'border-blue-500 text-blue-600 bg-blue-50'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+            onClick={() => handleTabChange('habits')}
+            className={`flex-1 py-3 px-4 text-center font-medium transition-colors ${
+              activeTab === 'habits'
+                ? 'text-[#8b4513] border-b-2 border-[#8b4513]'
+                : 'text-[#7c5a2a] hover:text-[#8b4513]'
             }`}
           >
             <div className="flex items-center justify-center space-x-2">
-              {React.createElement(FaTasks as React.ComponentType<any>, { className: "w-4 h-4" })}
-              <span>タスク</span>
-              {regularIncompleteCount > 0 && (
-                <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {regularIncompleteCount}
+              {FaFire ({className:"w-4 h-4"})}
+              <span>習慣</span>
+              {habitIncompleteCount > 0 && (
+                <span className="bg-[#deb887] text-[#7c5a2a] text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                  {habitIncompleteCount}
                 </span>
               )}
             </div>
           </button>
           
+
+          
           <button
-            onClick={() => {
-              setActiveTab('habits');
-              onTabChange?.('habits');
-            }}
-            className={`flex-1 py-3 px-4 text-sm font-medium text-center border-b-2 transition-colors ${
-              activeTab === 'habits'
-                ? 'border-blue-500 text-blue-600 bg-blue-50'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+            onClick={() => handleTabChange('tasks')}
+            className={`flex-1 py-3 px-4 text-center font-medium transition-colors ${
+              activeTab === 'tasks'
+                ? 'text-[#8b4513] border-b-2 border-[#8b4513]'
+                : 'text-[#7c5a2a] hover:text-[#8b4513]'
             }`}
           >
             <div className="flex items-center justify-center space-x-2">
-              {React.createElement(FaFire as React.ComponentType<any>, { className: "w-4 h-4" })}
-              <span>習慣</span>
-              {habitIncompleteCount > 0 && (
-                <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {habitIncompleteCount}
+              {FaTasks ({className:"w-4 h-4"})}
+              <span>タスク</span>
+              {regularIncompleteCount > 0 && (
+                <span className="bg-[#deb887] text-[#7c5a2a] text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                  {regularIncompleteCount}
                 </span>
               )}
             </div>
@@ -275,351 +407,212 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
       </div>
 
       {/* Task List */}
-      <div className="px-4 py-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-800">
-            {getTitle()}
-          </h2>
-          <span className="text-sm text-gray-500">
-            {getCurrentTasks().length}件
-          </span>
-        </div>
-
-                 {/* Plan Restriction Notice for Habits */}
-         {activeTab === 'habits' && planType === 'guest' && (
-           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-             <div className="flex items-start space-x-2">
-               {React.createElement(FaFire as React.ComponentType<any>, { className: "text-yellow-500 mt-0.5 flex-shrink-0" })}
-               <div>
-                 <h3 className="text-sm font-medium text-yellow-800">習慣機能について</h3>
-                 <p className="text-xs text-yellow-700 mt-1">
-                   {planType === 'guest' 
-                     ? '習慣機能を使用するには会員登録が必要です。'
-                     : `現在のプランでは習慣を${maxHabits}個まで作成できます。`
-                   }
-                 </p>
-               </div>
-             </div>
-           </div>
-         )}
-
-         {/* 無料ユーザー向けプレミアム誘導 */}
-         {activeTab === 'habits' && planType === 'free' && habitTasks.length > 0 && (
-           <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
-             <div className="flex items-center gap-2 mb-1">
-               {React.createElement(FaCrown as React.ComponentType<any>, { className: "w-3 h-3 text-purple-600" })}
-               <span className="text-xs font-medium text-purple-900">
-                 プレミアムで習慣を無制限に ({habitTasks.length}/{maxHabits}個)
-               </span>
-             </div>
-             <p className="text-xs text-purple-700">
-               ストリークも永続保存！高度な分析機能も利用可能
-             </p>
-           </div>
-         )}
-
-        {/* Mobile Optimized Task Cards */}
-        <div className="space-y-3">
-          {getCurrentTasks().map((task: Task) => (
-            <div
-              key={task.id}
-              className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden"
+      <div className="flex-1 p-4">
+        {/* 無料ユーザー向け習慣制限表示（習慣タブの時のみ） */}
+        {activeTab === 'habits' && planType === 'free' && (
+          <div className="mb-3 flex justify-center">
+            <button
+              onClick={() => router.push('/settings?tab=subscription')}
+              className="bg-[#f5f5dc] border border-[#deb887] rounded px-2 py-1 hover:bg-[#deb887] transition-colors cursor-pointer"
+              title="プレミアム版で習慣を無制限に追加できます"
             >
-              {/* Row 1: Checkbox, Title, and Edit Button */}
-              <div className="flex items-start space-x-3 p-4 pb-2">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onCompleteTask(task.id);
-                  }}
-                  className={`mt-1 flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                    task.status === 'done'
-                      ? 'bg-green-500 border-green-500 text-white'
-                      : 'border-gray-300 hover:border-blue-400'
-                  }`}
-                >
-                  {task.status === 'done' && React.createElement(FaCheck as React.ComponentType<any>, { className: "w-2.5 h-2.5" })}
-                </button>
-                
-                <div 
-                  className="flex-1 cursor-pointer"
-                  onClick={() => toggleTaskExpansion(task.id)}
-                >
-                  <h3 className={`font-medium text-sm leading-tight ${
-                  task.status === 'done' ? 'text-gray-500 line-through' : 'text-gray-800'
-                }`}>
-                  {task.title}
-                </h3>
+              <div className="flex items-center gap-1">
+                {FaCrown({ className: "w-3 h-3 text-[#8b4513]" })}
+                <span className="text-xs font-medium text-[#8b4513]">習慣制限: {habitTasks.length}/3</span>
               </div>
+            </button>
+          </div>
+        )}
+        
+        {getCurrentTasks().length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-gray-400 mb-4">
+              {activeTab === 'habits' ? (
+                FaFire ({className:"w-12 h-12 mx-auto"})
+              ) : (
+                FaTasks ({className:"w-12 h-12 mx-auto"})
+              )}
+            </div>
+            <h3 className="text-lg font-medium text-[#8b4513] mb-2">
+              {activeTab === 'habits' ? '習慣がありません' : 'タスクがありません'}
+            </h3>
+            <p className="text-[#7c5a2a] mb-6">
+              {activeTab === 'habits' 
+                ? '新しい習慣を追加して、継続的な目標を設定しましょう。'
+                : '新しいタスクを追加して、今日の目標を設定しましょう。'
+              }
+            </p>
+          </div>
 
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    router.push(`/tasks?id=${task.id}&edit=true`);
-                  }}
-                  className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                  title="編集"
-                >
-                  {React.createElement(FaEdit as React.ComponentType<any>, { className: "w-3 h-3" })}
-                </button>
-                </div>
+        ) : (
+          <div className="h-56">
+            <MobileTaskCarousel
+              tasks={getCurrentTasks()}
+              onCompleteTask={onCompleteTask}
+              onDeleteTask={onDeleteTask}
+              onEditTask={onEditTask}
+              onTaskClick={handleTaskClick}
+              isHabit={activeTab === 'habits'}
+              selectedDate={selectedDate}
+            />
+          </div>
+        )}
+      </div>
 
-              {/* Row 2: Category and Priority */}
-              <div className="px-4 pb-2">
-                <div className="flex items-center space-x-2 pl-8">
-                  {task.category && (
-                    <CategoryBadge category={task.category} size="sm" />
-                  )}
-                  
-                  {task.priority && task.priority !== 'medium' && (
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      task.priority === 'high' ? 'bg-red-100 text-red-600' :
-                      task.priority === 'low' ? 'bg-gray-100 text-gray-600' :
-                      'bg-yellow-100 text-yellow-600'
-                    }`}>
-                      {task.priority === 'high' ? '高' : 
-                       task.priority === 'low' ? '低' : '中'}
-                    </span>
-                  )}
+      {/* Character and Message UI - デスクトップ版と同じ配置 */}
+      <div className="px-4 pb-10">
+        <div className="character-container relative flex justify-center">
+          {/* メッセージバブル（キャラクターの上に配置） */}
+          {showMessage && (
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-4 w-72 max-w-sm">
+              {/* 尻尾を背面に配置（z-index指定なし、枠・影なし、グラデ一致） */}
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gradient-to-br from-[#fff8f0]/95 to-[#f5e6d3]/95 rotate-45 -translate-y-1/2 pointer-events-none"></div>
+              <div className="relative z-10 bg-gradient-to-br from-[#fff8f0]/95 to-[#f5e6d3]/95 backdrop-blur-md rounded-2xl shadow-2xl transition-all duration-300 p-4 w-72">
+                <div className={`text-[#8b4513] font-medium leading-relaxed text-sm text-center ${!isTyping ? 'cursor-pointer' : 'cursor-default'}`} onClick={!isTyping ? onMessageClick : undefined}>
+                  <span>{displayedMessage}</span>
+                  {isTyping && <span className="animate-blink ml-1">|</span>}
                 </div>
               </div>
-
-              {/* Row 3: Time/Frequency and Streak (for habits) */}
-               <div className="px-4 pb-4">
-                 <div className="flex items-center justify-between pl-8">
-                   <div className="flex items-center space-x-2">
-                     {(task as any).estimated_duration && (
-                       <span className="text-xs text-gray-500">
-                         {(task as any).estimated_duration}分
-                       </span>
-                     )}
-                     
-                     {task.is_habit && (
-                       <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-                         {getFrequencyLabel((task as any).habit_frequency)}
-                       </span>
-                     )}
-                   </div>
-
-                   {task.is_habit && (task as any).current_streak !== undefined && (task as any).current_streak > 0 && (
-                     <StreakBadge task={task as any} size="sm" showText={false} />
-                   )}
-                 </div>
-               </div>
-
-              {/* インライン展開エリア */}
-              {expandedTaskId === task.id && (
-                <div className="border-t border-gray-100 bg-gray-50 animate-in slide-in-from-top duration-300">
-                  <div className="p-4 space-y-4">
-                    {/* タスクステータスとバッジ */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        task.priority === 'high' ? 'bg-red-100 text-red-700' :
-                        task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-green-100 text-green-700'
-                      }`}>
-                        優先度: {task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}
-                      </span>
-                      {task.is_habit && (
-                        <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">
-                          習慣タスク
-                        </span>
-                      )}
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        task.status === 'done' ? 'bg-green-100 text-green-700' :
-                        task.status === 'doing' ? 'bg-blue-100 text-blue-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                        {task.status === 'done' ? '完了' : task.status === 'doing' ? '進行中' : '未着手'}
-                      </span>
-                    </div>
-
-                    {/* メモ */}
-                    {task.description && (
-                      <div>
-                        <h4 className="text-xs font-medium text-gray-700 mb-1">メモ</h4>
-                        <div className="bg-white rounded p-2 text-xs text-gray-600 prose prose-xs max-w-none">
-                          <ReactMarkdown>
-                            {task.description}
-                          </ReactMarkdown>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 日程情報 */}
-                    {(task.start_date || (task.due_date && planType !== 'guest')) && (
-                      <div>
-                        <h4 className="text-xs font-medium text-gray-700 mb-1">📅 日程情報</h4>
-                        <div className="bg-purple-50 rounded p-2 space-y-1">
-                          {task.start_date && (
-                            <div className="flex items-center gap-2 text-xs text-purple-700">
-                              <span>🚀</span>
-                              <span>開始日: {new Date(task.start_date).toLocaleDateString('ja-JP')}</span>
-                            </div>
-                          )}
-                          {task.due_date && planType !== 'guest' && (
-                            <div className="flex items-center gap-2 text-xs text-purple-700">
-                              <span>🎯</span>
-                              <span>期限日: {new Date(task.due_date).toLocaleDateString('ja-JP')}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 習慣情報 */}
-                    {task.is_habit && (
-                      <div>
-                        <h4 className="text-xs font-medium text-gray-700 mb-1">習慣情報</h4>
-                        <div className="space-y-1 text-xs text-gray-600">
-                          <div>頻度: {getFrequencyLabel((task as any).habit_frequency)}</div>
-                          {(task as any).current_streak !== undefined && (task as any).current_streak > 0 && (
-                            <div className="flex items-center gap-1">
-                              <span>継続:</span>
-                              <StreakBadge task={task as any} size="sm" showText={true} />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* タイマー・実行情報 */}
-                    <div className="space-y-3">
-                      <h4 className="text-xs font-medium text-gray-700">タイマー・実行情報</h4>
-                      <MobileTaskTimer 
-                        task={task as any} 
-                        onExecutionComplete={async () => {
-                          // データのみを再取得（ページリロードを避ける）
-                          try {
-                            console.log('タスク実行完了 - データ更新中...');
-                            
-                            // 親コンポーネントのデータ更新を呼び出す
-                            if (onTaskUpdate) {
-                              await onTaskUpdate();
-                            }
-                            
-                            console.log('データ更新完了');
-                          } catch (error) {
-                            console.error('データ更新エラー:', error);
-                          }
-                        }}
-                      />
-                      <MobileTaskHistory task={task as any} />
-                    </div>
-
-                  </div>
+            </div>
+          )}
+          
+          {/* キャラクター（感情メニュー付き）- モバイル版専用デザイン */}
+          <div className="relative">
+            <div 
+              className="cursor-pointer flex-shrink-0 z-30"
+              style={{ height: '3cm', width: 'auto', display: 'flex', alignItems: 'center' }} 
+              onClick={(e) => {
+                e.stopPropagation(); // イベント伝播を停止
+                handleMessageClick();
+              }}
+            >
+              {/* 半透明の円（半径2cm）- 背面に配置 */}
+              <div className={`
+                absolute inset-0 w-32 h-32 rounded-full border-2 transform -translate-x-1/2 -translate-y-1/2
+                ${recordStatus && currentTimePeriod && (
+                  recordStatus[currentTimePeriod] === null || 
+                  (recordStatus[currentTimePeriod] && recordStatus[currentTimePeriod].id?.toString().startsWith('temp-'))
+                ) ? 'background-circle-unrecorded' : 'bg-blue-200/20 border-blue-300/30'}
+              `} style={{ left: '50%', top: '50%', zIndex: -1 }}></div>
+              
+              <Image
+                ref={characterRef}
+                src={showMessage ? '/TalkToTheBird.png' : '/SilentBird.png'}
+                alt="StepEasy Bird Character"
+                width={120}
+                height={120}
+                priority={true}
+                style={{ height: '3cm', width: 'auto', objectFit: 'contain', display: 'block' }}
+                className={`
+                  transition-transform transition-shadow duration-200 active:scale-110
+                  ${recordStatus && currentTimePeriod && (
+                    recordStatus[currentTimePeriod] === null || 
+                    (recordStatus[currentTimePeriod] && recordStatus[currentTimePeriod].id?.toString().startsWith('temp-'))
+                  ) ? 'character-unrecorded' : ''}
+                `}
+              />
+              
+              {/* 朝昼晩（統合型ヘッダー）をキャラクターの足元にabsolute配置：感情メニュー表示時のみ表示 */}
+              {showEmotionMenu && (
+                <div className="absolute left-1/2 -translate-x-1/2 -bottom-8 z-30 w-auto min-w-fit max-w-md flex justify-center pointer-events-none">
+                  <span className={`
+                    bg-white/90 border border-gray-200 rounded-full px-4 py-1 text-sm font-bold text-gray-800 shadow-md pointer-events-none select-none
+                    ${recordStatus && currentTimePeriod && (
+                      recordStatus[currentTimePeriod] === null || 
+                      (recordStatus[currentTimePeriod] && recordStatus[currentTimePeriod].id?.toString().startsWith('temp-'))
+                    ) ? 'border-blue-400 bg-blue-50' : ''}
+                  `}>
+                    {getEmotionTimePeriodLabel()}
+                  </span>
+                </div>
+              )}
+              
+              {/* 感情記録メニュー - キャラクター画像の中心に配置 */}
+              {showEmotionMenu && (
+                <div className="absolute inset-0 z-40">
+                  <EmotionHoverMenu
+                    isVisible={showEmotionMenu}
+                    onClose={() => {
+                      handleCloseEmotionMenu();
+                    }}
+                    characterRef={characterRef}
+                    isMessageDisplaying={showMessage}
+                    isTyping={isTyping}
+                    isMobile={true}
+                  />
                 </div>
               )}
             </div>
-          ))}
-
-                     {getCurrentTasks().length === 0 && (
-             <div className="text-center py-12">
-               {activeTab === 'tasks' ? (
-                 <>
-                   {React.createElement(FaCalendarAlt as React.ComponentType<any>, { className: "mx-auto text-gray-300 text-3xl mb-3" })}
-                   <p className="text-gray-500 text-sm">
-                     {isToday ? '今日のタスクはありません' : 'この日のタスクはありません'}
-                   </p>
-                 </>
-               ) : (
-                 <>
-                   {React.createElement(FaFire as React.ComponentType<any>, { className: "mx-auto text-gray-300 text-3xl mb-3" })}
-                   <p className="text-gray-500 text-sm">
-                     {isToday ? '今日の習慣はありません' : 'この日の習慣はありません'}
-                   </p>
-                 </>
-               )}
-             </div>
-           )}
-        </div>
-      </div>
-
-            {/* Enhanced Character Insights Card */}
-      <div className="px-4 pb-6">
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          {/* Main Content */}
-          <div className="p-5">
-            <div className="flex flex-col items-center text-center space-y-4">
-              {/* Character Section */}
-              <div className="flex-shrink-0">
-                <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 border-2 border-blue-200 flex items-center justify-center overflow-hidden">
-                  <img
-                    src={characterMood === 'happy' ? '/TalkToTheBird.png' : characterMood === 'sad' ? '/SilentBird.png' : '/TalkToTheBird.png'}
-                    alt="StepEasy Bird Character"
-                    className="w-16 h-16 object-contain"
-                  />
-                  {/* Mood indicator */}
-                  <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
-                    characterMood === 'happy' ? 'bg-green-400' :
-                    characterMood === 'normal' ? 'bg-yellow-400' :
-                    'bg-gray-400'
-                  }`} />
-                </div>
-              </div>
-
-              {/* Character Message */}
-              <div className="w-full">
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    {characterMessage || '読み込み中...'}
-                  </p>
-                </div>
-                
-                {/* 詳細分析ボタン */}
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <button
-                    onClick={() => handleNavigateToProgress()}
-                    className="w-full bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg p-3 transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                       <div className="flex items-center gap-2">
-                         {React.createElement(FaChartBar as React.ComponentType<any>, { className: "w-4 h-4 text-blue-600" })}
-                         <span className="text-sm font-medium text-blue-900">詳細統計</span>
-                       </div>
-                       <div className="text-xs text-blue-600">
-                         進捗ページで確認
-                       </div>
-                     </div>
-                  </button>
-                </div>
-              </div>
-            </div>
+            
+            {/* 感情記録ボタン（モバイル版専用） */}
+            <button
+              onClick={() => {
+                setShowEmotionMenu(!showEmotionMenu);
+              }}
+              className="absolute -bottom-8 -right-8 w-14 h-14 bg-pink-400/30 backdrop-blur-sm rounded-full shadow-lg border-2 border-white flex items-center justify-center text-white hover:bg-pink-500/30 active:scale-95 transition-all duration-200 z-40"
+              title="感情を記録"
+              data-emotion-button="true"
+            >
+              <svg className="w-6 h-6" fill="#be185d" viewBox="0 0 24 24">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* プレミアム Coming Soon バナー */}
-      {!isPremium && (
-        <div className="mb-6">
-          <PremiumComingSoonBanner
-            onPreviewClick={() => setShowPreviewModal(true)}
-            onNotificationSignup={() => setShowNotificationForm(true)}
+
+      
+
+
+      {/* タスクプレビュー・編集モーダル */}
+      {selectedTask && (
+        <>
+          <TaskPreviewModal
+            task={selectedTask}
+            isOpen={showTaskPreviewModal}
+            onClose={() => setShowTaskPreviewModal(false)}
+            onEdit={(task) => {
+              setSelectedTask(task);
+              setShowTaskPreviewModal(false);
+              setShowTaskEditModal(true);
+            }}
+            onDelete={handleDeleteTask}
+            onComplete={handleCompleteTask}
+            onRefresh={() => {
+              if (onTaskUpdate) {
+                onTaskUpdate();
+              }
+            }}
+            isMobile={true}
+            selectedDate={selectedDate}
           />
-        </div>
+
+          <TaskEditModal
+            task={selectedTask}
+            isOpen={showTaskEditModal}
+            onClose={() => setShowTaskEditModal(false)}
+            onSave={async (taskData) => {
+              if (selectedTask && onEditTask) {
+                await onEditTask(selectedTask);
+              }
+            }}
+            onDelete={handleDeleteTask}
+            onPreview={(task) => {
+              setSelectedTask(task);
+              setShowTaskEditModal(false);
+              setShowTaskPreviewModal(true);
+            }}
+            onRefresh={() => {
+              if (onTaskUpdate) {
+                onTaskUpdate();
+              }
+            }}
+            isMobile={true}
+            selectedDate={selectedDate}
+          />
+        </>
       )}
-
-      {/* プレミアムプレビューモーダル */}
-      <PremiumPreviewModal
-        isOpen={showPreviewModal}
-        onClose={() => setShowPreviewModal(false)}
-        onNotificationSignup={() => {
-          setShowPreviewModal(false);
-          setShowNotificationForm(true);
-        }}
-      />
-
-      {/* 通知登録フォーム */}
-      <NotificationSignupForm
-        isOpen={showNotificationForm}
-        onClose={() => setShowNotificationForm(false)}
-        onSuccess={() => {
-          // 成功時の処理（必要に応じて）
-          console.log('Premium notification signup successful');
-        }}
-      />
-
-      <div className="pb-20"></div>
     </div>
   );
 }; 

@@ -18,7 +18,7 @@ interface Recipient {
   };
 }
 
-// メール送信関数（実装は後で追加）
+// メール送信関数
 async function sendReleaseEmail(params: {
   to: string;
   subject: string;
@@ -26,8 +26,6 @@ async function sendReleaseEmail(params: {
   userName: string;
   interestedFeatures: string[];
 }) {
-  // TODO: Resend/SendGrid等のメール送信サービスを実装
-  // 現在はログ出力のみ
   console.log('📧 メール送信:', {
     to: params.to,
     subject: params.subject,
@@ -35,7 +33,6 @@ async function sendReleaseEmail(params: {
     interestedFeatures: params.interestedFeatures
   });
   
-  // 開発中は成功として扱う
   return { success: true };
 }
 

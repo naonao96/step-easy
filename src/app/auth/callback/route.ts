@@ -11,13 +11,29 @@ export async function GET(request: NextRequest) {
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
     
     try {
-      await supabase.auth.exchangeCodeForSession(code);
+      const { data: { session } } = await supabase.auth.exchangeCodeForSession(code);
+      
+      if (session?.user) {
+        // ユーザーのオンボーディング完了状況をチェック
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('created_at, onboarding_completed_at')
+          .eq('id', session.user.id)
+          .single();
+
+        if (!userError && userData) {
+          // オンボーディングが完了していない場合のみオンボーディング画面にリダイレクト
+          if (!userData.onboarding_completed_at) {
+            return NextResponse.redirect(`${requestUrl.origin}/onboarding`);
+          }
+        }
+      }
     } catch (error) {
       console.error('Error exchanging code for session:', error);
       return NextResponse.redirect(`${requestUrl.origin}/login?error=auth_error`);
     }
   }
 
-  // 認証成功後はメニュー画面にリダイレクト
+  // オンボーディング完了済みまたは新規ユーザーでない場合はメニュー画面にリダイレクト
   return NextResponse.redirect(`${requestUrl.origin}/menu`);
 } 

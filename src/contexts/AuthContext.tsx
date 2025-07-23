@@ -12,16 +12,17 @@ interface AuthUser {
   id: string;
   email: string;
   displayName?: string;
+  characterName?: string;
   isGuest?: boolean;
   isPremium?: boolean;
   planType?: 'guest' | 'free' | 'premium';
+  notification_settings?: { [key: string]: boolean };
 }
 
 interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
   signInWithGoogle: () => Promise<void>;
-  signInWithEmail: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   signInAsGuest: () => Promise<void>;
   isGuest: boolean;
@@ -55,7 +56,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('*')
+        .select(`
+          id,
+          email,
+          display_name,
+          character_name,
+          plan_type,
+          notification_settings
+        `)
         .eq('id', userId)
         .single();
 
@@ -68,7 +76,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: userData.id as string,
         email: userData.email as string,
         displayName: userData.display_name as string,
+        characterName: userData.character_name as string,
         planType: (userData.plan_type as 'guest' | 'free' | 'premium') || 'free',
+        notification_settings: userData.notification_settings as { [key: string]: boolean } || {
+          task: true,
+          habit: true,
+          subscription: true,
+          system: true,
+          ai: true,
+        },
       };
     } catch (error) {
       console.error('Error in fetchUserFromDatabase:', error);
@@ -92,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .insert([{
             id: userId,
             email: email,
-            display_name: displayName || email.split('@')[0] || 'User',
+            display_name: '', // オンボーディングで設定するため空文字で作成
             plan_type: 'free'
           }]);
 
@@ -123,7 +139,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const sessionUser = {
         id: session.user.id,
         email: session.user.email || '',
-        displayName: session.user.user_metadata?.display_name || '',
+        displayName: '', // データベースから取得するため空文字で初期化
         planType: 'free' as const,
       };
       
@@ -136,7 +152,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ensureUserExists(
           session.user.id,
           session.user.email || '',
-          session.user.user_metadata?.display_name
+          '' // オンボーディングで設定するため空文字で作成
         ).catch(error => {
           console.warn('🔐 Background ensureUserExists failed:', error);
         });
@@ -161,7 +177,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser({
         id: session.user.id,
         email: session.user.email || '',
-        displayName: session.user.user_metadata?.display_name || '',
+        displayName: '', // データベースから取得するため空文字
         planType: 'free',
       });
     }
@@ -236,38 +252,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signInWithEmail = async (email: string, password: string) => {
-    try {
-      console.log('🔐 AuthContext signInWithEmail called');
-      console.log('🔐 Email:', email);
-      console.log('🔐 Password length:', password.length);
-      
-      // 1. 基本的な認証のみ実行
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      console.log('🔐 Supabase auth result:', { 
-        success: !error, 
-        error: error?.message,
-        hasUser: !!data?.user,
-        userId: data?.user?.id 
-      });
-      
-      if (error) {
-        console.error('🔐 Auth error:', error);
-        throw error;
-      }
-      
-      console.log('🔐 Auth successful, redirecting...');
-      router.push('/menu');
-      
-    } catch (error) {
-      console.error('🔐 Error in signInWithEmail:', error);
-      throw error;
-    }
-  };
+
 
   const signInAsGuest = async () => {
     setUser({ 
@@ -521,11 +506,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     isLoading,
     signInWithGoogle,
-    signInWithEmail,
     signOut,
     signInAsGuest,
     isGuest: !!user?.isGuest,
-    isPremium: devPremiumOverride !== null ? devPremiumOverride : !!user?.isPremium,
+    isPremium: devPremiumOverride !== null ? devPremiumOverride : user?.planType === 'premium',
     planType: getPlanType(),
     shouldShowMigrationModal,
     setShouldShowMigrationModal,

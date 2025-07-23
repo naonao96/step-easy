@@ -4,6 +4,7 @@ import React from 'react';
 import { AppHeader } from '@/components/organisms/AppHeader';
 import { MobileBottomNavigation } from '@/components/organisms/MobileBottomNavigation';
 import { LeftSidebar } from '@/components/organisms/LeftSidebar';
+import { CloudLayer } from '@/components/CloudLayer';
 
 import { Task } from '@/types/task';
 
@@ -33,6 +34,8 @@ interface AppLayoutProps {
   showBottomNav?: boolean;
   showFAB?: boolean;
   onFABClick?: () => void;
+  currentTab?: 'tasks' | 'habits';
+  isModalOpen?: boolean; // モーダルの開閉状態を追加
 }
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ 
@@ -49,42 +52,42 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   showNotifications = true,
   className = '',
   showBottomNav = true,
-  showFAB = true,
-  onFABClick
+  showFAB = false,
+  onFABClick,
+  currentTab = 'tasks',
+  isModalOpen = false
 }) => {
   // モバイルメニュー関連のstateを削除（ボトムナビゲーションを使用）
 
   // ホームバリアント（メニュー画面用）
   if (variant === 'home') {
     return (
-      <div className="h-screen bg-blue-50">
-        {/* 固定ヘッダー */}
+      <div className="flex flex-col h-screen">
+        {/* ヘッダー（固定・非縮小） */}
         <AppHeader 
           variant="default"
           tasks={tasks}
           showNotifications={showNotifications}
           showMobileMenu={false}
           onMobileMenuToggle={undefined}
-          className="fixed top-0 left-0 right-0 z-50"
+          className="h-20 flex-shrink-0"
         />
-        
-        {/* 左サイドバー（デスクトップのみ） */}
-        <LeftSidebar className="hidden lg:block" />
-        
-        {/* モバイルナビゲーション（サイドドロワー）を無効化 - ボトムナビゲーションを使用 */}
-        
-        {/* メインコンテンツエリア */}
-        <main className={`pt-20 lg:ml-16 overflow-y-auto min-h-screen ${
-          showBottomNav ? 'pb-16 md:pb-0' : ''
-        } ${className}`}>
+        {/* メインエリア（ヘッダー下の残りスペース） */}
+        <div className="flex flex-1">
+          {/* サイドバー（固定幅・非縮小） */}
+          <LeftSidebar className="hidden lg:block w-16 flex-shrink-0" />
+          {/* メインコンテンツ（残りスペース・スクロール可能） */}
+          <main className="flex-1 overflow-y-auto md:pb-0 pb-20 pt-16 md:pt-20 lg:pl-16">
           {children}
         </main>
-
+        </div>
         {/* モバイル専用ボトムナビゲーション */}
         {showBottomNav && (
           <MobileBottomNavigation 
             showAddButton={showFAB}
             onAddClick={onFABClick}
+            currentTab={currentTab}
+            isModalOpen={isModalOpen}
           />
         )}
       </div>
@@ -93,8 +96,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 
   // 通常バリアント（タスク管理画面など用）
   return (
-    <div className="h-screen bg-blue-50">
-      {/* 固定ヘッダー */}
+    <div className="flex flex-col h-screen">
       <AppHeader 
         title={title}
         showBackButton={showBackButton}
@@ -107,26 +109,19 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         showNotifications={showNotifications}
         showMobileMenu={false}
         onMobileMenuToggle={undefined}
-        className="fixed top-0 left-0 right-0 z-50"
+        className="h-20 flex-shrink-0"
       />
-      
-      {/* 左サイドバー（デスクトップのみ） */}
-      <LeftSidebar className="hidden lg:block" />
-      
-      {/* モバイルナビゲーション（サイドドロワー）を無効化 - ボトムナビゲーションを使用 */}
-      
-      {/* メインコンテンツエリア */}
-      <main className={`pt-20 lg:ml-16 overflow-y-auto min-h-screen ${
-        showBottomNav ? 'pb-16 md:pb-0' : ''
-      } ${className}`}>
+      <div className="flex flex-1">
+        <LeftSidebar className="hidden md:block w-16 flex-shrink-0" />
+        <main className="flex-1 overflow-y-auto md:pb-0 pb-20 pt-16 md:pt-20 md:pl-16">
         {children}
       </main>
-
-      {/* モバイル専用ボトムナビゲーション */}
+      </div>
       {showBottomNav && (
         <MobileBottomNavigation 
           showAddButton={showFAB}
           onAddClick={onFABClick}
+          currentTab={currentTab}
         />
       )}
     </div>

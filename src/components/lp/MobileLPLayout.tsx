@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { FaBook, FaShieldAlt, FaFileContract, FaQuestionCircle, FaHome, FaTasks, FaGem, FaSignInAlt, FaUserPlus, FaEye, FaDownload, FaTimes } from 'react-icons/fa';
+import { FaBook, FaShieldAlt, FaFileContract, FaQuestionCircle, FaHome, FaGem, FaSignInAlt, FaUserPlus, FaEye, FaDownload, FaTimes } from 'react-icons/fa';
 
-export type ContentSection = 'home' | 'features' | 'plans' | 'guide' | 'privacy' | 'terms' | 'faq';
+export type ContentSection = 'home' | 'plans' | 'guide' | 'privacy' | 'terms' | 'faq';
 
 interface MobileLPLayoutProps {
   activeSection: ContentSection;
@@ -64,7 +64,6 @@ export const MobileLPLayout: React.FC<MobileLPLayoutProps> = ({
 
   const bottomNavItems = [
     { id: 'home' as ContentSection, label: 'ホーム', icon: FaHome },
-    { id: 'features' as ContentSection, label: '機能', icon: FaTasks },
     { id: 'plans' as ContentSection, label: 'プラン', icon: FaGem },
     { id: 'guide' as ContentSection, label: 'ガイド', icon: FaBook },
     { id: 'faq' as ContentSection, label: 'その他', icon: FaQuestionCircle },
@@ -76,23 +75,21 @@ export const MobileLPLayout: React.FC<MobileLPLayoutProps> = ({
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex flex-col">
+    <div className="min-h-screen flex flex-col">
       {/* ヘッダー */}
-      <header className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-40">
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between">
+      <header className="h-16 md:h-20 bg-gradient-to-b from-[#f7ecd7] to-[#f5e9da] backdrop-blur-sm shadow-lg border-b border-[#deb887]/30 sticky top-0 z-40 pt-safe">
+        <div className="px-4 sm:px-6 h-full flex items-center">
+          <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
               <Image
                 src="/logo.png"
                 alt="StepEasy"
-                width={32}
-                height={32}
-                className="drop-shadow-lg"
+                width={80}
+                height={80}
+                className="h-8 sm:h-10 w-auto drop-shadow-lg"
+                priority
+                quality={100}
               />
-              <div>
-                <h1 className="text-lg font-bold text-slate-900">StepEasy</h1>
-                <p className="text-xs text-slate-600">習慣を育てる、成長を実感する</p>
-              </div>
             </div>
             
             {/* ヘッダーアクション */}
@@ -100,8 +97,9 @@ export const MobileLPLayout: React.FC<MobileLPLayoutProps> = ({
               <button
                 onClick={onLogin}
                 disabled={isLoading}
-                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg font-medium transition-colors disabled:opacity-50"
+                className="px-2 py-1 bg-[#8b4513] hover:bg-[#7c5a2a] text-white text-xs rounded-md font-medium transition-colors disabled:opacity-50 flex items-center gap-1"
               >
+                {(FaSignInAlt as any)({ className: "w-3 h-3" })}
                 ログイン
               </button>
             </div>
@@ -111,25 +109,25 @@ export const MobileLPLayout: React.FC<MobileLPLayoutProps> = ({
 
       {/* PWAインストールプロンプト */}
       {showPWAPrompt && deferredPrompt && (
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 relative z-50">
+        <div className="bg-gradient-to-r from-[#8b4513] to-[#7c5a2a] text-white p-4 relative z-50">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 flex-1">
-              {(FaDownload as any)({ className: "w-5 h-5 text-blue-100" })}
+              {(FaDownload as any)({ className: "w-5 h-5 text-[#deb887]" })}
               <div className="flex-1">
                 <p className="font-medium text-sm">アプリとして追加</p>
-                <p className="text-xs text-blue-100">ホーム画面に追加して快適に利用</p>
+                <p className="text-xs text-[#deb887]">ホーム画面に追加して快適に利用</p>
               </div>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={handlePWAInstall}
-                className="px-3 py-1.5 bg-white text-blue-600 text-sm rounded-lg font-medium"
+                className="px-3 py-1.5 bg-white text-[#8b4513] text-sm rounded-lg font-medium"
               >
                 追加
               </button>
               <button
                 onClick={dismissPWAPrompt}
-                className="p-1.5 text-blue-100 hover:text-white"
+                className="p-1.5 text-[#deb887] hover:text-white"
               >
                 {(FaTimes as any)({ className: "w-4 h-4" })}
               </button>
@@ -139,47 +137,15 @@ export const MobileLPLayout: React.FC<MobileLPLayoutProps> = ({
       )}
 
       {/* メインコンテンツ */}
-      <main className="flex-1 overflow-y-auto pb-32">
+      <main className="flex-1 overflow-y-auto">
         {children}
       </main>
 
-      {/* アクションボタンエリア（プランページ以外で表示） */}
-      {activeSection !== 'plans' && (
-        <div className="fixed bottom-20 left-4 right-4 z-30">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-4">
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                onClick={onLogin}
-                disabled={isLoading}
-                className="flex flex-col items-center gap-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50"
-              >
-                {(FaSignInAlt as any)({ className: "w-4 h-4" })}
-                <span className="text-xs">ログイン</span>
-              </button>
-              <button
-                onClick={onRegister}
-                disabled={isLoading}
-                className="flex flex-col items-center gap-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50"
-              >
-                {(FaUserPlus as any)({ className: "w-4 h-4" })}
-                <span className="text-xs">新規登録</span>
-              </button>
-              <button
-                onClick={onGuest}
-                disabled={isLoading}
-                className="flex flex-col items-center gap-1 px-4 py-3 bg-slate-600 hover:bg-slate-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50"
-              >
-                {(FaEye as any)({ className: "w-4 h-4" })}
-                <span className="text-xs">ゲスト</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* ボトムナビゲーション */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-40">
-        <div className="grid grid-cols-5 h-16">
+      <nav className="fixed bottom-0 left-0 right-0 bg-gradient-to-b from-[#f7ecd7] to-[#f5e9da] backdrop-blur-sm border-t border-[#deb887]/30 shadow-lg z-40 pb-safe">
+        <div className="grid grid-cols-4 h-16">
           {bottomNavItems.map((item) => {
             const IconComponent = item.icon;
             const isActive = activeSection === item.id;
@@ -190,12 +156,12 @@ export const MobileLPLayout: React.FC<MobileLPLayoutProps> = ({
                 onClick={() => onSectionChange(item.id)}
                 className={`flex flex-col items-center justify-center gap-1 transition-colors ${
                   isActive
-                    ? 'text-blue-600 bg-blue-50'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'text-[#8b4513] bg-[#f5f5dc]/80'
+                    : 'text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc]/80'
                 }`}
               >
-                {(IconComponent as any)({ className: `w-5 h-5 ${isActive ? 'text-blue-600' : ''}` })}
-                <span className={`text-xs font-medium ${isActive ? 'text-blue-600' : ''}`}>
+                {(IconComponent as any)({ className: `w-5 h-5 ${isActive ? 'text-[#8b4513]' : ''}` })}
+                <span className={`text-xs font-medium ${isActive ? 'text-[#8b4513]' : ''}`}>
                   {item.label}
                 </span>
               </button>

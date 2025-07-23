@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FaCheck, FaTimes, FaSpinner, FaExclamationTriangle } from 'react-icons/fa';
 import { Button } from '@/components/atoms/Button';
-import { Task } from '@/stores/taskStore';
+import { Task } from '@/types/task';
 
 interface GuestMigrationModalProps {
   isOpen: boolean;

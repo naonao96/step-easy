@@ -94,13 +94,15 @@ export const DurationInput: React.FC<DurationInputProps> = ({
 
   return (
     <div className={`space-y-4 ${className}`}>
-      {/* ラベル */}
-      <div className="flex items-center gap-2">
-        {FaClock ({className:"w-4 h-4 text-gray-500"})}
-        <label className="block text-sm font-medium text-gray-700">
-          {label}
-        </label>
-      </div>
+      {/* ラベル - 外部から指定された場合のみ表示 */}
+      {label && (
+        <div className="flex items-center gap-2">
+          {FaClock ({className:"w-4 h-4 text-gray-500"})}
+          <label className="block text-sm font-medium text-gray-700">
+            {label}
+          </label>
+        </div>
+      )}
 
       {/* プリセット選択 */}
       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
