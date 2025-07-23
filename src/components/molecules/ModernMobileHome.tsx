@@ -341,7 +341,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
               <h1 className="text-lg font-semibold text-[#8b4513]">
                 {getTitle()}
               </h1>
-              {!isToday && (
+              {!isTodaySelected && (
                 <button
                   onClick={goToToday}
                   className="text-sm text-[#7c5a2a] hover:text-[#8b4513] transition-colors mt-1"

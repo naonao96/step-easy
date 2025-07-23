@@ -60,8 +60,8 @@ export const HABIT_CONSTANTS = {
   
   // ステータス
   STATUSES: ['active', 'paused', 'stopped'] as const,
-  
-  // プラン別制限
+
+// プラン別制限
   PLAN_LIMITS: {
     guest: { maxHabits: 0, maxStreakDays: 0 },
     free: { maxHabits: 3, maxStreakDays: 14 },
