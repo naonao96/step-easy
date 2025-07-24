@@ -39,6 +39,7 @@ interface AuthContextType {
   canSetDueDate: () => { canSet: boolean; message: string };
   getStartDateLimits: (isExistingTask?: boolean) => { min: string | undefined; max: string | undefined; disabled: boolean; message: string };
   getDueDateLimits: (startDate?: Date) => { min: string | undefined; max: string | undefined; disabled: boolean; message: string };
+  refreshUser: () => Promise<void>; // 追加
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -91,6 +92,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return null;
     }
   }, []);
+
+  // 他への影響を一切与えないrefreshUser関数
+  const refreshUser = useCallback(async () => {
+    if (!user) return;
+    const updated = await fetchUserFromDatabase(user.id);
+    if (updated) setUser(updated);
+  }, [user, fetchUserFromDatabase]);
 
   // ユーザー登録確認・作成関数
   const ensureUserExists = useCallback(async (userId: string, email: string, displayName?: string): Promise<void> => {
@@ -521,6 +529,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     canSetDueDate,
     getStartDateLimits,
     getDueDateLimits,
+    refreshUser, // ← 追加
   };
 
   return (
