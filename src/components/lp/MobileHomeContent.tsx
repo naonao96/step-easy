@@ -612,7 +612,7 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
           
           <div className={`space-y-4 transition-all duration-1000 delay-200 ${externalLinksAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <a
-              href="https://note.com/preview/n179346d630b0"
+              href="https://note.com/naosukesan/n/n179346d630b0"
               target="_blank"
               rel="noopener noreferrer"
               className="block bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-[#deb887] hover:shadow-xl transition-shadow"
@@ -742,7 +742,7 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
                   <a href="https://x.com/stepeasyjp" target="_blank" rel="noopener noreferrer" className="text-[#7c5a2a] hover:text-[#8b4513] transition-colors">
                     {(FaTwitter as any)({ className: "w-5 h-5" })}
                   </a>
-                  <a href="https://note.com/preview/n179346d630b0" target="_blank" rel="noopener noreferrer" className="text-[#7c5a2a] hover:text-[#8b4513] transition-colors">
+                  <a href="https://note.com/naosukesan/n/n179346d630b0" target="_blank" rel="noopener noreferrer" className="text-[#7c5a2a] hover:text-[#8b4513] transition-colors">
                     {(FaFileAlt as any)({ className: "w-5 h-5" })}
                   </a>
                 </div>
