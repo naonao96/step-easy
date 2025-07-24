@@ -1,5 +1,6 @@
 import { Task } from '@/types/task';
 import { HabitCompletion } from '@/types/habit';
+import { getJSTDateString } from '@/lib/timeUtils';
 
 /**
  * 習慣の種類に応じた継続期限を計算
@@ -132,9 +133,7 @@ const isConsecutiveDay = (date1: Date, date2: Date): boolean => {
  * 指定された日付が今日かどうかチェック（日本時間）
  */
 const isToday = (date: Date): boolean => {
-  const now = new Date();
-  const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
-  const today = japanTime.toISOString().split('T')[0];
-  const dateString = date.toISOString().split('T')[0];
+  const today = getJSTDateString();
+  const dateString = getJSTDateString(date);
   return dateString === today;
 }; 

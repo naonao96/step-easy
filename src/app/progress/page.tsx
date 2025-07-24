@@ -13,6 +13,7 @@ import { FaChartBar, FaChartPie, FaFire, FaChartLine, FaTrophy } from 'react-ico
 import { DEFAULT_CATEGORIES } from '@/types/task';
 import { Task } from '@/types/task';
 import { useSearchParams } from 'next/navigation';
+import { getJSTDateString } from '@/lib/timeUtils';
 
 type TabType = 'today' | 'category' | 'heatmap' | 'overall';
 
@@ -43,8 +44,7 @@ export default function ProgressPage() {
     today.setHours(0, 0, 0, 0);
     
     // 今日の日付文字列を取得（日本時間）
-    const japanTime = new Date(today.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
-    const todayString = japanTime.toISOString().split('T')[0];
+    const todayString = getJSTDateString(today);
     
     // 今日のタスクを取得
     const todayTasks = tasks.filter(task => {
@@ -178,11 +178,11 @@ export default function ProgressPage() {
       }).reverse();
 
       const dailyStats = last30Days.map(date => {
-        const dateStr = date.toISOString().split('T')[0];
+        const dateStr = getJSTDateString(date);
         const dayCompletedTasks = categoryCompletedTasks.filter(task => {
           if (!task.completed_at) return false;
           const completedDate = new Date(task.completed_at);
-          return completedDate.toISOString().split('T')[0] === dateStr;
+          return getJSTDateString(completedDate) === dateStr;
         });
         
         return {
@@ -399,11 +399,7 @@ export default function ProgressPage() {
                         {habits.filter(habit => habit.habit_status === 'active').map(habit => {
                           const isCompleted = habitCompletions.some(completion => 
                             completion.habit_id === habit.id && 
-                            completion.completed_date === (() => {
-                              const today = new Date();
-                              const japanTime = new Date(today.getTime() + (9 * 60 * 60 * 1000));
-                              return japanTime.toISOString().split('T')[0];
-                            })()
+                            completion.completed_date === getJSTDateString()
                           );
                           
                           return (
@@ -684,11 +680,7 @@ export default function ProgressPage() {
                     {habits.filter(habit => habit.habit_status === 'active').map(habit => {
                       const isCompleted = habitCompletions.some(completion => 
                         completion.habit_id === habit.id && 
-                        completion.completed_date === (() => {
-                          const today = new Date();
-                          const japanTime = new Date(today.getTime() + (9 * 60 * 60 * 1000));
-                          return japanTime.toISOString().split('T')[0];
-                        })()
+                        completion.completed_date === getJSTDateString()
                       );
                       
                       return (

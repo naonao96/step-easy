@@ -3,7 +3,7 @@ import { useHabitStore } from '@/stores/habitStore';
 import { type Task } from '@/types/task';
 import { type Habit } from '@/types/habit';
 import { isNewHabit } from '@/lib/habitUtils';
-import { toDateStringOrNull, toTimestampStringOrNull } from '@/lib/timeUtils';
+import { toDateStringOrNull, toTimestampStringOrNull, getJSTDateString } from '@/lib/timeUtils';
 import { BaseTaskModal } from './BaseTaskModal';
 
 interface TaskPreviewModalProps {
@@ -44,8 +44,7 @@ export const TaskPreviewModal: React.FC<TaskPreviewModalProps> = ({
     if (isNewHabit(task)) {
       // 新しい習慣テーブルの習慣の場合：habitCompletionsからリアルタイムで判定
       const targetDate = selectedDate || new Date();
-      const japanTime = new Date(targetDate.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
-      const dateString = japanTime.toISOString().split('T')[0];
+      const dateString = getJSTDateString(targetDate);
       
       const isCompleted = habitCompletions.some(
         completion => completion.habit_id === task.id && completion.completed_date === dateString

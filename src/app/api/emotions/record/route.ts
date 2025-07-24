@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 今日の日付を取得（日本時間）
-    const today = japanTime.toISOString().split('T')[0];
+    const today = getJSTDateString(japanTime);
 
     // 既存の記録をチェック
     const { data: existingRecord, error: checkError } = await supabase

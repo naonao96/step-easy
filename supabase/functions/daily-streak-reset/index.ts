@@ -61,13 +61,12 @@ serve(async (req) => {
 
     // 今日の日付を取得（日本時間）
     const now = new Date();
-    const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
-    const today = japanTime.toISOString().split('T')[0];
+    const today = now.toLocaleDateString("en-CA", {timeZone: "Asia/Tokyo"});
     
     // 昨日の日付を取得
-    const yesterday = new Date(japanTime);
+    const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayString = yesterday.toISOString().split('T')[0];
+    const yesterdayString = yesterday.toLocaleDateString("en-CA", {timeZone: "Asia/Tokyo"});
 
     console.log(`対象日: ${today}, 昨日: ${yesterdayString}`);
 

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { getExpiredStreakTasks } from '@/lib/streakUtils';
 import { Task } from '@/types/task';
+import { getJSTDateString } from '@/lib/timeUtils';
 
 // モジュールレベルでSupabaseクライアントを一度だけ作成
 const supabase = createClientComponentClient();
@@ -145,7 +146,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
           
           // ゲストユーザーの場合、タスクが完了状態になった時の継続日数計算
           if (task.status === 'done' && guestTasks[taskIndex].status !== 'done') {
-            const today = new Date().toISOString().split('T')[0];
+            const today = getJSTDateString();
             const lastCompleted = updatedTask.last_completed_date;
             
             if (!lastCompleted) {

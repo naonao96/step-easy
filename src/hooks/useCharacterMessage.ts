@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Task } from '@/types/task';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { getJSTDateString as getJSTDateStringFromTimeUtils, getJSTHour as getJSTHourFromTimeUtils } from '@/lib/timeUtils';
 
 interface CharacterMessageHookProps {
   userType: 'guest' | 'free' | 'premium';
@@ -47,12 +48,16 @@ const supabase = createClientComponentClient();
 /**
  * 日本時間での日付文字列を取得する関数
  */
-const getJSTDateString = (date?: Date): string => {
-  const targetDate = date ? new Date(date) : new Date();
-  const jstOffset = 9 * 60;
-  const jstTime = new Date(targetDate.getTime() + (jstOffset * 60 * 1000));
-  return jstTime.toISOString().split('T')[0];
-};
+  const getJSTDateString = (date?: Date): string => {
+    return getJSTDateStringFromTimeUtils(date);
+  };
+
+/**
+ * 日本時間での時刻を取得する関数
+ */
+  const getJSTHour = (date?: Date): number => {
+    return getJSTHourFromTimeUtils(date);
+  };
 
 /**
  * daily_messagesテーブルから今日のメッセージを取得
@@ -60,11 +65,21 @@ const getJSTDateString = (date?: Date): string => {
 const fetchDailyMessage = async (userId: string): Promise<string | null> => {
   try {
     const now = new Date();
-    const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
-    const hour = japanTime.getHours();
+    const hour = getJSTHour(now);
     
-    // 常に今日のメッセージを取得（日本時間）
-    const targetDate = japanTime.toISOString().split('T')[0];
+    let targetDate: string;
+    let isYesterday = false;
+    
+    // 0時から9時までは前日のメッセージを取得
+    if (hour >= 0 && hour < 9) {
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      targetDate = getJSTDateString(yesterday);
+      isYesterday = true;
+    } else {
+      // 9時以降は今日のメッセージを取得
+      targetDate = getJSTDateString(now);
+    }
 
     const { data: dailyMessage, error } = await supabase
       .from('daily_messages')
@@ -78,6 +93,7 @@ const fetchDailyMessage = async (userId: string): Promise<string | null> => {
       return null;
     }
 
+    console.log(`📅 メッセージ取得: ${isYesterday ? '前日' : '今日'} (${targetDate})`);
     return dailyMessage.message;
   } catch (error) {
     console.error('Error fetching daily message:', error);
@@ -128,7 +144,7 @@ const generatePersonalizedMessage = async (
   // 新規登録判定（翌日9時まで）
   if (user?.id && user?.created_at) {
     const registrationTime = new Date(user.created_at);
-    const jstRegistrationTime = new Date(registrationTime.getTime() + (9 * 60 * 60 * 1000));
+    const jstRegistrationTime = new Date(registrationTime);
     const nextDay9AM = new Date(jstRegistrationTime);
     nextDay9AM.setDate(nextDay9AM.getDate() + 1);
     nextDay9AM.setUTCHours(0, 0, 0, 0);
@@ -167,8 +183,7 @@ const generatePersonalizedMessage = async (
 
   // 時間帯の判定（日本時間）
   const now = new Date();
-  const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
-  const hour = japanTime.getHours();
+  const hour = getJSTHour(now);
   const timeOfDay = hour >= 6 && hour < 12 ? '朝' : hour >= 12 && hour < 18 ? '昼' : '晩';
   
   // ユーザー名の処理

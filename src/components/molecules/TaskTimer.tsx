@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { FaPlay, FaPause, FaStop, FaClock, FaUndo } from 'react-icons/fa';
 import { useExecutionStore } from '@/stores/executionStore';
 import { Task } from '@/types/task';
-import { formatDurationShort } from '@/lib/timeUtils';
+import { formatDurationShort, getJSTDateString } from '@/lib/timeUtils';
 import { handleTimerError, getTimerErrorMessage } from '@/lib/timerUtils';
 import { getHabitDailyExecutionTime, formatHabitExecutionTime } from '@/lib/habitUtils';
 
@@ -44,8 +44,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({ task, onExecutionComplete,
         try {
           // 今日の日付を日本時間で取得
           const today = new Date();
-          const jstOffset = 9 * 60; // 分単位
-          const jstTime = new Date(today.getTime() + (jstOffset * 60 * 1000));
+          const jstTime = new Date(getJSTDateString(today) + 'T00:00:00+09:00');
           const executionTime = await getHabitDailyExecutionTime(task.id, jstTime);
           setHabitExecutionTime(executionTime);
         } catch (error) {
@@ -104,8 +103,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({ task, onExecutionComplete,
     if (isHabitTask) {
       // 今日の日付を日本時間で取得
       const today = new Date();
-      const jstOffset = 9 * 60; // 分単位
-      const jstTime = new Date(today.getTime() + (jstOffset * 60 * 1000));
+      const jstTime = new Date(getJSTDateString(today) + 'T00:00:00+09:00');
       const executionTime = await getHabitDailyExecutionTime(task.id, jstTime);
       setHabitExecutionTime(executionTime);
     }
