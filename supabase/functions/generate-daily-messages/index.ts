@@ -227,7 +227,7 @@ function calculateHabitStreak(completions: HabitCompletion[], isCompletedToday: 
 function getYesterdayData(tasks: Task[], habits: Habit[], habitCompletions: HabitCompletion[], emotions: any[]) {
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toLocaleDateString("en-CA", {timeZone: "Asia/Tokyo"});
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
   
   // 前日のタスク統計（既存の計算を維持）
   const yesterdayTasks = tasks?.filter((t: Task) => 
@@ -241,7 +241,7 @@ function getYesterdayData(tasks: Task[], habits: Habit[], habitCompletions: Habi
   // 前日の感情データ（朝昼晩）
   const yesterdayEmotions = emotions?.filter((e: any) => {
     const emotionDate = new Date(e.created_at);
-    const emotionDateStr = emotionDate.toLocaleDateString("en-CA", {timeZone: "Asia/Tokyo"});
+    const emotionDateStr = emotionDate.toISOString().split('T')[0];
     return emotionDateStr === yesterdayStr;
   }) || [];
   const morningEmotion = yesterdayEmotions.find((e: any) => e.time_period === 'morning')?.emotion_type || 'none';
@@ -338,7 +338,7 @@ async function generateMessage(genAI: GoogleGenerativeAI, userName?: string, tas
   // 時間帯と曜日の取得（日本時間）
   const getTimeBasedGreeting = (): string => {
     const now = new Date();
-    const japanTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Tokyo"}));
+    const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
     const hour = japanTime.getHours();
     if (hour >= 6 && hour < 12) return 'morning';
     if (hour >= 12 && hour < 18) return 'afternoon';
@@ -420,7 +420,9 @@ serve(async (_req: any) => {
     // 日本時間での日付取得（統一処理）
     const getJSTDateString = (): string => {
       const now = new Date();
-      return now.toLocaleDateString("en-CA", {timeZone: "Asia/Tokyo"});
+      const jstOffset = 9 * 60; // 日本時間は UTC+9
+      const jstTime = new Date(now.getTime() + (jstOffset * 60 * 1000));
+      return jstTime.toISOString().split('T')[0];
     };
 
     const today = getJSTDateString();
@@ -506,8 +508,8 @@ serve(async (_req: any) => {
         if (emotions && emotions.length > 0) {
           // 日付降順で並べ替え（created_atから日付を抽出）
           const sorted = [...emotions].sort((a, b) => {
-            const dateA = new Date(a.created_at).toLocaleDateString("en-CA", {timeZone: "Asia/Tokyo"});
-            const dateB = new Date(b.created_at).toLocaleDateString("en-CA", {timeZone: "Asia/Tokyo"});
+            const dateA = new Date(a.created_at).toISOString().split('T')[0];
+            const dateB = new Date(b.created_at).toISOString().split('T')[0];
             return dateB.localeCompare(dateA);
           });
           for (const e of sorted.slice(0, 3)) {

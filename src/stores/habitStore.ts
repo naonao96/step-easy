@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Habit, HabitCompletion, HabitFormData, HabitCompletionError, HabitCompletionResult } from '@/types/habit';
 import { getJSTDateString } from '@/lib/habitUtils';
-import { getJSTDateString as getJSTDateStringFromTimeUtils } from '@/lib/timeUtils';
 
 const supabase = createClientComponentClient();
 
@@ -134,7 +133,9 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
   completeHabit: async (habitId): Promise<HabitCompletionResult> => {
     try {
       // 日本時間での今日の日付を取得
-      const today = getJSTDateStringFromTimeUtils();
+      const now = new Date();
+      const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+      const today = japanTime.toISOString().split('T')[0];
       
       // フロントエンド側での重複チェック
       const { habits, habitCompletions } = get();
@@ -223,7 +224,11 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
   toggleHabitCompletion: async (habitId: string, completed: boolean, targetDate?: string): Promise<HabitCompletionResult> => {
     try {
       // 指定された日付または日本時間での今日の日付を取得
-      const dateString = targetDate || getJSTDateStringFromTimeUtils();
+      const dateString = targetDate || (() => {
+        const now = new Date();
+        const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+        return japanTime.toISOString().split('T')[0];
+      })();
       
       const { habits, habitCompletions } = get();
       const isCurrentlyCompleted = habitCompletions.some(
@@ -292,8 +297,10 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
   },
 
   getTodayCompletions: () => {
-          // 日本時間での今日の日付を取得
-      const today = getJSTDateStringFromTimeUtils();
+    // 日本時間での今日の日付を取得
+    const now = new Date();
+    const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+    const today = japanTime.toISOString().split('T')[0];
     return get().habitCompletions.filter(c => c.completed_date === today);
   },
 

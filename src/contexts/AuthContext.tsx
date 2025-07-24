@@ -4,7 +4,6 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { useRouter } from 'next/navigation';
 import { hasGuestTasks, getGuestTasks } from '@/lib/guestMigration';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { getJSTDateString } from '@/lib/timeUtils';
 
 // Supabaseクライアントはシングルトンとしてモジュールレベルで一度だけ生成
 const supabase = createClientComponentClient();
@@ -413,7 +412,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const getStartDateLimits = useCallback((isExistingTask?: boolean) => {
     const planType = getPlanType();
-    const today = getJSTDateString();
+    const today = new Date().toISOString().split('T')[0];
     
     switch (planType) {
       case 'guest':
@@ -430,7 +429,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           maxDate.setDate(maxDate.getDate() + 14);
           return {
             min: undefined, // 過去日も許可
-            max: getJSTDateString(maxDate),
+            max: maxDate.toISOString().split('T')[0],
             disabled: false,
             message: '過去日から14日先まで設定可能'
           };
@@ -439,7 +438,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           maxDate.setDate(maxDate.getDate() + 14);
           return {
             min: today,
-            max: getJSTDateString(maxDate),
+            max: maxDate.toISOString().split('T')[0],
             disabled: false,
             message: '今日から14日先まで設定可能'
           };

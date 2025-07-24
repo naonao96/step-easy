@@ -17,7 +17,6 @@ import ReactMarkdown from 'react-markdown';
 import { TASK_CONSTANTS, MODAL_CONSTANTS } from '@/lib/constants';
 import { useHabitStore } from '@/stores/habitStore';
 import { isNewHabit, isHabitCompleted, isHabitByType } from '@/lib/habitUtils';
-import { getJSTDateString } from '@/lib/timeUtils';
 
 // 型定義
 interface BaseTaskFormData {
@@ -165,7 +164,8 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
     if (initialData && initialData.id && isHabitByType(initialData)) {
       // 習慣の場合：habitCompletionsからリアルタイムで判定
       const targetDate = selectedDate || new Date();
-      const dateString = getJSTDateString(targetDate);
+      const japanTime = new Date(targetDate.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+      const dateString = japanTime.toISOString().split('T')[0];
       
       const isCompleted = habitCompletions.some(
         completion => completion.habit_id === initialData.id && completion.completed_date === dateString

@@ -212,26 +212,6 @@ export const getJapanTimeNow = (): { date: Date; hour: number; minute: number; s
 };
 
 /**
- * 日本時間での日付文字列を取得する統一関数（YYYY-MM-DD形式）
- * 手動計算の置き換え用
- */
-export const getJSTDateString = (date?: Date): string => {
-  const targetDate = date ? new Date(date) : new Date();
-  return targetDate.toLocaleDateString("en-CA", {timeZone: "Asia/Tokyo"});
-};
-
-/**
- * 日本時間での時刻を取得する統一関数
- * 手動計算の置き換え用
- */
-export const getJSTHour = (date?: Date): number => {
-  const targetDate = date ? new Date(date) : new Date();
-  return parseInt(targetDate.toLocaleString("en-US", {timeZone: "Asia/Tokyo", hour: "numeric", hour12: false}));
-};
-
-
-
-/**
  * 感情ログ用の統一された時間帯判定関数
  */
 export const getEmotionTimePeriod = (): 'morning' | 'afternoon' | 'evening' => {
@@ -302,7 +282,8 @@ export function getDayBasedMessage(userName?: string): string {
  */
 export function toJSTDateString(date: Date): string {
   // より正確な日本時間変換（タイムゾーン指定）
-  return getJSTDateString(date);
+  const jstTime = new Date(date.toLocaleString("en-US", {timeZone: "Asia/Tokyo"}));
+  return jstTime.toISOString().split('T')[0];
 }
 
 /**
@@ -328,7 +309,8 @@ export function toISODateStringOrNull(date: Date | null): string | null {
  * @returns 今日のJST基準YYYY-MM-DD形式文字列
  */
 export function getTodayJSTString(): string {
-  return getJSTDateString();
+  const today = new Date();
+  return toJSTDateString(today);
 }
 
 /**
@@ -347,7 +329,7 @@ export function fromJSTDateString(dateString: string): Date {
  * @returns YYYY-MM-DD形式文字列またはnull
  */
 export function toDateStringOrNull(date: Date | null): string | null {
-  return date ? getJSTDateString(date) : null;
+  return date ? date.toISOString().split('T')[0] : null;
 }
 
 /**

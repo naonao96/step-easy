@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { ActiveTaskExecution, Task } from '@/types/task';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { getTodayJSTString } from '@/lib/timeUtils';
 
 // Supabaseクライアントはシングルトンとしてモジュールレベルで一度だけ生成
 const supabase = createClientComponentClient();
@@ -83,7 +82,10 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
 
   // 今日の日付を取得（YYYY-MM-DD形式、日本時間）
   const getTodayString = () => {
-    return getTodayJSTString();
+    const now = new Date();
+    const jstOffset = 9 * 60; // 分単位
+    const jstTime = new Date(now.getTime() + (jstOffset * 60 * 1000));
+    return jstTime.toISOString().split('T')[0];
   };
 
   // 今日の累積時間を計算

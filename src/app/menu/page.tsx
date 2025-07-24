@@ -28,7 +28,6 @@ import { useMessageDisplay } from '@/hooks/useMessageDisplay';
 import { integrateHabitData, convertHabitsToTasks, isNewHabit } from '@/lib/habitUtils';
 import { completeHabit, deleteHabit as deleteHabitOperation, editHabit } from '@/lib/habitOperations';
 import { useEmotionStore } from '@/stores/emotionStore';
-import { getEmotionTimePeriod, getJSTHour } from '@/lib/timeUtils';
 // react-responsiveが未インストールの場合は `npm install react-responsive` を実行してください
 const { useMediaQuery } = require('react-responsive');
 
@@ -61,6 +60,7 @@ export default function MenuPage() {
     
     // 5分ごとに現在の時間帯を更新
     const interval = setInterval(() => {
+      const { getEmotionTimePeriod } = require('@/lib/timeUtils');
       const newTimePeriod = getEmotionTimePeriod();
       if (newTimePeriod !== emotionStore.currentTimePeriod) {
         emotionStore.refreshTodayEmotions();
@@ -330,8 +330,14 @@ export default function MenuPage() {
   const { characterMessage, messageParts } = useCharacterMessage({
     userType: user?.planType || 'guest',
     userName: user?.displayName || user?.email?.split('@')[0] || 'ユーザー',
-    tasks: selectedDateTasks, // 選択された日付のタスクを渡す
-    statistics,
+    tasks,
+    statistics: {
+      selectedDateCompletedTasks: 0,
+      selectedDateTotalTasks: 0,
+      selectedDatePercentage: 0,
+      todayPercentage: 0,
+      overallPercentage: 0,
+    },
     selectedDate,
   });
 
@@ -518,7 +524,9 @@ export default function MenuPage() {
 
   // 時間帯による挨拶の設定（日本時間）
   useEffect(() => {
-    const hour = getJSTHour();
+    const now = new Date();
+    const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+    const hour = japanTime.getHours();
     if (hour >= 6 && hour < 12) {
       setGreeting('おはようございます');
     } else if (hour >= 12 && hour < 18) {
@@ -606,7 +614,7 @@ export default function MenuPage() {
           messageParts={messageParts}
           onCompleteTask={handleCompleteTask}
           onDeleteTask={handleDeleteTask}
-          onEditTask={handleEditTask}
+          onEditTask={(task) => handleEditTask(task as any)}
           onDateSelect={setSelectedDate}
           onTabChange={handleMobileTabChange}
           onTaskUpdate={fetchTasks} // データ更新関数を追加
@@ -738,66 +746,26 @@ export default function MenuPage() {
             onClose={() => setShowEditModal(false)}
             onSave={async (taskData) => {
               if (selectedTask) {
-                try {
-                  console.log('🔍 習慣編集保存開始:', {
-                    task_id: selectedTask.id,
-                    is_habit: isNewHabit(selectedTask),
-                    input_data: taskData,
-                    timestamp: new Date().toISOString()
-                  });
-
-                  // 習慣かどうかを判定して適切な更新関数を使用
-                  if (isNewHabit(selectedTask)) {
-                    // 習慣の場合はupdateHabitを使用
-                    const { updateHabit } = useHabitStore.getState();
-                    
-                    // taskDataを習慣用の形式に変換（日付処理を修正）
-                    const habitData = {
-                      title: taskData.title,
-                      description: taskData.description,
-                      category: taskData.category,
-                      priority: taskData.priority,
-                      estimated_duration: taskData.estimated_duration,
-                      start_date: taskData.start_date ? taskData.start_date : undefined,
-                      due_date: taskData.due_date ? taskData.due_date : null,
-                      has_deadline: taskData.due_date !== null && taskData.due_date !== undefined
-                    };
-
-                    console.log('🔍 変換後の習慣データ:', {
-                      habit_data: habitData,
-                      data_types: {
-                        title: typeof habitData.title,
-                        description: typeof habitData.description,
-                        category: typeof habitData.category,
-                        priority: typeof habitData.priority,
-                        estimated_duration: typeof habitData.estimated_duration,
-                        start_date: typeof habitData.start_date,
-                        due_date: typeof habitData.due_date,
-                        has_deadline: typeof habitData.has_deadline
-                      },
-                      timestamp: new Date().toISOString()
-                    });
-
-                    await updateHabit(selectedTask.id, habitData);
-                    await fetchHabits(); // 習慣データを再取得
-                    
-                    // モバイル版の場合のみ親コンポーネント更新
-                    if (!isDesktop) {
-                      await fetchTasks();
-                    }
-                    
-                    console.log('✅ 習慣編集保存完了:', {
-                      task_id: selectedTask.id,
-                      updated_fields: Object.keys(habitData),
-                      timestamp: new Date().toISOString()
-                    });
-                  } else {
-                    // タスクの場合はupdateTaskを使用
-                    await updateTask(selectedTask.id, taskData);
-                  }
-                } catch (error) {
-                  console.error('❌ 習慣編集保存エラー:', error);
-                  alert('保存に失敗しました: ' + (error as Error).message);
+                // 習慣かどうかを判定して適切な更新関数を使用
+                if (isNewHabit(selectedTask)) {
+                  // 習慣の場合はupdateHabitを使用
+                  const { updateHabit } = useHabitStore.getState();
+                  // taskDataを習慣用の形式に変換
+                  const habitData = {
+                    title: taskData.title,
+                    description: taskData.description,
+                    category: taskData.category,
+                    priority: taskData.priority,
+                    estimated_duration: taskData.estimated_duration,
+                    start_date: taskData.start_date || undefined,
+                    due_date: taskData.due_date === '' || taskData.due_date == null ? undefined : taskData.due_date,
+                    has_deadline: taskData.due_date !== null
+                  };
+                  await updateHabit(selectedTask.id, habitData);
+                  await fetchHabits(); // 習慣データを再取得
+                } else {
+                  // タスクの場合はupdateTaskを使用
+                  await updateTask(selectedTask.id, taskData);
                 }
               }
             }}

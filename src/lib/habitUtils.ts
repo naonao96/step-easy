@@ -1,7 +1,6 @@
 type PlanType = 'guest' | 'free' | 'premium';
 import { Habit, HabitWithCompletion } from '@/types/habit';
 import { Task } from '@/types/task';
-import { getJSTDateString as getJSTDateStringFromTimeUtils } from '@/lib/timeUtils';
 
 /**
  * プラン別の習慣制限を取得
@@ -109,7 +108,11 @@ export const isHabitCompleted = (habit: HabitWithCompletion | Task): boolean => 
  * 日本時間での日付文字列を取得（統一実装）
  */
 export const getJSTDateString = (date?: Date): string => {
-  return getJSTDateStringFromTimeUtils(date);
+  const targetDate = date ? new Date(date) : new Date();
+  
+  // 日本時間での日付文字列を直接取得
+  const jstDateString = targetDate.toLocaleDateString("en-CA", {timeZone: "Asia/Tokyo"});
+  return jstDateString;
 };
 
 /**
@@ -142,7 +145,7 @@ export const normalizeDateToJST = (dateString: string | null | undefined): strin
       console.warn('Invalid date string:', dateString);
       return null;
     }
-    return getJSTDateStringFromTimeUtils(date);
+    return date.toLocaleDateString('en-CA', {timeZone: 'Asia/Tokyo'});
   } else {
     // DATE形式の場合はそのまま使用
     return dateString;
@@ -223,7 +226,7 @@ export const convertHabitsToTasks = (habits: Habit[], selectedDate?: Date, habit
         priority: habit.priority || 'medium',
         due_date: normalizeDateToJST(habit.due_date),
         start_date: habit.start_date || null,
-        completed_at: isCompletedOnSelectedDate ? new Date(getJSTDateStringFromTimeUtils(new Date(targetDate + 'T00:00:00+09:00')) + 'T00:00:00+09:00').toISOString() : undefined,
+        completed_at: isCompletedOnSelectedDate ? new Date(targetDate + 'T00:00:00+09:00').toISOString() : undefined,
         created_at: habit.created_at,
         updated_at: habit.updated_at,
         user_id: habit.user_id,
@@ -264,7 +267,9 @@ export const getHabitDailyExecutionTime = async (habitId: string, targetDate?: D
     const date = targetDate || new Date();
     
     // 日本時間（JST）で日付文字列を取得
-    const dateString = getJSTDateStringFromTimeUtils(date);
+    const jstOffset = 9 * 60; // 分単位
+    const jstTime = new Date(date.getTime() + (jstOffset * 60 * 1000));
+    const dateString = jstTime.toISOString().split('T')[0];
     
     // その日の実行ログを取得（日本時間の日付範囲で検索）
     const { data: logs } = await supabase

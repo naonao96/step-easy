@@ -1,12 +1,10 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Task } from '@/types/task';
-import { Habit } from '@/types/habit';
 import { CategoryBadge } from '@/components/atoms/CategoryBadge';
 import { Character } from './Character';
 import { getEmotionTimePeriodLabel } from '@/lib/timeUtils';
 import { isNewHabit } from '@/lib/habitUtils';
-import { useHabitStore } from '@/stores/habitStore';
 import { isToday, getIncompleteTaskCount, getPlanLimits, generateDateTitle } from '@/lib/commonUtils';
 
 import { useAuth } from '@/contexts/AuthContext';
@@ -56,7 +54,7 @@ interface ModernMobileHomeProps {
   messageParts?: string[];
   onCompleteTask: (id: string) => void;
   onDeleteTask: (id: string) => void;
-  onEditTask?: (task: Task | Habit) => void;
+  onEditTask?: (task: Task) => void;
   onDateSelect: (date: Date) => void;
   onTabChange?: (tab: 'tasks' | 'habits') => void;
   onTaskUpdate?: () => Promise<void>; // データ更新関数を追加
@@ -595,73 +593,8 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
             isOpen={showTaskEditModal}
             onClose={() => setShowTaskEditModal(false)}
             onSave={async (taskData) => {
-              if (selectedTask) {
-                try {
-                  console.log('🔍 モバイル習慣編集保存開始:', {
-                    task_id: selectedTask.id,
-                    is_habit: isNewHabit(selectedTask),
-                    input_data: taskData,
-                    timestamp: new Date().toISOString()
-                  });
-
-                  // 習慣かどうかを判定して適切な更新関数を使用
-                  if (isNewHabit(selectedTask)) {
-                    // 習慣の場合はupdateHabitを使用
-                    const { updateHabit } = useHabitStore.getState();
-                    
-                    // taskDataを習慣用の形式に変換（日付処理を修正）
-                    const habitData = {
-                      title: taskData.title,
-                      description: taskData.description,
-                      category: taskData.category,
-                      priority: taskData.priority,
-                      estimated_duration: taskData.estimated_duration,
-                      start_date: taskData.start_date ? taskData.start_date : undefined,
-                      due_date: taskData.due_date ? taskData.due_date : null,
-                      has_deadline: taskData.due_date !== null && taskData.due_date !== undefined
-                    };
-
-                    console.log('🔍 モバイル変換後の習慣データ:', {
-                      habit_data: habitData,
-                      data_types: {
-                        title: typeof habitData.title,
-                        description: typeof habitData.description,
-                        category: typeof habitData.category,
-                        priority: typeof habitData.priority,
-                        estimated_duration: typeof habitData.estimated_duration,
-                        start_date: typeof habitData.start_date,
-                        due_date: typeof habitData.due_date,
-                        has_deadline: typeof habitData.has_deadline
-                      },
-                      timestamp: new Date().toISOString()
-                    });
-
-                    await updateHabit(selectedTask.id, habitData);
-                    
-                    // 習慣データを再取得（リアルタイム反映のため）
-                    const { fetchHabits } = useHabitStore.getState();
-                    await fetchHabits();
-                    
-                    // 親コンポーネントの更新関数も呼び出し
-                    if (onTaskUpdate) {
-                      await onTaskUpdate();
-                    }
-                    
-                    console.log('✅ モバイル習慣編集保存完了:', {
-                      task_id: selectedTask.id,
-                      updated_fields: Object.keys(habitData),
-                      timestamp: new Date().toISOString()
-                    });
-                  } else {
-                    // タスクの場合はonEditTaskを使用（従来通り）
-                    if (onEditTask) {
-                      await onEditTask(taskData);
-                    }
-                  }
-                } catch (error) {
-                  console.error('❌ モバイル習慣編集保存エラー:', error);
-                  alert('保存に失敗しました: ' + (error as Error).message);
-                }
+              if (selectedTask && onEditTask) {
+                await onEditTask(selectedTask);
               }
             }}
             onDelete={handleDeleteTask}

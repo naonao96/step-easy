@@ -4,7 +4,6 @@ import { Task } from '@/types/task';
 import { DEFAULT_CATEGORIES } from '@/types/task';
 import { FaCalendarCheck, FaFolderOpen, FaFire, FaChartLine } from 'react-icons/fa';
 import { useHabitStore } from '@/stores/habitStore';
-import { getJSTDateString } from '@/lib/timeUtils';
 
 interface MobileProgressDashboardProps {
   tasks: Task[];
@@ -97,7 +96,8 @@ export const MobileProgressDashboard: React.FC<MobileProgressDashboardProps> = (
     
     // 今日の習慣を取得
     const todayDateForHabits = new Date();
-    const todayString = getJSTDateString(todayDateForHabits);
+    const japanTime = new Date(todayDateForHabits.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+    const todayString = japanTime.toISOString().split('T')[0];
     
     const todayHabits = habits.filter(habit => habit.habit_status === 'active');
     const completedHabits = habitCompletions.filter(completion => 

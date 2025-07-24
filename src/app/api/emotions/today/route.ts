@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     // 今日の日付を取得（日本時間）
     const japanTime = getJapanTime();
-    const today = getJSTDateString(japanTime);
+    const today = japanTime.toISOString().split('T')[0];
 
     // 今日の感情記録を取得
     const { data: todayEmotions, error: fetchError } = await supabase

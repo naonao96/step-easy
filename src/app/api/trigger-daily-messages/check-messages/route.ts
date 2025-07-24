@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { getJSTDateString } from '@/lib/timeUtils';
 
 export async function GET() {
   try {
@@ -22,7 +21,7 @@ export async function GET() {
       }
     });
 
-    const today = getJSTDateString();
+    const today = new Date().toISOString().split('T')[0];
 
     // 今日生成されたメッセージを取得
     const { data: messages, error } = await supabase
