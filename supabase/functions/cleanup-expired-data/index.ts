@@ -48,6 +48,7 @@ serve(async (req) => {
     let deletedTasks = 0, deletedLogs = 0, deletedMessages = 0;
 
     // 30日経過データ削除（全テーブル）
+    // プレミアム機能リリースまで削除処理を無効化
     const deleteTables = [
       { table: 'tasks', log: 'タスク', counter: 'deletedTasks' },
       { table: 'execution_logs', log: '実行ログ', counter: 'deletedLogs' },
@@ -63,50 +64,55 @@ serve(async (req) => {
     for (const entry of deleteTables) {
       if (entry.table === 'habit_completions') continue; // habit_completionsは後で
       try {
-        const { data, error } = await supabase
-          .from(entry.table)
-          .delete()
-          .in('user_id', userIds)
-          .lt('created_at', cutoffDate)
-          .select('id');
-        if (error) {
-          console.error(`${entry.log}削除エラー:`, error);
-        } else {
-          if (entry.counter && Array.isArray(data)) {
-            if (entry.counter === 'deletedTasks') deletedTasks = data.length;
-            if (entry.counter === 'deletedLogs') deletedLogs = data.length;
-            if (entry.counter === 'deletedMessages') deletedMessages = data.length;
-          }
-          console.log(`削除された${entry.log}: ${data?.length ?? 0}件`);
-        }
+        // 削除処理をコメントアウト（プレミアム機能リリース時に復活）
+        // const { data, error } = await supabase
+        //   .from(entry.table)
+        //   .delete()
+        //   .in('user_id', userIds)
+        //   .lt('created_at', cutoffDate)
+        //   .select('id');
+        // if (error) {
+        //   console.error(`${entry.log}削除エラー:`, error);
+        // } else {
+        //   if (entry.counter && Array.isArray(data)) {
+        //     if (entry.counter === 'deletedTasks') deletedTasks = data.length;
+        //     if (entry.counter === 'deletedLogs') deletedLogs = data.length;
+        //     if (entry.counter === 'deletedMessages') deletedMessages = data.length;
+        //   }
+        //   console.log(`削除された${entry.log}: ${data?.length ?? 0}件`);
+        // }
+        console.log(`${entry.log}削除処理は無効化中（プレミアム機能リリース時に復活予定）`);
       } catch (e) {
         console.error(`${entry.log}削除時例外:`, e);
       }
     }
     // habit_completionsはhabit_idで削除
+    // プレミアム機能リリースまで削除処理を無効化
     try {
-      const { data: userHabits, error: habitsError } = await supabase
-        .from('habits')
-        .select('id')
-        .in('user_id', userIds)
-        .lt('created_at', cutoffDate);
-      if (habitsError) {
-        console.error('habits取得エラー:', habitsError);
-      } else if (userHabits && userHabits.length > 0) {
-        const habitIds = userHabits.map(h => h.id);
-        const { data, error: completionsError } = await supabase
-          .from('habit_completions')
-          .delete()
-          .in('habit_id', habitIds)
-          .select('id');
-        if (completionsError) {
-          console.error('habit_completions削除エラー:', completionsError);
-        } else {
-          console.log(`削除されたhabit_completions: ${data?.length ?? 0}件`);
-        }
-      } else {
-        console.log('削除対象のhabit_completionsはありません');
-      }
+      // 削除処理をコメントアウト（プレミアム機能リリース時に復活）
+      // const { data: userHabits, error: habitsError } = await supabase
+      //   .from('habits')
+      //   .select('id')
+      //   .in('user_id', userIds)
+      //   .lt('created_at', cutoffDate);
+      // if (habitsError) {
+      //   console.error('habits取得エラー:', habitsError);
+      // } else if (userHabits && userHabits.length > 0) {
+      //   const habitIds = userHabits.map(h => h.id);
+      //   const { data, error: completionsError } = await supabase
+      //     .from('habit_completions')
+      //     .delete()
+      //     .in('habit_id', habitIds)
+      //     .select('id');
+      //   if (completionsError) {
+      //     console.error('habit_completions削除エラー:', completionsError);
+      //   } else {
+      //     console.log(`削除されたhabit_completions: ${data?.length ?? 0}件`);
+      //   }
+      // } else {
+      //   console.log('削除対象のhabit_completionsはありません');
+      // }
+      console.log('habit_completions削除処理は無効化中（プレミアム機能リリース時に復活予定）');
     } catch (e) {
       console.error('habit_completions削除時例外:', e);
     }
@@ -179,8 +185,8 @@ serve(async (req) => {
             user_id: userId,
             type: 'system_info',
             category: 'system',
-            title: '一部の記録がそろそろ旅立ちます',
-            message: '無料プランでは、記録は30日間保存されます。\n一部の記録がまもなく保存期間を超えるため、自動的に削除される予定です。\n大切な記録を残したい方は、プレミアムプランをご検討くださいね🕊️',
+            title: '📦 データ整理のご案内',
+            message: 'StepEasyでは、より快適に使っていただくために、\n古い記録の整理ルールを準備中です。\n\nプレミアム機能の開始とあわせて、くわしい内容をお知らせします🕊️\n※今のところ、記録はすべて安全に保存されていますのでご安心ください。',
             is_read: false,
             priority: 'high',
             created_at: new Date()
