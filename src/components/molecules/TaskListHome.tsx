@@ -264,9 +264,15 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
             router.push(`/tasks?id=${task.id}&mode=edit`);
           }
         }}
-        disabled={false} // 編集は未来日でも可能
-        className="flex-shrink-0 p-2 sm:p-1 transition-colors touch-manipulation text-[#7c5a2a] hover:text-[#8b4513]"
-        title="編集"
+        disabled={isFutureDate}
+        className={`flex-shrink-0 p-2 sm:p-1 transition-colors touch-manipulation ${
+          isFutureDate
+            ? 'text-gray-400 cursor-not-allowed opacity-50'
+            : task.status === 'done' 
+            ? 'text-[#7c5a2a] hover:text-[#8b4513]' 
+            : 'text-[#7c5a2a] hover:text-[#8b4513]'
+        }`}
+        title={isFutureDate ? '未来日は編集できません' : '編集'}
       >
         {FaEdit({ className: "w-4 h-4 sm:w-3 sm:h-3" })}
       </button>
