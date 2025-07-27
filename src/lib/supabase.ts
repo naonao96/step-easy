@@ -13,9 +13,14 @@ export function createClient() {
 export type User = {
   id: string;
   email: string;
-  displayName: string;
+  display_name: string;
+  displayName?: string; // 後方互換性のため
   bio?: string;
   avatar_url?: string;
+  character_name?: string;
+  plan_type?: string;
+  notification_settings?: any;
+  onboarding_completed_at?: string;
   created_at: string;
   updated_at: string;
 };

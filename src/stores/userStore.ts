@@ -38,7 +38,10 @@ export const useUserStore = create<UserStore>((set, get) => ({
       if (authUser) {
         const { data: userData, error: userError } = await supabase
           .from('users')
-          .select('*')
+          .select(`
+            id, email, display_name, character_name, plan_type,
+            notification_settings, created_at, updated_at, onboarding_completed_at
+          `)
           .eq('id', authUser.id)
           .single();
 

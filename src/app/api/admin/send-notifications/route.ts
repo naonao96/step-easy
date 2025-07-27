@@ -19,19 +19,11 @@ export async function POST(request: NextRequest) {
       adminKey 
     } = body;
 
-    // 管理者キーの検証（デバッグログ付き）
-    console.log('送信された管理者キー:', adminKey ? adminKey.substring(0, 8) + '...' : 'empty');
-    console.log('環境変数の管理者キー:', process.env.ADMIN_SECRET_KEY ? process.env.ADMIN_SECRET_KEY.substring(0, 8) + '...' : 'not set');
-    console.log('キーが一致するか:', adminKey === process.env.ADMIN_SECRET_KEY);
+    // 管理者キーの検証
     
     if (adminKey !== process.env.ADMIN_SECRET_KEY) {
       return NextResponse.json({ 
-        error: '管理者権限がありません',
-        debug: {
-          receivedKey: adminKey ? adminKey.substring(0, 8) + '...' : 'empty',
-          expectedKey: process.env.ADMIN_SECRET_KEY ? process.env.ADMIN_SECRET_KEY.substring(0, 8) + '...' : 'not set',
-          keysMatch: adminKey === process.env.ADMIN_SECRET_KEY
-        }
+        error: '管理者権限がありません'
       }, { status: 403 });
     }
 
@@ -109,7 +101,6 @@ export async function POST(request: NextRequest) {
     const results = await Promise.allSettled(
       targetUserIds.map(userId =>
         createNotification({
-          userId,
           type: 'system_info',
           title,
           message,

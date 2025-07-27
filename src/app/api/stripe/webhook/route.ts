@@ -93,7 +93,6 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   // 体験期間開始の通知
   if (subscription.status === 'trialing') {
     await createSubscriptionNotification(
-      userId, 
       'trial_started', 
       '無料体験期間が開始されました', 
       '7日間、すべてのプレミアム機能をお試しいただけます。'
@@ -198,7 +197,6 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 
     console.log('🔔 サブスクリプションキャンセル通知を作成中...');
     const notificationResult = await createSubscriptionNotification(
-      userId, 
       'subscription_canceled', 
       'サブスクリプションが解約されました', 
       '現在の期間終了までプレミアム機能をご利用いただけます。'
@@ -217,7 +215,6 @@ async function handleTrialWillEnd(subscription: Stripe.Subscription) {
 
   // 体験期間終了3日前の通知
   await createSubscriptionNotification(
-    userId, 
     'trial_ending', 
     '無料体験期間が終了します', 
     '3日後に無料体験期間が終了し、月額200円の課金が開始されます。'
@@ -239,7 +236,6 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
     });
 
   await createSubscriptionNotification(
-    userId, 
     'subscription_payment_success', 
     '支払いが完了しました', 
     'プレミアム機能をご利用いただけます。'
@@ -261,7 +257,6 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
     });
 
   await createSubscriptionNotification(
-    userId, 
     'subscription_payment_failed', 
     '支払いに失敗しました', 
     'お支払い方法をご確認ください。'

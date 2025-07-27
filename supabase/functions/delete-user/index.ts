@@ -21,7 +21,7 @@ serve(async (req: Request) => {
     return new Response(null, {
       status: 200,
       headers: {
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGINS || 'https://yourdomain.com',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization'
       }
@@ -35,7 +35,7 @@ serve(async (req: Request) => {
       status: 405,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGINS || 'https://yourdomain.com'
       }
     });
   }
@@ -58,7 +58,7 @@ serve(async (req: Request) => {
       status: 400,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGINS || 'https://yourdomain.com'
       }
     });
   }
@@ -76,7 +76,7 @@ serve(async (req: Request) => {
         status: 404,
         headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGINS || 'https://yourdomain.com'
         }
       });
     }
@@ -128,7 +128,7 @@ serve(async (req: Request) => {
         status: 500,
         headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGINS || 'https://yourdomain.com'
         }
       });
     }
@@ -139,7 +139,7 @@ serve(async (req: Request) => {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGINS || 'https://yourdomain.com'
       }
     });
   } catch (e) {
@@ -152,7 +152,7 @@ serve(async (req: Request) => {
       status: 500,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGINS || 'https://yourdomain.com'
       }
     });
   }

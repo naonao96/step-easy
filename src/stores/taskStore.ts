@@ -31,7 +31,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     try {
       const { data: { user } } = await supabase.auth.getUser();
   
-      
       // ゲストユーザーの場合はローカルストレージから取得
       if (!user) {
         const guestTasks = JSON.parse(localStorage.getItem('guestTasks') || '[]');
@@ -41,15 +40,17 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       
       const isGuest = user?.user_metadata?.is_guest;
 
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
+      // API経由でタスクを取得
+      const response = await fetch('/api/tasks');
+      if (!response.ok) {
+        throw new Error('タスクの取得に失敗しました');
+      }
+      
+      const { tasks, error } = await response.json();
+      if (error) throw new Error(error);
 
       // ゲストユーザーの場合は3件までに制限
-      const limitedTasks = isGuest ? data.slice(0, GUEST_TASK_LIMIT) : data;
+      const limitedTasks = isGuest ? tasks.slice(0, GUEST_TASK_LIMIT) : tasks;
       set({ tasks: limitedTasks as unknown as Task[] });
     } catch (error) {
       console.error('fetchTasks エラー:', error);
@@ -109,12 +110,19 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         user_id: user.id
       };
 
-      const { data, error } = await supabase
-        .from('tasks')
-        .insert([taskWithUserId])
-        .select();
+      // API経由でタスクを作成
+      const response = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(taskWithUserId),
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'タスクの作成に失敗しました');
+      }
       
       await get().fetchTasks();
     } catch (error) {
@@ -183,13 +191,19 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         return;
       }
 
-      // 認証済みユーザーの場合、データベースで継続日数を自動計算
-      const { error } = await supabase
-        .from('tasks')
-        .update(task)
-        .eq('id', id);
+      // 認証済みユーザーの場合、API経由でタスクを更新
+      const response = await fetch('/api/tasks', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id, ...task }),
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'タスクの更新に失敗しました');
+      }
       await get().fetchTasks();
     } catch (error) {
       set({ error: (error as Error).message });
@@ -213,12 +227,15 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         return;
       }
 
-      const { error } = await supabase
-        .from('tasks')
-        .delete()
-        .eq('id', id);
+      // API経由でタスクを削除
+      const response = await fetch(`/api/tasks?id=${id}`, {
+        method: 'DELETE',
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'タスクの削除に失敗しました');
+      }
       await get().fetchTasks();
     } catch (error) {
       set({ error: (error as Error).message });

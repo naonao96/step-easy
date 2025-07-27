@@ -97,42 +97,46 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
 
       const today = getTodayString();
       
-      // 習慣かどうかを判定
-      const { data: habitData } = await supabase
+      // 習慣かどうかを判定（修正版）
+      let isHabit = false;
+      
+      // まずhabitsテーブルで検索
+      const { data: habitData, error: habitError } = await supabase
         .from('habits')
         .select('id')
         .eq('id', taskId)
         .single();
 
-      const isHabit = !!habitData;
-      
-      // 今日の実行履歴を取得
-      let todayLogs;
-      if (isHabit) {
-        // 習慣の場合はhabit_idで検索
-        const { data } = await supabase
-          .from('execution_logs')
-          .select('duration')
-          .eq('habit_id', taskId)
-          .eq('user_id', user.id)
-          .gte('start_time', `${today}T00:00:00.000Z`)
-          .lt('start_time', `${today}T23:59:59.999Z`)
-          .eq('is_completed', true);
-        todayLogs = data;
+      if (habitData && !habitError) {
+        // habitsテーブルに存在する場合は習慣
+        isHabit = true;
       } else {
-        // 通常タスクの場合はtask_idで検索
-        const { data } = await supabase
-          .from('execution_logs')
-          .select('duration')
-          .eq('task_id', taskId)
-          .eq('user_id', user.id)
-          .gte('start_time', `${today}T00:00:00.000Z`)
-          .lt('start_time', `${today}T23:59:59.999Z`)
-          .eq('is_completed', true);
-        todayLogs = data;
+        // habitsテーブルに存在しない場合はtasksテーブルで検索
+        const { data: taskData, error: taskError } = await supabase
+          .from('tasks')
+          .select('id')
+          .eq('id', taskId)
+          .single();
+        
+        if (taskData && !taskError) {
+          // tasksテーブルに存在する場合はタスク
+          isHabit = false;
+        } else {
+          // どちらにも存在しない場合はエラー
+          console.error('実行対象が見つかりません:', { taskId, habitError, taskError });
+          return newDuration; // エラーの場合は新しい時間のみを返す
+        }
       }
 
-      const todayTotal = (todayLogs || []).reduce((sum, log) => sum + (log.duration as number), 0);
+              // 今日の実行履歴を取得
+        let todayLogs;
+        const response = await fetch(`/api/executions/logs?${isHabit ? `habitId=${taskId}` : `taskId=${taskId}`}&today=${today}`);
+        if (response.ok) {
+          const { executionLogs } = await response.json();
+          todayLogs = executionLogs;
+        }
+
+      const todayTotal = (todayLogs || []).reduce((sum: number, log: any) => sum + (log.duration as number), 0);
       return todayTotal + newDuration;
     } catch (error) {
       console.error('今日の累積時間計算エラー:', error);
@@ -147,24 +151,34 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
     isRunning: false,
     deviceType: detectDeviceType(),
 
-    // 他のデバイスでの実行状態をチェック
-    checkActiveExecution: async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) return;
+      // 他のデバイスでの実行状態をチェック
+  checkActiveExecution: async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) return;
 
-        // ユーザーのアクティブな実行を取得（task_idまたはhabit_idのいずれかが存在する）
-        const { data: activeExec } = await supabase
-          .from('active_executions')
-          .select('*')
-          .eq('user_id', user.id)
-          .or('task_id.not.is.null,habit_id.not.is.null')
-          .single();
+      // API経由でアクティブな実行を取得
+      const response = await fetch('/api/executions/active');
+      if (!response.ok) {
+        console.error('実行状態取得エラー:', response.statusText);
+        return;
+      }
+      
+      const { activeExecutions, error } = await response.json();
+      if (error) {
+        console.error('実行状態取得エラー:', error);
+        return;
+      }
 
-        if (activeExec && !get().activeExecution) {
-          // 他のデバイスで実行中の場合、ローカル状態を同期
-          const taskId = activeExec.task_id || activeExec.habit_id;
+      // アクティブな実行があるかチェック
+      const activeExec = activeExecutions?.find((exec: any) => 
+        exec.task_id || exec.habit_id
+      );
+
+      if (activeExec && !get().activeExecution) {
+        // 他のデバイスで実行中の場合、ローカル状態を同期
+        const taskId = activeExec.task_id || activeExec.habit_id;
           set({
             activeExecution: {
               task_id: taskId as string,
@@ -207,22 +221,53 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
           return;
         }
 
-        // 習慣かどうかを判定
-        const { data: habitData } = await supabase
+        // 習慣かどうかを判定（修正版）
+        let isHabit = false;
+        
+        // まずhabitsテーブルで検索
+        const { data: habitData, error: habitError } = await supabase
           .from('habits')
-          .select('id')
+          .select('id, user_id')
           .eq('id', taskId)
           .single();
-
-        const isHabit = !!habitData;
+        
+        if (habitData && !habitError) {
+          // habitsテーブルに存在する場合は習慣
+          isHabit = true;
+        } else {
+          // habitsテーブルに存在しない場合はtasksテーブルで検索
+          const { data: taskData, error: taskError } = await supabase
+            .from('tasks')
+            .select('id, user_id')
+            .eq('id', taskId)
+            .single();
+          
+          if (taskData && !taskError) {
+            // tasksテーブルに存在する場合はタスク
+            isHabit = false;
+          } else {
+            // どちらにも存在しない場合はエラー
+            console.error('実行対象が見つかりません:', { taskId, habitError, taskError });
+            throw new Error('実行対象が見つかりません');
+          }
+        }
+        
         const executionType = isHabit ? 'habit' : 'task';
 
         // 他のタスクが実行中でないかチェック
-        const { data: existingExec } = await supabase
-          .from('active_executions')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
+        const response = await fetch('/api/executions');
+        if (!response.ok) {
+          throw new Error('実行状態の取得に失敗しました');
+        }
+        
+        const { activeExecutions, error } = await response.json();
+        if (error) {
+          throw new Error(error);
+        }
+
+        const existingExec = activeExecutions?.find((exec: any) => 
+          exec.task_id || exec.habit_id
+        );
 
         if (existingExec) {
           // ランタイムエラーではなく、制御された戻り値で処理
@@ -258,11 +303,22 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
           activeData.task_id = taskId;
         }
 
-        const { error: activeError } = await supabase
-          .from('active_executions')
-          .insert(activeData);
+        // API経由でアクティブ実行を作成
+        const createResponse = await fetch('/api/executions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            type: 'active_execution',
+            ...activeData
+          }),
+        });
 
-        if (activeError) throw activeError;
+        if (!createResponse.ok) {
+          const errorData = await createResponse.json();
+          throw new Error(errorData.error || 'アクティブ実行の作成に失敗しました');
+        }
 
         // ローカル状態を更新
         set({
@@ -309,14 +365,36 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
         
         // データベース状態確認：他デバイスで強制クリーンアップされていないかチェック
         if (user) {
-          // 習慣かどうかを判定
-          const { data: habitData } = await supabase
+          // 習慣かどうかを判定（修正版）
+          let isHabit = false;
+          
+          // まずhabitsテーブルで検索
+          const { data: habitData, error: habitError } = await supabase
             .from('habits')
-            .select('id')
+            .select('id, user_id')
             .eq('id', state.activeExecution.task_id)
             .single();
-
-          const isHabit = !!habitData;
+          
+          if (habitData && !habitError) {
+            // habitsテーブルに存在する場合は習慣
+            isHabit = true;
+          } else {
+            // habitsテーブルに存在しない場合はtasksテーブルで検索
+            const { data: taskData, error: taskError } = await supabase
+              .from('tasks')
+              .select('id, user_id')
+              .eq('id', state.activeExecution.task_id)
+              .single();
+            
+            if (taskData && !taskError) {
+              // tasksテーブルに存在する場合はタスク
+              isHabit = false;
+            } else {
+              // どちらにも存在しない場合はエラー
+              console.error('実行対象が見つかりません:', { taskId: state.activeExecution.task_id, habitError, taskError });
+              throw new Error('実行対象が見つかりません');
+            }
+          }
 
           // 適切なフィールドで検索
           let existingExec;
@@ -355,14 +433,37 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
         const endTime = new Date();
         
         if (user) {
-          // 習慣かどうかを判定
-          const { data: habitData } = await supabase
+          // 習慣かどうかを判定（修正版）
+          let isHabit = false;
+          
+          // まずhabitsテーブルで検索
+          const { data: habitData, error: habitError } = await supabase
             .from('habits')
             .select('id')
             .eq('id', state.activeExecution.task_id)
             .single();
-
-          const isHabit = !!habitData;
+          
+          if (habitData && !habitError) {
+            // habitsテーブルに存在する場合は習慣
+            isHabit = true;
+          } else {
+            // habitsテーブルに存在しない場合はtasksテーブルで検索
+            const { data: taskData, error: taskError } = await supabase
+              .from('tasks')
+              .select('id')
+              .eq('id', state.activeExecution.task_id)
+              .single();
+            
+            if (taskData && !taskError) {
+              // tasksテーブルに存在する場合はタスク
+              isHabit = false;
+            } else {
+              // どちらにも存在しない場合はエラー
+              console.error('実行対象が見つかりません:', { taskId: state.activeExecution.task_id, habitError, taskError });
+              throw new Error('実行対象が見つかりません');
+            }
+          }
+          
           const executionType = isHabit ? 'habit' : 'task';
           const sessionType = isHabit ? 'habit' : 'normal'; // 後方互換性のため
 
@@ -380,92 +481,106 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
 
           if (isHabit) {
             logData.habit_id = state.activeExecution.task_id;
+            logData.task_id = null; // 習慣の場合は明示的にNULL
           } else {
             logData.task_id = state.activeExecution.task_id;
+            logData.habit_id = null; // タスクの場合は明示的にNULL
           }
 
-          const { error: logError } = await supabase
-            .from('execution_logs')
-            .insert(logData);
+          // API経由で実行ログを作成
+          const logResponse = await fetch('/api/executions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              type: 'execution_log',
+              ...logData
+            }),
+          });
 
-          if (logError) throw logError;
+          if (!logResponse.ok) {
+            const errorData = await logResponse.json();
+            throw new Error(errorData.error || '実行ログの作成に失敗しました');
+          }
 
           // 今日の累積時間を計算
           const todayTotal = await calculateTodayTotal(state.activeExecution.task_id, sessionDuration);
 
           if (isHabit) {
-            // 習慣の場合はhabitsテーブルを更新
-            const { data: habitData } = await supabase
-              .from('habits')
-              .select('all_time_total, today_total')
-              .eq('id', state.activeExecution.task_id)
-              .eq('user_id', user.id)
-              .single();
+            // 習慣の統計情報を更新
+            const statsResponse = await fetch('/api/executions/stats', {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                targetId: state.activeExecution.task_id,
+                isHabit: true,
+                updates: {
+                  all_time_total: sessionDuration, // 新規追加分
+                  today_total: todayTotal,
+                  last_execution_date: getTodayString(),
+                  updated_at: new Date().toISOString()
+                }
+              }),
+            });
 
-            const newAllTimeTotal = ((habitData?.all_time_total as number) || 0) + sessionDuration;
-            const newTodayTotal = todayTotal;
-
-            // habitsテーブルに累計時間を更新
-            const { error: habitUpdateError } = await supabase
-              .from('habits')
-              .update({ 
-                all_time_total: newAllTimeTotal,
-                today_total: newTodayTotal,
-                last_execution_date: getTodayString(),
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', state.activeExecution.task_id)
-              .eq('user_id', user.id);
-
-            if (habitUpdateError) throw habitUpdateError;
+            if (!statsResponse.ok) {
+              const errorData = await statsResponse.json();
+              throw new Error(errorData.error || '習慣の統計更新に失敗しました');
+            }
 
             console.log('習慣の実行時間を記録しました:', {
               habit_id: state.activeExecution.task_id,
               duration: sessionDuration,
-              today_total: newTodayTotal,
-              all_time_total: newAllTimeTotal
+              today_total: todayTotal
             });
           } else {
-            // 通常タスクの場合はtasksテーブルを更新
-            const { data: taskData } = await supabase
-              .from('tasks')
-              .select('all_time_total, execution_count')
-              .eq('id', state.activeExecution.task_id)
-              .eq('user_id', user.id)
-              .single();
+            // タスクの統計情報を更新
+            const statsResponse = await fetch('/api/executions/stats', {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                targetId: state.activeExecution.task_id,
+                isHabit: false,
+                updates: {
+                  all_time_total: sessionDuration, // 新規追加分
+                  today_total: todayTotal,
+                  actual_duration: Math.floor(sessionDuration / 60),
+                  execution_count: 1, // 新規追加分
+                  last_execution_date: getTodayString(),
+                  updated_at: new Date().toISOString()
+                }
+              }),
+            });
 
-            const newAllTimeTotal = ((taskData?.all_time_total as number) || 0) + sessionDuration;
-            const newExecutionCount = ((taskData?.execution_count as number) || 0) + 1;
-
-            const { error: updateError } = await supabase
-              .from('tasks')
-              .update({ 
-                all_time_total: newAllTimeTotal,
-                today_total: todayTotal,
-                actual_duration: Math.floor(newAllTimeTotal / 60), // 制約緩和により0も許可
-                execution_count: newExecutionCount,
-                last_execution_date: getTodayString(),
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', state.activeExecution.task_id)
-              .eq('user_id', user.id);
-
-            if (updateError) throw updateError;
+            if (!statsResponse.ok) {
+              const errorData = await statsResponse.json();
+              throw new Error(errorData.error || 'タスクの統計更新に失敗しました');
+            }
           }
 
-          // active_executionsから削除（特定タスクまたは習慣のみ）
-          if (isHabit) {
-            await supabase
-              .from('active_executions')
-              .delete()
-              .eq('user_id', user.id)
-              .eq('habit_id', state.activeExecution.task_id);
-          } else {
-            await supabase
-              .from('active_executions')
-              .delete()
-              .eq('user_id', user.id)
-              .eq('task_id', state.activeExecution.task_id);
+          // API経由でactive_executionsから削除（特定タスクまたは習慣のみ）
+          // まず該当するactive_executionのIDを取得
+          const execResponse = await fetch('/api/executions');
+          if (execResponse.ok) {
+            const { activeExecutions } = await execResponse.json();
+                         const targetExec = activeExecutions?.find((exec: any) => 
+               isHabit ? exec.habit_id === state.activeExecution?.task_id : exec.task_id === state.activeExecution?.task_id
+             );
+            
+            if (targetExec) {
+              const deleteResponse = await fetch(`/api/executions?id=${targetExec.id}&type=active_execution`, {
+                method: 'DELETE',
+              });
+              
+              if (!deleteResponse.ok) {
+                console.error('アクティブ実行の削除に失敗しました');
+              }
+            }
           }
 
         } else {
@@ -511,14 +626,36 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
         const { data: { user } } = await supabase.auth.getUser();
 
         if (user) {
-          // 習慣かどうかを判定
-          const { data: habitData } = await supabase
+          // 習慣かどうかを判定（修正版）
+          let isHabit = false;
+          
+          // まずhabitsテーブルで検索
+          const { data: habitData, error: habitError } = await supabase
             .from('habits')
             .select('id')
             .eq('id', state.activeExecution.task_id)
             .single();
 
-          const isHabit = !!habitData;
+          if (habitData && !habitError) {
+            // habitsテーブルに存在する場合は習慣
+            isHabit = true;
+          } else {
+            // habitsテーブルに存在しない場合はtasksテーブルで検索
+            const { data: taskData, error: taskError } = await supabase
+              .from('tasks')
+              .select('id')
+              .eq('id', state.activeExecution.task_id)
+              .single();
+            
+            if (taskData && !taskError) {
+              // tasksテーブルに存在する場合はタスク
+              isHabit = false;
+            } else {
+              // どちらにも存在しない場合はエラー
+              console.error('実行対象が見つかりません:', { taskId: state.activeExecution.task_id, habitError, taskError });
+              throw new Error('実行対象が見つかりません');
+            }
+          }
 
           // active_executionsを更新（特定タスクまたは習慣のみ）
           if (isHabit) {
@@ -560,14 +697,36 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
         const { data: { user } } = await supabase.auth.getUser();
         
         if (user) {
-          // 習慣かどうかを判定
-          const { data: habitData } = await supabase
+          // 習慣かどうかを判定（修正版）
+          let isHabit = false;
+          
+          // まずhabitsテーブルで検索
+          const { data: habitData, error: habitError } = await supabase
             .from('habits')
             .select('id')
             .eq('id', state.activeExecution.task_id)
             .single();
-
-          const isHabit = !!habitData;
+          
+          if (habitData && !habitError) {
+            // habitsテーブルに存在する場合は習慣
+            isHabit = true;
+          } else {
+            // habitsテーブルに存在しない場合はtasksテーブルで検索
+            const { data: taskData, error: taskError } = await supabase
+              .from('tasks')
+              .select('id')
+              .eq('id', state.activeExecution.task_id)
+              .single();
+            
+            if (taskData && !taskError) {
+              // tasksテーブルに存在する場合はタスク
+              isHabit = false;
+            } else {
+              // どちらにも存在しない場合はエラー
+              console.error('実行対象が見つかりません:', { taskId: state.activeExecution.task_id, habitError, taskError });
+              throw new Error('実行対象が見つかりません');
+            }
+          }
 
           // 他のタスクが実行中でないかチェック（休憩中の競合検出）
           let existingExec;
@@ -610,14 +769,36 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
         const now = new Date();
         
         if (user) {
-          // 習慣かどうかを判定
-          const { data: habitData } = await supabase
+          // 習慣かどうかを判定（修正版）
+          let isHabit = false;
+          
+          // まずhabitsテーブルで検索
+          const { data: habitData, error: habitError } = await supabase
             .from('habits')
             .select('id')
             .eq('id', state.activeExecution?.task_id)
             .single();
 
-          const isHabit = !!habitData;
+          if (habitData && !habitError) {
+            // habitsテーブルに存在する場合は習慣
+            isHabit = true;
+          } else {
+            // habitsテーブルに存在しない場合はtasksテーブルで検索
+            const { data: taskData, error: taskError } = await supabase
+              .from('tasks')
+              .select('id')
+              .eq('id', state.activeExecution?.task_id)
+              .single();
+            
+            if (taskData && !taskError) {
+              // tasksテーブルに存在する場合はタスク
+              isHabit = false;
+            } else {
+              // どちらにも存在しない場合はエラー
+              console.error('実行対象が見つかりません:', { taskId: state.activeExecution?.task_id, habitError, taskError });
+              throw new Error('実行対象が見つかりません');
+            }
+          }
 
           // active_executionsを更新（特定タスクまたは習慣のみ）
           if (isHabit) {
@@ -679,126 +860,215 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
         if (user && activeExecution) {
           const today = getTodayString();
           
+          // 習慣かどうかを判定（修正版）
+          let isHabit = false;
+          
+          // まずhabitsテーブルで検索
+          const { data: habitData, error: habitError } = await supabase
+            .from('habits')
+            .select('id')
+            .eq('id', activeExecution.task_id)
+            .single();
+          
+          if (habitData && !habitError) {
+            // habitsテーブルに存在する場合は習慣
+            isHabit = true;
+          } else {
+            // habitsテーブルに存在しない場合はtasksテーブルで検索
+            const { data: taskData, error: taskError } = await supabase
+              .from('tasks')
+              .select('id')
+              .eq('id', activeExecution.task_id)
+              .single();
+            
+            if (taskData && !taskError) {
+              // tasksテーブルに存在する場合はタスク
+              isHabit = false;
+            } else {
+              // どちらにも存在しない場合はエラー
+              console.error('実行対象が見つかりません:', { taskId: activeExecution.task_id, habitError, taskError });
+              throw new Error('実行対象が見つかりません');
+            }
+          }
+          
           // データベースリセット処理
           if (resetType === 'today' || resetType === 'total') {
             const updates: any = {};
             
             if (resetType === 'today') {
-              // 現在のタスク情報を取得
-              const { data: currentTask } = await supabase
-                .from('tasks')
-                .select('all_time_total, today_total')
-                .eq('id', activeExecution.task_id)
-                .eq('user_id', user.id)
-                .single();
-              
-              const currentAllTimeTotal = currentTask?.all_time_total || 0;
-              const currentTodayTotal = currentTask?.today_total || 0;
-              
-              // 今日累計リセット: 総累計から今日分を引く
-              updates.all_time_total = Math.max(0, (currentAllTimeTotal as number) - (currentTodayTotal as number));
-              updates.today_total = 0;
-              updates.actual_duration = updates.all_time_total > 0 ? Math.floor(updates.all_time_total / 60) : null;
-              
-              // 今日の実行回数も調整（今日削除されるログの数を引く）
-              const { data: todayLogs } = await supabase
-                .from('execution_logs')
-                .select('id')
-                .eq('task_id', activeExecution.task_id)
-                .eq('user_id', user.id)
-                .gte('start_time', `${today}T00:00:00.000Z`)
-                .lt('start_time', `${today}T23:59:59.999Z`);
-              
-              let todayLogsCount = 0;
-              if (todayLogs && todayLogs.length > 0) {
-                todayLogsCount = todayLogs.length;
-                const { data: currentTaskCount } = await supabase
-                  .from('tasks')
-                  .select('execution_count')
+              // 今日累計リセット
+              if (isHabit) {
+                // 習慣の場合
+                const { data: currentHabit } = await supabase
+                  .from('habits')
+                  .select('all_time_total, today_total')
                   .eq('id', activeExecution.task_id)
                   .eq('user_id', user.id)
                   .single();
-                  
-                const currentExecutionCount = (currentTaskCount?.execution_count as number) || 0;
-                updates.execution_count = Math.max(0, currentExecutionCount - todayLogsCount);
-              }
-              
-              console.log(`今日累計リセット実行: ${today}`, {
-                元の総累計: currentAllTimeTotal,
-                今日累計: currentTodayTotal,
-                新しい総累計: updates.all_time_total,
-                今日の実行回数: todayLogsCount,
-                新しい実行回数: updates.execution_count
-              });
-              
-              // 今日のexecution_logsを削除
-              const { data: deletedLogs, error: deleteError } = await supabase
-                .from('execution_logs')
-                .delete()
-                .eq('task_id', activeExecution.task_id)
-                .eq('user_id', user.id)
-                .gte('start_time', `${today}T00:00:00.000Z`)
-                .lt('start_time', `${today}T23:59:59.999Z`)
-                .select();
-              
-              if (deleteError) {
-                console.error('今日のログ削除エラー:', deleteError);
+                
+                const currentAllTimeTotal = currentHabit?.all_time_total || 0;
+                const currentTodayTotal = currentHabit?.today_total || 0;
+                
+                updates.all_time_total = Math.max(0, currentAllTimeTotal - currentTodayTotal);
+                updates.today_total = 0;
+                
+                console.log(`習慣の今日累計リセット実行: ${today}`, {
+                  元の総累計: currentAllTimeTotal,
+                  今日累計: currentTodayTotal,
+                  新しい総累計: updates.all_time_total
+                });
+                
+                // 今日のexecution_logsを削除（習慣用）
+                const { data: deletedLogs, error: deleteError } = await supabase
+                  .from('execution_logs')
+                  .delete()
+                  .eq('habit_id', activeExecution.task_id)
+                  .eq('user_id', user.id)
+                  .gte('start_time', `${today}T00:00:00.000Z`)
+                  .lt('start_time', `${today}T23:59:59.999Z`)
+                  .select();
+                
+                if (deleteError) {
+                  console.error('習慣の今日のログ削除エラー:', deleteError);
+                } else {
+                  console.log('削除された習慣の今日のログ:', deletedLogs);
+                }
+                
               } else {
-                console.log('削除された今日のログ:', deletedLogs);
+                // タスクの場合（既存ロジック）
+                const { data: currentTask } = await supabase
+                  .from('tasks')
+                  .select('all_time_total, today_total, execution_count')
+                  .eq('id', activeExecution.task_id)
+                  .eq('user_id', user.id)
+                  .single();
+                
+                const currentAllTimeTotal = currentTask?.all_time_total || 0;
+                const currentTodayTotal = currentTask?.today_total || 0;
+                
+                updates.all_time_total = Math.max(0, currentAllTimeTotal - currentTodayTotal);
+                updates.today_total = 0;
+                updates.actual_duration = updates.all_time_total > 0 ? Math.floor(updates.all_time_total / 60) : null;
+                
+                // 今日の実行回数も調整
+                const { data: todayLogs } = await supabase
+                  .from('execution_logs')
+                  .select('id')
+                  .eq('task_id', activeExecution.task_id)
+                  .eq('user_id', user.id)
+                  .gte('start_time', `${today}T00:00:00.000Z`)
+                  .lt('start_time', `${today}T23:59:59.999Z`);
+                
+                let todayLogsCount = todayLogs?.length || 0;
+                const currentExecutionCount = currentTask?.execution_count || 0;
+                updates.execution_count = Math.max(0, currentExecutionCount - todayLogsCount);
+                
+                console.log(`タスクの今日累計リセット実行: ${today}`, {
+                  元の総累計: currentAllTimeTotal,
+                  今日累計: currentTodayTotal,
+                  新しい総累計: updates.all_time_total,
+                  今日の実行回数: todayLogsCount,
+                  新しい実行回数: updates.execution_count
+                });
+                
+                // 今日のexecution_logsを削除（タスク用）
+                const { data: deletedLogs, error: deleteError } = await supabase
+                  .from('execution_logs')
+                  .delete()
+                  .eq('task_id', activeExecution.task_id)
+                  .eq('user_id', user.id)
+                  .gte('start_time', `${today}T00:00:00.000Z`)
+                  .lt('start_time', `${today}T23:59:59.999Z`)
+                  .select();
+                
+                if (deleteError) {
+                  console.error('タスクの今日のログ削除エラー:', deleteError);
+                } else {
+                  console.log('削除されたタスクの今日のログ:', deletedLogs);
+                }
               }
               
             } else if (resetType === 'total') {
               // 総累計リセット
-              updates.all_time_total = 0;
-              updates.today_total = 0;
-              updates.actual_duration = null; // NULLに設定（制約対応）
-              updates.execution_count = 0;
-              
-              console.log('総累計リセット実行');
-              
-              // 全てのexecution_logsを削除
-              const { data: deletedLogs, error: deleteError } = await supabase
-                .from('execution_logs')
-                .delete()
-                .eq('task_id', activeExecution.task_id)
-                .eq('user_id', user.id)
-                .select();
-              
-              if (deleteError) {
-                console.error('全ログ削除エラー:', deleteError);
+              if (isHabit) {
+                // 習慣の場合
+                updates.all_time_total = 0;
+                updates.today_total = 0;
+                
+                console.log('習慣の総累計リセット実行');
+                
+                // 全てのexecution_logsを削除（習慣用）
+                const { data: deletedLogs, error: deleteError } = await supabase
+                  .from('execution_logs')
+                  .delete()
+                  .eq('habit_id', activeExecution.task_id)
+                  .eq('user_id', user.id)
+                  .select();
+                
+                if (deleteError) {
+                  console.error('習慣の全ログ削除エラー:', deleteError);
+                } else {
+                  console.log('削除された習慣の全ログ:', deletedLogs);
+                }
+                
               } else {
-                console.log('削除された全ログ:', deletedLogs);
+                // タスクの場合
+                updates.all_time_total = 0;
+                updates.today_total = 0;
+                updates.actual_duration = null; // NULLに設定（制約対応）
+                updates.execution_count = 0;
+                
+                console.log('タスクの総累計リセット実行');
+                
+                // 全てのexecution_logsを削除（タスク用）
+                const { data: deletedLogs, error: deleteError } = await supabase
+                  .from('execution_logs')
+                  .delete()
+                  .eq('task_id', activeExecution.task_id)
+                  .eq('user_id', user.id)
+                  .select();
+                
+                if (deleteError) {
+                  console.error('タスクの全ログ削除エラー:', deleteError);
+                } else {
+                  console.log('削除されたタスクの全ログ:', deletedLogs);
+                }
               }
             }
             
-            console.log('tasksテーブル更新:', updates);
-            
-            // tasksテーブルを更新
-            const { data: updatedTask, error: updateError } = await supabase
-              .from('tasks')
-              .update(updates)
-              .eq('id', activeExecution.task_id)
-              .eq('user_id', user.id)
-              .select();
-            
-            if (updateError) {
-              console.error('tasksテーブル更新エラー:', updateError);
-              throw updateError;
+            // テーブル更新
+            if (isHabit) {
+              const { data: updatedHabit, error: updateError } = await supabase
+                .from('habits')
+                .update(updates)
+                .eq('id', activeExecution.task_id)
+                .eq('user_id', user.id)
+                .select();
+              
+              if (updateError) {
+                console.error('習慣テーブル更新エラー:', updateError);
+                throw updateError;
+              } else {
+                console.log('更新された習慣:', updatedHabit);
+              }
             } else {
-              console.log('更新されたタスク:', updatedTask);
+              const { data: updatedTask, error: updateError } = await supabase
+                .from('tasks')
+                .update(updates)
+                .eq('id', activeExecution.task_id)
+                .eq('user_id', user.id)
+                .select();
+              
+              if (updateError) {
+                console.error('タスクテーブル更新エラー:', updateError);
+                throw updateError;
+              } else {
+                console.log('更新されたタスク:', updatedTask);
+              }
             }
           }
           
-          // 習慣かどうかを判定
-          const { data: habitData } = await supabase
-            .from('habits')
-            .select('id')
-            .eq('id', activeExecution.task_id)
-            .single();
-
-          const isHabit = !!habitData;
-
-          // active_executionsからも削除（特定タスクまたは習慣のみ）
+          // active_executionsから削除
           if (isHabit) {
             await supabase
               .from('active_executions')
@@ -843,7 +1113,11 @@ export const useExecutionStore = create<ExecutionStore>((set, get) => {
         // 最新の実行状態を取得
         const { data: activeExec } = await supabase
           .from('active_executions')
-          .select('*')
+          .select(`
+            id, user_id, task_id, habit_id, execution_type,
+            start_time, device_type, is_paused, accumulated_time,
+            created_at, updated_at
+          `)
           .eq('user_id', user.id)
           .single();
 

@@ -1,193 +1,127 @@
 /**
- * 環境設定ユーティリティ
- * 開発・本番環境の設定を適切に読み込むためのヘルパー関数
+ * 環境変数の管理
+ * フロントエンドに露出する変数とサーバーサイドのみの変数を分離
  */
 
-export interface EnvironmentConfig {
-  // Supabase設定
-  supabaseUrl: string;
-  supabaseAnonKey: string;
-  supabaseServiceKey?: string;
-  
-  // AI設定
-  geminiApiKey?: string;
+// フロントエンドに露出する環境変数（最小限）
+export const clientEnv = {
+  // Supabase設定（公開用）
+  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   
   // アプリケーション設定
-  appName: string;
-  appVersion: string;
-  appUrl: string;
-  appEnv: 'development' | 'production';
+  appName: process.env.NEXT_PUBLIC_APP_NAME || 'StepEasy',
+  appVersion: process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0',
+  appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+  appEnv: (process.env.NEXT_PUBLIC_APP_ENV as 'development' | 'production') || 'development',
   
-  // 環境設定
-  nodeEnv: 'development' | 'production';
-  debugMode: boolean;
-  logLevel: 'debug' | 'info' | 'warn' | 'error';
+  // 開発用設定
+  debugMode: process.env.NEXT_PUBLIC_DEBUG_MODE === 'true',
   
-  // オプション設定
-  analyticsId?: string;
-  errorReportingUrl?: string;
-}
-
-/**
- * 環境変数から設定を読み込み
- */
-export function loadEnvironmentConfig(): EnvironmentConfig {
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  const isProduction = process.env.NODE_ENV === 'production';
-  
-  // 必須環境変数の検証
-  const requiredVars = {
-    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  };
-  
-  const missingVars = Object.entries(requiredVars)
-    .filter(([_, value]) => !value)
-    .map(([key]) => key);
-  
-  if (missingVars.length > 0) {
-    throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
-  }
-  
-  const config: EnvironmentConfig = {
-    // Supabase設定
-    supabaseUrl: requiredVars.supabaseUrl!,
-    supabaseAnonKey: requiredVars.supabaseAnonKey!,
-    supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-    
-    // AI設定
-    geminiApiKey: process.env.GEMINI_API_KEY,
-    
-    // アプリケーション設定
-    appName: process.env.NEXT_PUBLIC_APP_NAME || 'StepEasy',
-    appVersion: process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0',
-    appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-    appEnv: (process.env.NEXT_PUBLIC_APP_ENV as 'development' | 'production') || 'development',
-    
-    // 環境設定
-    nodeEnv: process.env.NODE_ENV as 'development' | 'production' || 'development',
-    debugMode: process.env.NEXT_PUBLIC_DEBUG_MODE === 'true',
-    logLevel: (process.env.LOG_LEVEL as 'debug' | 'info' | 'warn' | 'error') || 'info',
-    
-    // オプション設定
-    analyticsId: process.env.NEXT_PUBLIC_ANALYTICS_ID,
-    errorReportingUrl: process.env.NEXT_PUBLIC_ERROR_REPORTING_URL,
-  };
-  
-  return config;
-}
-
-/**
- * 環境設定の検証
- */
-export function validateEnvironmentConfig(config: EnvironmentConfig): string[] {
-  const errors: string[] = [];
-  
-  // Supabase設定の検証
-  if (!config.supabaseUrl.startsWith('https://')) {
-    errors.push('Supabase URL must start with https://');
-  }
-  
-  if (!config.supabaseUrl.includes('.supabase.co')) {
-    errors.push('Invalid Supabase URL format');
-  }
-  
-  // 本番環境での追加検証
-  if (config.appEnv === 'production') {
-    if (!config.geminiApiKey) {
-      errors.push('Gemini API key is required in production');
-    }
-    
-    if (!config.supabaseServiceKey) {
-      errors.push('Supabase service role key is required in production');
-    }
-  }
-  
-  return errors;
-}
-
-/**
- * 環境情報をログ出力（開発環境のみ）
- */
-export function logEnvironmentInfo(config: EnvironmentConfig): void {
-  if (config.nodeEnv === 'development' && config.debugMode) {
-    console.log('🔧 Environment Configuration:', {
-      appName: config.appName,
-      appVersion: config.appVersion,
-      appEnv: config.appEnv,
-      nodeEnv: config.nodeEnv,
-      supabaseUrl: config.supabaseUrl.substring(0, 30) + '...',
-      hasGeminiApiKey: !!config.geminiApiKey,
-      hasServiceKey: !!config.supabaseServiceKey,
-      debugMode: config.debugMode,
-      logLevel: config.logLevel,
-    });
-  }
-}
-
-/**
- * 環境別の設定を取得
- */
-export function getEnvironmentConfig(): EnvironmentConfig {
-  const config = loadEnvironmentConfig();
-  const errors = validateEnvironmentConfig(config);
-  
-  if (errors.length > 0) {
-    throw new Error(`Environment configuration errors: ${errors.join(', ')}`);
-  }
-  
-  logEnvironmentInfo(config);
-  return config;
-}
-
-/**
- * 環境判定ヘルパー
- */
-export const isDevelopment = () => process.env.NODE_ENV === 'development';
-export const isProduction = () => process.env.NODE_ENV === 'production';
-export const isDebugMode = () => process.env.NEXT_PUBLIC_DEBUG_MODE === 'true';
-
-/**
- * 環境別のログ関数
- */
-export const logger = {
-  debug: (message: string, ...args: any[]) => {
-    if (isDevelopment() && isDebugMode()) {
-      console.log(`[DEBUG] ${message}`, ...args);
-    }
-  },
-  
-  info: (message: string, ...args: any[]) => {
-    console.log(`[INFO] ${message}`, ...args);
-  },
-  
-  warn: (message: string, ...args: any[]) => {
-    console.warn(`[WARN] ${message}`, ...args);
-  },
-  
-  error: (message: string, ...args: any[]) => {
-    console.error(`[ERROR] ${message}`, ...args);
-  },
+  // 外部サービス（公開用キーのみ）
+  analyticsId: process.env.NEXT_PUBLIC_ANALYTICS_ID,
+  errorReportingUrl: process.env.NEXT_PUBLIC_ERROR_REPORTING_URL,
+  stripePublishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
 };
 
-/**
- * 環境別の設定値を取得
- */
-export function getConfigValue<T>(
-  developmentValue: T,
-  productionValue: T,
-  defaultValue?: T
-): T {
-  if (isProduction()) {
-    return productionValue;
-  }
+// サーバーサイドのみの環境変数（機密情報）
+export const serverEnv = {
+  // Supabase設定（機密）
+  supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
   
-  if (isDevelopment()) {
-    return developmentValue;
-  }
+  // Stripe設定（機密）
+  stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
   
-  return defaultValue !== undefined ? defaultValue : developmentValue;
-}
+  // その他の機密設定
+  jwtSecret: process.env.JWT_SECRET,
+  encryptionKey: process.env.ENCRYPTION_KEY,
+  
+  // 外部サービス（機密）
+  sendgridApiKey: process.env.SENDGRID_API_KEY,
+  awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+};
 
-// デフォルトエクスポート
-export default getEnvironmentConfig; 
+// 環境変数の検証
+export const validateEnv = () => {
+  const requiredClientVars = [
+    'NEXT_PUBLIC_SUPABASE_URL',
+    'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+  ];
+
+  const requiredServerVars = [
+    'SUPABASE_SERVICE_ROLE_KEY',
+  ];
+
+  const missingClientVars = requiredClientVars.filter(
+    varName => !process.env[varName]
+  );
+
+  const missingServerVars = requiredServerVars.filter(
+    varName => !process.env[varName]
+  );
+
+  if (missingClientVars.length > 0) {
+    throw new Error(`Missing required client environment variables: ${missingClientVars.join(', ')}`);
+  }
+
+  if (missingServerVars.length > 0) {
+    throw new Error(`Missing required server environment variables: ${missingServerVars.join(', ')}`);
+  }
+};
+
+// 開発環境でのみデバッグ情報を出力
+export const logEnvConfig = () => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔧 Environment Configuration:', {
+      appName: clientEnv.appName,
+      appVersion: clientEnv.appVersion,
+      appEnv: clientEnv.appEnv,
+      debugMode: clientEnv.debugMode,
+      hasSupabaseUrl: !!clientEnv.supabaseUrl,
+      hasSupabaseAnonKey: !!clientEnv.supabaseAnonKey,
+      hasServiceKey: !!serverEnv.supabaseServiceKey,
+    });
+  }
+};
+
+// 環境変数の初期化
+validateEnv();
+logEnvConfig();
+
+// 後方互換性のため、既存のexportを維持
+export const {
+  supabaseUrl,
+  supabaseAnonKey,
+  appName,
+  appVersion,
+  appUrl,
+  appEnv,
+  debugMode,
+  analyticsId,
+  errorReportingUrl,
+  stripePublishableKey,
+} = clientEnv;
+
+// デバッグ用ログ関数
+export const debugLog = (message: string, ...args: any[]) => {
+  if (debugMode) {
+    console.log(`[DEBUG] ${message}`, ...args);
+  }
+};
+
+export const infoLog = (message: string, ...args: any[]) => {
+  if (debugMode) {
+    console.log(`[INFO] ${message}`, ...args);
+  }
+};
+
+export const errorLog = (message: string, ...args: any[]) => {
+  console.error(`[ERROR] ${message}`, ...args);
+};
+
+// 環境判定ヘルパー
+export const isDevelopment = () => appEnv === 'development';
+export const isProduction = () => appEnv === 'production';
+export const isDebugMode = () => debugMode; 

@@ -34,20 +34,16 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
   fetchHabits: async () => {
     set({ isLoading: true });
     try {
-      const { data: habits, error } = await supabase
-        .from('habits')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // API経由で習慣データを取得
+      const response = await fetch('/api/habits');
+      if (!response.ok) {
+        throw new Error('習慣の取得に失敗しました');
+      }
+      
+      const { habits, habitCompletions, error } = await response.json();
+      if (error) throw new Error(error);
 
-      if (error) throw error;
-
-      const { data: completions, error: completionsError } = await supabase
-        .from('habit_completions')
-        .select('*');
-
-      if (completionsError) throw completionsError;
-
-      set({ habits: habits || [], habitCompletions: completions || [] });
+      set({ habits: habits || [], habitCompletions: habitCompletions || [] });
     } catch (error) {
       console.error('習慣取得エラー:', error);
     } finally {
@@ -71,11 +67,19 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
         longest_streak: 0
       };
 
-      const { error } = await supabase
-        .from('habits')
-        .insert([habit]);
+      // API経由で習慣を作成
+      const response = await fetch('/api/habits', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(habit),
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '習慣の作成に失敗しました');
+      }
       await get().fetchHabits();
     } catch (error) {
       console.error('習慣作成エラー:', error);
@@ -92,14 +96,19 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
         timestamp: new Date().toISOString()
       });
 
-      const { error } = await supabase
-        .from('habits')
-        .update(updates)
-        .eq('id', id);
+      // API経由で習慣を更新
+      const response = await fetch('/api/habits', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id, ...updates }),
+      });
 
-      if (error) {
-        console.error('❌ 習慣更新エラー:', error);
-        throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ 習慣更新エラー:', errorData.error);
+        throw new Error(errorData.error || '習慣の更新に失敗しました');
       }
 
       console.log('✅ 習慣データ更新完了:', {
@@ -117,12 +126,15 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
 
   deleteHabit: async (id) => {
     try {
-      const { error } = await supabase
-        .from('habits')
-        .delete()
-        .eq('id', id);
+      // API経由で習慣を削除
+      const response = await fetch(`/api/habits?id=${id}`, {
+        method: 'DELETE',
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '習慣の削除に失敗しました');
+      }
       await get().fetchHabits();
     } catch (error) {
       console.error('習慣削除エラー:', error);
@@ -245,33 +257,37 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
       
       if (completed) {
         // 完了にする場合
-        const { error: completionError } = await supabase
-          .from('habit_completions')
-          .insert([{
+        const response = await fetch('/api/habits/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
             habit_id: habitId,
             completed_date: dateString
-          }]);
+          }),
+        });
 
-        if (completionError) {
+        if (!response.ok) {
+          const errorData = await response.json();
           return {
             success: false,
             error: 'DATABASE_ERROR',
-            message: '完了処理に失敗しました'
+            message: errorData.error || '完了処理に失敗しました'
           };
         }
       } else {
         // 未完了にする場合（完了記録を削除）
-        const { error: deletionError } = await supabase
-          .from('habit_completions')
-          .delete()
-          .eq('habit_id', habitId)
-          .eq('completed_date', dateString);
+        const response = await fetch(`/api/habits/completions?habit_id=${habitId}&completed_date=${dateString}`, {
+          method: 'DELETE',
+        });
 
-        if (deletionError) {
+        if (!response.ok) {
+          const errorData = await response.json();
           return {
             success: false,
             error: 'DATABASE_ERROR',
-            message: '未完了処理に失敗しました'
+            message: errorData.error || '未完了処理に失敗しました'
           };
         }
       }
@@ -348,7 +364,9 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
       // 最新の完了データを直接データベースから取得（確実性のため）
       const { data: habitCompletions, error } = await supabase
         .from('habit_completions')
-        .select('*')
+        .select(`
+          id, habit_id, completed_date, completed_at, created_at
+        `)
         .eq('habit_id', habitId);
       
       if (error) throw error;

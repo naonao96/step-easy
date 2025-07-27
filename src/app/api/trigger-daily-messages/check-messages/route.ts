@@ -26,7 +26,10 @@ export async function GET() {
     // 今日生成されたメッセージを取得
     const { data: messages, error } = await supabase
       .from('daily_messages')
-      .select('*')
+      .select(`
+        id, user_id, message_date, scheduled_type, message_content,
+        generated_at, created_at, updated_at
+      `)
       .eq('message_date', today)
       .eq('scheduled_type', 'morning')
       .order('generated_at', { ascending: false });
