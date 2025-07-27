@@ -13,6 +13,6 @@ jobs:
     steps:
       - name: Cleanup expired data for free users
         run: |
-          curl -X POST ${{ secrets.API_URL }}/functions/v1/cleanup-expired-data \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+          curl -X POST ${{ secrets.SUPABASE_URL }}/functions/v1/cleanup-expired-data \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
             -H "Content-Type: application/json" 
