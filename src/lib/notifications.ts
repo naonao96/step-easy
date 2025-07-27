@@ -39,7 +39,6 @@ export interface Notification {
 
 // 通知作成オプション
 export interface CreateNotificationOptions {
-  userId: string;
   type: NotificationType;
   title: string;
   message: string;
@@ -47,17 +46,9 @@ export interface CreateNotificationOptions {
   category?: NotificationCategory;
 }
 
-// Supabaseクライアント（サーバーサイド用）
+// Supabaseクライアント（クライアントサイド専用）
 const getSupabaseClient = () => {
-  // サーバーサイドの場合（Service Role Key使用）
-  if (typeof window === 'undefined') {
-    return createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-  }
-  
-  // クライアントサイドの場合
+  // クライアントサイドのみ（Service Role Keyは使用しない）
   return createClientComponentClient();
 };
 
@@ -66,29 +57,25 @@ const getSupabaseClient = () => {
  */
 export async function createNotification(options: CreateNotificationOptions): Promise<{ success: boolean; error?: string }> {
   try {
-    const { userId, type, title, message, priority = 'medium', category } = options;
+    const { type, title, message, priority = 'medium', category } = options;
 
-    // カテゴリを自動判定（指定されていない場合）
-    const autoCategory: NotificationCategory = category || getCategoryFromType(type);
-
-    const supabase = getSupabaseClient();
-
-    const { error } = await supabase
-      .from('notifications')
-      .insert({
-        user_id: userId,
+    const response = await fetch('/api/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
         type,
         title,
         message,
         priority,
-        category: autoCategory,
-        is_read: false,
-        created_at: new Date().toISOString()
-      });
+        category
+      }),
+    });
 
-    if (error) {
-      console.error('通知作成エラー:', error);
-      return { success: false, error: error.message };
+    if (!response.ok) {
+      const errorData = await response.json();
+      return { success: false, error: errorData.error || '通知の作成に失敗しました' };
     }
 
     return { success: true };
@@ -115,20 +102,15 @@ function getCategoryFromType(type: NotificationType): NotificationCategory {
  */
 export async function getUserNotifications(userId: string, limit: number = 50): Promise<{ notifications: Notification[]; error?: string }> {
   try {
-    const supabase = getSupabaseClient();
-    const { data, error } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(limit);
-
-    if (error) {
-      console.error('通知取得エラー:', error);
-      return { notifications: [], error: error.message };
+    const response = await fetch(`/api/notifications?limit=${limit}`);
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      return { notifications: [], error: errorData.error || '通知の取得に失敗しました' };
     }
 
-    return { notifications: data || [] };
+    const { notifications } = await response.json();
+    return { notifications: notifications || [] };
   } catch (error) {
     console.error('通知取得エラー:', error);
     return { notifications: [], error: '通知の取得に失敗しました' };
@@ -140,19 +122,15 @@ export async function getUserNotifications(userId: string, limit: number = 50): 
  */
 export async function getUnreadNotificationCount(userId: string): Promise<{ count: number; error?: string }> {
   try {
-    const supabase = getSupabaseClient();
-    const { count, error } = await supabase
-      .from('notifications')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('is_read', false);
-
-    if (error) {
-      console.error('未読通知数取得エラー:', error);
-      return { count: 0, error: error.message };
+    const response = await fetch(`/api/notifications?unread=true&limit=1000`);
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      return { count: 0, error: errorData.error || '未読通知数の取得に失敗しました' };
     }
 
-    return { count: count || 0 };
+    const { notifications } = await response.json();
+    return { count: notifications?.length || 0 };
   } catch (error) {
     console.error('未読通知数取得エラー:', error);
     return { count: 0, error: '未読通知数の取得に失敗しました' };
@@ -164,24 +142,26 @@ export async function getUnreadNotificationCount(userId: string): Promise<{ coun
  */
 export async function markNotificationAsRead(notificationId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = getSupabaseClient();
-    const { error } = await supabase
-      .from('notifications')
-      .update({
-        is_read: true,
-        read_at: new Date().toISOString()
-      })
-      .eq('id', notificationId);
+    const response = await fetch('/api/notifications', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        notificationId,
+        is_read: true
+      }),
+    });
 
-    if (error) {
-      console.error('通知既読エラー:', error);
-      return { success: false, error: error.message };
+    if (!response.ok) {
+      const errorData = await response.json();
+      return { success: false, error: errorData.error || '通知の既読化に失敗しました' };
     }
 
     return { success: true };
   } catch (error) {
-    console.error('通知既読エラー:', error);
-    return { success: false, error: '通知の既読処理に失敗しました' };
+    console.error('通知既読化エラー:', error);
+    return { success: false, error: '通知の既読化に失敗しました' };
   }
 }
 
@@ -190,25 +170,23 @@ export async function markNotificationAsRead(notificationId: string): Promise<{ 
  */
 export async function markAllNotificationsAsRead(userId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = getSupabaseClient();
-    const { error } = await supabase
-      .from('notifications')
-      .update({
-        is_read: true,
-        read_at: new Date().toISOString()
-      })
-      .eq('user_id', userId)
-      .eq('is_read', false);
-
-    if (error) {
-      console.error('全通知既読エラー:', error);
-      return { success: false, error: error.message };
+    // 未読通知を取得
+    const { notifications, error: fetchError } = await getUserNotifications(userId, 1000);
+    if (fetchError) {
+      return { success: false, error: fetchError };
     }
 
+    // 未読通知をすべて既読にする
+    const unreadNotifications = notifications.filter(n => !n.is_read);
+    const updatePromises = unreadNotifications.map(notification => 
+      markNotificationAsRead(notification.id)
+    );
+
+    await Promise.all(updatePromises);
     return { success: true };
   } catch (error) {
-    console.error('全通知既読エラー:', error);
-    return { success: false, error: '全通知の既読処理に失敗しました' };
+    console.error('全通知既読化エラー:', error);
+    return { success: false, error: '全通知の既読化に失敗しました' };
   }
 }
 
@@ -217,15 +195,13 @@ export async function markAllNotificationsAsRead(userId: string): Promise<{ succ
  */
 export async function deleteNotification(notificationId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = getSupabaseClient();
-    const { error } = await supabase
-      .from('notifications')
-      .delete()
-      .eq('id', notificationId);
+    const response = await fetch(`/api/notifications?id=${notificationId}`, {
+      method: 'DELETE',
+    });
 
-    if (error) {
-      console.error('通知削除エラー:', error);
-      return { success: false, error: error.message };
+    if (!response.ok) {
+      const errorData = await response.json();
+      return { success: false, error: errorData.error || '通知の削除に失敗しました' };
     }
 
     return { success: true };
@@ -236,25 +212,29 @@ export async function deleteNotification(notificationId: string): Promise<{ succ
 }
 
 /**
- * 古い通知を削除する（30日以上前）
+ * 古い通知を削除する
  */
 export async function deleteOldNotifications(userId: string, daysOld: number = 30): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = getSupabaseClient();
+    // 古い通知を取得
+    const { notifications, error: fetchError } = await getUserNotifications(userId, 1000);
+    if (fetchError) {
+      return { success: false, error: fetchError };
+    }
+
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - daysOld);
 
-    const { error } = await supabase
-      .from('notifications')
-      .delete()
-      .eq('user_id', userId)
-      .lt('created_at', cutoffDate.toISOString());
+    // 古い通知を削除
+    const oldNotifications = notifications.filter(n => 
+      new Date(n.created_at) < cutoffDate
+    );
 
-    if (error) {
-      console.error('古い通知削除エラー:', error);
-      return { success: false, error: error.message };
-    }
+    const deletePromises = oldNotifications.map(notification => 
+      deleteNotification(notification.id)
+    );
 
+    await Promise.all(deletePromises);
     return { success: true };
   } catch (error) {
     console.error('古い通知削除エラー:', error);
@@ -263,35 +243,31 @@ export async function deleteOldNotifications(userId: string, daysOld: number = 3
 }
 
 /**
- * サブスクリプション関連の通知を作成する（ヘルパー関数）
+ * サブスクリプション関連の通知を作成する
  */
 export async function createSubscriptionNotification(
-  userId: string,
   type: 'subscription_payment_success' | 'subscription_payment_failed' | 'trial_ending' | 'subscription_canceled' | 'subscription_renewed' | 'trial_started',
   title: string,
   message: string
 ): Promise<{ success: boolean; error?: string }> {
   return createNotification({
-    userId,
     type,
     title,
     message,
-    priority: 'high', // サブスクリプション関連は高優先度
+    priority: 'high',
     category: 'subscription'
   });
 }
 
 /**
- * タスク関連の通知を作成する（ヘルパー関数）
+ * タスク関連の通知を作成する
  */
 export async function createTaskNotification(
-  userId: string,
   type: 'task_completed' | 'task_due_soon' | 'task_overdue' | 'task_created',
   title: string,
   message: string
 ): Promise<{ success: boolean; error?: string }> {
   return createNotification({
-    userId,
     type,
     title,
     message,
@@ -301,16 +277,14 @@ export async function createTaskNotification(
 }
 
 /**
- * 習慣関連の通知を作成する（ヘルパー関数）
+ * 習慣関連の通知を作成する
  */
 export async function createHabitNotification(
-  userId: string,
   type: 'habit_streak' | 'habit_completed' | 'habit_missed' | 'habit_goal_reached',
   title: string,
   message: string
 ): Promise<{ success: boolean; error?: string }> {
   return createNotification({
-    userId,
     type,
     title,
     message,
