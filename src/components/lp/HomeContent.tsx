@@ -604,7 +604,7 @@ export const HomeContent: React.FC<HomeContentProps> = ({ onLogin, onRegister, o
           
           <div className={`grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto transition-all duration-1000 delay-200 ${externalLinksAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <a
-              href="https://note.com/naosukesan/n/n179346d630b0"
+              href="https://note.com/preview/n179346d630b0"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-white/80 backdrop-blur rounded-2xl p-8 shadow-lg border border-[#deb887] hover:shadow-xl transition-shadow group"
@@ -733,7 +733,7 @@ export const HomeContent: React.FC<HomeContentProps> = ({ onLogin, onRegister, o
                 <a href="https://x.com/stepeasyjp" target="_blank" rel="noopener noreferrer" className="text-[#7c5a2a] hover:text-[#8b4513] transition-colors">
                   {(FaTwitter as any)({ className: "w-6 h-6" })}
                 </a>
-                <a href="https://note.com/naosukesan/n/n179346d630b0" target="_blank" rel="noopener noreferrer" className="text-[#7c5a2a] hover:text-[#8b4513] transition-colors">
+                <a href="https://note.com/preview/n179346d630b0" target="_blank" rel="noopener noreferrer" className="text-[#7c5a2a] hover:text-[#8b4513] transition-colors">
                   {(FaFileAlt as any)({ className: "w-6 h-6" })}
                 </a>
               </div>

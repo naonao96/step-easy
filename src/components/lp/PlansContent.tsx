@@ -187,6 +187,11 @@ export const PlansContent: React.FC<PlansContentProps> = ({ onLogin, onRegister,
                   {(FaStar as any)({ className: "w-4 h-4 text-[#8b4513] flex-shrink-0" })}
                   <span className="text-[#8b4513]">習慣機能：無制限</span>
                 </div>
+                <div className="flex items-center gap-3">
+                  {(FaStar as any)({ className: "w-4 h-4 text-[#8b4513] flex-shrink-0" })}
+                  <span className="text-[#8b4513]">詳細な成長分析</span>
+                </div>
+
                 
                 {/* 詳細プレビューボタン */}
                 <button 
