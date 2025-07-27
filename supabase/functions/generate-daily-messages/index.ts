@@ -462,10 +462,10 @@ serve(async (_req: any) => {
           .eq('user_id', user.id)
           .single();
 
-        // ユーザー情報からキャラクター名と表示名を取得
+        // ユーザー情報からキャラクター名を取得
         const { data: userData } = await supabase
           .from('users')
-          .select('character_name, display_name')
+          .select('character_name')
           .eq('id', user.id)
           .single();
 
@@ -477,7 +477,7 @@ serve(async (_req: any) => {
 
         // ユーザータイプ判定
         const userType = userSettings?.plan_type || 'free';
-        const userName = userData?.display_name || user.user_metadata?.display_name || userSettings?.display_name;
+        const userName = userSettings?.display_name || user.user_metadata?.display_name;
         const characterName = userData?.character_name || '小鳥';
 
         let message = '';
