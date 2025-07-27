@@ -88,8 +88,8 @@ export const HabitModal = forwardRef<{ closeWithValidation: () => void }, HabitM
         priority: data.priority,
         estimated_duration: data.estimated_duration,
         // データベース基準で文字列のまま渡す
-        start_date: data.start_date || undefined,
-        due_date: data.due_date || undefined,
+        start_date: data.start_date || null,
+        due_date: data.due_date || null,
         has_deadline: data.due_date !== null
       };
 

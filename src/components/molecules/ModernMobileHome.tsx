@@ -17,6 +17,7 @@ import { MobileTaskHistory } from './MobileTaskHistory';
 import { MobileTaskCarousel } from './MobileTaskCarousel';
 import { TaskPreviewModal } from './TaskPreviewModal';
 import { TaskEditModal } from './TaskEditModal';
+import { HabitModal } from './HabitModal';
 import { 
   FaPlus, 
   FaCalendarAlt, 
@@ -119,6 +120,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [showTaskPreviewModal, setShowTaskPreviewModal] = useState(false);
   const [showTaskEditModal, setShowTaskEditModal] = useState(false);
+  const [showHabitModal, setShowHabitModal] = useState(false);
 
   // 感情記録UIの状態管理（データ取得による再レンダリングの影響を受けない）
   const characterRef = useRef<HTMLImageElement>(null);
@@ -575,7 +577,12 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
             onEdit={(task) => {
               setSelectedTask(task);
               setShowTaskPreviewModal(false);
-              setShowTaskEditModal(true);
+              // 習慣かどうかを判定して適切なモーダルを表示
+              if (isNewHabit(task)) {
+                setShowHabitModal(true);
+              } else {
+                setShowTaskEditModal(true);
+              }
             }}
             onDelete={handleDeleteTask}
             onComplete={handleCompleteTask}
@@ -594,7 +601,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
             onClose={() => setShowTaskEditModal(false)}
             onSave={async (taskData) => {
               if (selectedTask && onEditTask) {
-                await onEditTask(selectedTask);
+                await onEditTask(taskData as Task);
               }
             }}
             onDelete={handleDeleteTask}
@@ -610,6 +617,21 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
             }}
             isMobile={true}
             selectedDate={selectedDate}
+          />
+
+          <HabitModal
+            isOpen={showHabitModal}
+            onClose={() => setShowHabitModal(false)}
+            initialData={selectedTask}
+            mode="edit"
+            isMobile={true}
+            onSave={(habit) => {
+              // 習慣編集後にselectedTaskをクリア
+              setSelectedTask(null);
+              if (onTaskUpdate) {
+                onTaskUpdate();
+              }
+            }}
           />
         </>
       )}

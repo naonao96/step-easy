@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTaskStore } from '@/stores/taskStore';
 import { Task } from '@/types/task';
 import { useHabitStore } from '@/stores/habitStore';
-import { HabitWithCompletion } from '@/types/habit';
+import { HabitWithCompletion, Habit } from '@/types/habit';
 import { AppLayout } from '@/components/templates/AppLayout';
 import { Calendar } from '@/components/molecules/Calendar';
 import { Character } from '@/components/molecules/Character';
@@ -614,10 +614,13 @@ export default function MenuPage() {
           messageParts={messageParts}
           onCompleteTask={handleCompleteTask}
           onDeleteTask={handleDeleteTask}
-          onEditTask={(task) => handleEditTask(task as any)}
+          onEditTask={handleEditTask}
           onDateSelect={setSelectedDate}
           onTabChange={handleMobileTabChange}
-          onTaskUpdate={fetchTasks} // データ更新関数を追加
+          onTaskUpdate={async () => {
+            await fetchTasks();
+            await fetchHabits();
+          }} // データ更新関数を追加
           onMessageClick={handleMessageClick} // メッセージクリック用
           emotionLog={emotionStore}
         />
@@ -757,8 +760,8 @@ export default function MenuPage() {
                     category: taskData.category,
                     priority: taskData.priority,
                     estimated_duration: taskData.estimated_duration,
-                    start_date: taskData.start_date || undefined,
-                    due_date: taskData.due_date === '' || taskData.due_date == null ? undefined : taskData.due_date,
+                    start_date: taskData.start_date || null,
+                    due_date: taskData.due_date === '' || taskData.due_date == null ? null : taskData.due_date,
                     has_deadline: taskData.due_date !== null
                   };
                   await updateHabit(selectedTask.id, habitData);

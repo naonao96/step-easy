@@ -23,8 +23,8 @@ export interface Habit extends BaseItem, StreakData {
   priority: 'low' | 'medium' | 'high';
   estimated_duration?: number; // 予想所要時間（分）
   // 期限指定機能
-  start_date?: string; // 開始日（YYYY-MM-DD形式）
-  due_date?: string;   // 期限日（TIMESTAMP WITH TIME ZONE形式）
+  start_date?: string | null; // 開始日（YYYY-MM-DD形式）
+  due_date?: string | null;   // 期限日（TIMESTAMP WITH TIME ZONE形式）
   has_deadline?: boolean; // 期限指定フラグ
   // 実行時間関連フィールド
   all_time_total?: number; // 全期間累計時間（秒）
@@ -47,8 +47,8 @@ export interface HabitFormData {
   category?: string;
   priority?: 'low' | 'medium' | 'high';
   estimated_duration?: number;
-  start_date?: string; // YYYY-MM-DD形式
-  due_date?: string;   // TIMESTAMP WITH TIME ZONE形式
+  start_date?: string | null; // YYYY-MM-DD形式
+  due_date?: string | null;   // TIMESTAMP WITH TIME ZONE形式
   has_deadline?: boolean;
 }
 

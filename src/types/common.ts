@@ -163,14 +163,8 @@ export interface TaskFormData extends BaseFormData {
 }
 
 /**
- * 習慣フォームデータ
+ * 習慣フォームデータ（src/types/habit.tsで定義済み）
  */
-export interface HabitFormData extends BaseFormData {
-  frequency: Frequency;
-  start_date?: string;
-  due_date?: string;
-  has_deadline: boolean;
-}
 
 // =====================================================
 // 統計データ型
