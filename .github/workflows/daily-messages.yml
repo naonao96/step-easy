@@ -3,7 +3,7 @@ name: Daily Messages Generation
 on:
   schedule:
     # 毎日午前9時（JST）に実行
-    - cron: '23 0 * * *'  # UTC 00:00 = JST 09:00
+    - cron: '23 0 * * *'  # UTC 00:00 = JST 08:00
   workflow_dispatch:  # 手動実行も可能
 
 jobs:
@@ -13,6 +13,6 @@ jobs:
     steps:
     - name: Trigger Daily Messages
       run: |
-        curl -X POST ${{ secrets.SUPABASE_URL }}/functions/v1/generate-daily-messages \
-          -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+        curl -X POST ${{ secrets.API_URL }}/functions/v1/generate-daily-messages \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET  }}" \
           -H "Content-Type: application/json"
