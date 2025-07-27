@@ -8,7 +8,6 @@ import { FeaturesStep } from '@/components/onboarding/FeaturesStep';
 import { PaceStep } from '@/components/onboarding/PaceStep';
 import { SetupStep } from '@/components/onboarding/SetupStep';
 import { OnboardingLayout } from '@/components/onboarding/OnboardingLayout';
-import { useAuth } from '@/contexts/AuthContext';
 
 // 動的レンダリングを強制
 export const dynamic = 'force-dynamic';
@@ -22,7 +21,6 @@ export default function OnboardingPage() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
   const router = useRouter();
-  const { user: authUser, isLoading: authLoading, refreshUser } = useAuth();
 
   // オンボーディング完了状況をチェック
   useEffect(() => {
@@ -80,8 +78,6 @@ export default function OnboardingPage() {
           console.error('Error updating user name:', error);
           throw error;
         }
-        // 保存直後にContextを最新化
-        if (refreshUser) await refreshUser();
       }
       
       console.log('Onboarding completed:', { userName, characterName, agreedToTerms });
