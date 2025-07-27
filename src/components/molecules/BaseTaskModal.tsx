@@ -465,9 +465,13 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
                     <>
                       <button
                         onClick={() => onEdit(initialData as any)}
-                        disabled={false} // 編集は未来日でも可能
-                        className="inline-flex items-center gap-1 px-1 py-1 text-xs font-medium rounded-lg transition-all duration-200 text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc]"
-                        title="編集"
+                        disabled={isFutureDate}
+                        className={`inline-flex items-center gap-1 px-1 py-1 text-xs font-medium rounded-lg transition-all duration-200 ${
+                          isFutureDate
+                            ? 'text-gray-400 cursor-not-allowed opacity-50'
+                            : 'text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc]'
+                        }`}
+                        title={isFutureDate ? '未来日は編集できません' : '編集'}
                       >
                         {FaEdit({ className: "w-3 h-3" })}
                         編集
@@ -528,9 +532,13 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
                   <>
                     <button
                       onClick={() => onEdit(initialData as any)}
-                      disabled={false} // 編集は未来日でも可能
-                      className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-lg transition-all duration-200 text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc]"
-                      title="編集"
+                      disabled={isFutureDate}
+                      className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-lg transition-all duration-200 ${
+                        isFutureDate
+                          ? 'text-gray-400 bg-gray-100 cursor-not-allowed opacity-50'
+                          : 'text-[#7c5a2a] hover:text-[#8b4513] hover:bg-[#f5f5dc]'
+                      }`}
+                      title={isFutureDate ? '未来日は編集できません' : '編集'}
                     >
                       {FaEdit({ className: "w-3 h-3" })}
                       編集

@@ -448,7 +448,7 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
                       
                       <div className="flex gap-1">
                         {onEditTask && (() => {
-                          // 未来日判定（習慣のみ）- 編集は未来日でも可能
+                          // 未来日判定（習慣のみ）
                           const isFutureDate = isHabit && selectedDate && selectedDate > new Date();
                           
                           return (
@@ -457,9 +457,13 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
                               e.stopPropagation();
                               onEditTask(task);
                             }}
-                              disabled={false} // 編集は未来日でも可能
-                              className="mt-1 p-1 transition-colors flex-shrink-0 text-[#7c5a2a] hover:text-[#8b4513]"
-                              title="編集"
+                              disabled={isFutureDate}
+                              className={`mt-1 p-1 transition-colors flex-shrink-0 ${
+                                isFutureDate
+                                  ? 'text-gray-400 cursor-not-allowed opacity-50'
+                                  : 'text-[#7c5a2a] hover:text-[#8b4513]'
+                              }`}
+                              title={isFutureDate ? '未来日は編集できません' : '編集'}
                           >
                             {FaEdit({ className: "w-4 h-4" })}
                           </button>
