@@ -2,20 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
-    // 管理者キーが設定されているかチェック
-    const adminKey = process.env.ADMIN_SECRET_KEY;
-    const hasAdminKey = !!adminKey;
-    const adminKeyLength = adminKey ? adminKey.length : 0;
-    const adminKeyPrefix = adminKey ? adminKey.substring(0, 8) + '...' : 'not set';
+    // 本番環境ではデバッグAPIを無効化
+    if (process.env.NODE_ENV === 'production') {
+      return NextResponse.json({ error: '本番環境では利用できません' }, { status: 403 });
+    }
+
+    // 管理者キーが設定されているかチェック（最小限の情報のみ）
+    const hasAdminKey = !!process.env.ADMIN_SECRET_KEY;
 
     return NextResponse.json({
       success: true,
       debug: {
         hasAdminKey,
-        adminKeyLength,
-        adminKeyPrefix,
         nodeEnv: process.env.NODE_ENV,
-        allEnvKeys: Object.keys(process.env).filter(key => key.includes('ADMIN') || key.includes('SUPABASE'))
+        // 機密情報のキー名は露出しない
+        envCount: Object.keys(process.env).length
       }
     });
 
