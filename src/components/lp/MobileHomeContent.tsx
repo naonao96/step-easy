@@ -177,10 +177,10 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
                   毎朝9時、あなたに寄り添う小鳥が、<br />
                   やさしく応援します。
                 </p>
-                <p className="text-sm text-[#8b4513] font-medium mt-2">
+                <p className="text-sm text-[#7c5a2a] font-medium">
                   繊細で、頑張りすぎてしまうあなたへ──
                 </p>
-                <p className="text-sm text-[#8b4513] font-medium mt-2">
+                <p className="text-sm text-[#7c5a2a] font-medium">
                   StepEasyは、「記録」と「応援」の力で、<br />
                   "つづける"をやさしく支えます。
                 </p>
@@ -216,26 +216,26 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
               
               {/* モバイルフレーム（前面・左下） */}
               <div className="absolute left-[5%] bottom-[-8%] z-10 after:content-[''] after:absolute after:-bottom-2 after:left-1/2 after:translate-x-[-50%] after:w-[40%] after:h-[12px] after:bg-black/10 after:rounded-full after:blur-sm">
-                <Image
-                  src="/MobileFrame.png"
-                  alt="StepEasy モバイル版画面"
-                  width={100}
-                  height={200}
-                  className="w-[35%] drop-shadow-2xl shadow-2xl rounded-xl border border-white/30 rounded-lg hover:shadow-2xl transition-all duration-300 object-contain cursor-pointer"
-                  style={{
-                    filter: 'drop-shadow(0 6px 12px rgba(0, 0, 0, 0.2)) drop-shadow(0 3px 6px rgba(0, 0, 0, 0.1)) drop-shadow(0 20px 40px rgba(0,0,0,0.1))',
-                    boxShadow: '0 12px 24px rgba(0, 0, 0, 0.15), 0 6px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
-                    transform: 'scale(1.1) translateX(-20px)',
-                    transition: 'all 0.3s ease',
-                    marginLeft: '80px'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.15) translateX(-20px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.1) translateX(-20px)';
-                  }}
-                />
+                  <Image
+                    src="/MobileFrame.png"
+                    alt="StepEasy モバイル版画面"
+                    width={100}
+                    height={200}
+                    className="w-[45%] drop-shadow-2xl shadow-2xl rounded-xl border border-white/30 rounded-lg hover:shadow-2xl transition-all duration-300 object-contain cursor-pointer"
+                    style={{
+                      filter: 'drop-shadow(0 6px 12px rgba(0, 0, 0, 0.2)) drop-shadow(0 3px 6px rgba(0, 0, 0, 0.1)) drop-shadow(0 20px 40px rgba(0,0,0,0.1))',
+                      boxShadow: '0 12px 24px rgba(0, 0, 0, 0.15), 0 6px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
+                      transform: 'scale(1.1) translateX(-20px)',
+                      transition: 'all 0.3s ease',
+                      marginLeft: '80px'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.15) translateX(-20px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.1) translateX(-20px)';
+                    }}
+                  />
               </div>
             </div>
             </div>
@@ -292,8 +292,8 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
               className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-[#deb887] hover:shadow-2xl hover:scale-105 hover:border-[#8b4513] transition-all duration-300 cursor-pointer group"
               onClick={() => openModal('習慣記録', '継続日数・頻度・状態を記録。ストリーク表示で習慣化アプリとしての効果を実感できます。', FaFire({ className: "w-6 h-6 text-[#8b4513]" }))}
             >
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-[#deb887] group-hover:bg-[#8b4513] rounded-full flex items-center justify-center transition-all duration-300">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-[#deb887] group-hover:bg-[#8b4513] rounded-full flex items-center justify-center mx-auto mb-4 transition-all duration-300">
                   {(FaFire as any)({ className: "w-6 h-6 text-[#8b4513] group-hover:text-white transition-colors duration-300" })}
                 </div>
                 <h3 className="text-lg font-bold text-[#8b4513] group-hover:text-[#6d3d13] transition-colors duration-300">習慣記録</h3>
@@ -305,8 +305,8 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
               className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-[#deb887] hover:shadow-2xl hover:scale-105 hover:border-[#8b4513] transition-all duration-300 cursor-pointer group"
               onClick={() => openModal('タスク記録', '1日のやることを記録し、完了状況も管理。効率的なタスク管理で生産性向上をサポート。', FaTasks({ className: "w-6 h-6 text-[#8b4513]" }))}
             >
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-[#deb887] group-hover:bg-[#8b4513] rounded-full flex items-center justify-center transition-all duration-300">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-[#deb887] group-hover:bg-[#8b4513] rounded-full flex items-center justify-center mx-auto mb-4 transition-all duration-300">
                   {(FaTasks as any)({ className: "w-6 h-6 text-[#8b4513] group-hover:text-white transition-colors duration-300" })}
                 </div>
                 <h3 className="text-lg font-bold text-[#8b4513] group-hover:text-[#6d3d13] transition-colors duration-300">タスク記録</h3>
@@ -318,8 +318,8 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
               className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-[#deb887] hover:shadow-2xl hover:scale-105 hover:border-[#8b4513] transition-all duration-300 cursor-pointer group"
               onClick={() => openModal('実行時間記録', '各行動の実施時間を記録し、統計へ活用。時間の使い方を可視化して改善点を発見。', FaClock({ className: "w-6 h-6 text-[#8b4513]" }))}
             >
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-[#deb887] group-hover:bg-[#8b4513] rounded-full flex items-center justify-center transition-all duration-300">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-[#deb887] group-hover:bg-[#8b4513] rounded-full flex items-center justify-center mx-auto mb-4 transition-all duration-300">
                   {(FaClock as any)({ className: "w-6 h-6 text-[#8b4513] group-hover:text-white transition-colors duration-300" })}
                 </div>
                 <h3 className="text-lg font-bold text-[#8b4513] group-hover:text-[#6d3d13] transition-colors duration-300">実行時間記録</h3>
@@ -331,8 +331,8 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
               className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-[#deb887] hover:shadow-2xl hover:scale-105 hover:border-[#8b4513] transition-all duration-300 cursor-pointer group"
               onClick={() => openModal('感情記録', '朝・昼・夜に気持ちを簡単記録。感情記録により自分の心の状態を理解し、メンタルヘルスをサポート。', FaHeart({ className: "w-6 h-6 text-[#8b4513]" }))}
             >
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-[#deb887] group-hover:bg-[#8b4513] rounded-full flex items-center justify-center transition-all duration-300">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-[#deb887] group-hover:bg-[#8b4513] rounded-full flex items-center justify-center mx-auto mb-4 transition-all duration-300">
                   {(FaHeart as any)({ className: "w-6 h-6 text-[#8b4513] group-hover:text-white transition-colors duration-300" })}
                 </div>
                 <h3 className="text-lg font-bold text-[#8b4513] group-hover:text-[#6d3d13] transition-colors duration-300">感情記録</h3>
@@ -344,8 +344,8 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
               className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-[#deb887] hover:shadow-2xl hover:scale-105 hover:border-[#8b4513] transition-all duration-300 cursor-pointer group"
               onClick={() => openModal('AI応援メッセージ', '毎朝9時に、前日の感情と行動をもとにした"応援のひとこと"が届く。AI応援メッセージで継続をサポート。', FaBrain({ className: "w-6 h-6 text-[#8b4513]" }))}
             >
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-[#deb887] group-hover:bg-[#8b4513] rounded-full flex items-center justify-center transition-all duration-300">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-[#deb887] group-hover:bg-[#8b4513] rounded-full flex items-center justify-center mx-auto mb-4 transition-all duration-300">
                   {(FaBrain as any)({ className: "w-6 h-6 text-[#8b4513] group-hover:text-white transition-colors duration-300" })}
                 </div>
                 <h3 className="text-lg font-bold text-[#8b4513] group-hover:text-[#6d3d13] transition-colors duration-300">AI応援メッセージ</h3>
@@ -357,8 +357,8 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
               className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-[#deb887] hover:shadow-2xl hover:scale-105 hover:border-[#8b4513] transition-all duration-300 cursor-pointer group"
               onClick={() => openModal('アーカイブ', 'すべての記録を保存・検索可能。過去の成長を振り返り、継続のモチベーションを維持。', FaArchive({ className: "w-6 h-6 text-[#8b4513]" }))}
             >
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-[#deb887] group-hover:bg-[#8b4513] rounded-full flex items-center justify-center transition-all duration-300">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-[#deb887] group-hover:bg-[#8b4513] rounded-full flex items-center justify-center mx-auto mb-4 transition-all duration-300">
                   {(FaArchive as any)({ className: "w-6 h-6 text-[#8b4513] group-hover:text-white transition-colors duration-300" })}
                 </div>
                 <h3 className="text-lg font-bold text-[#8b4513] group-hover:text-[#6d3d13] transition-colors duration-300">アーカイブ</h3>
