@@ -62,14 +62,14 @@ export const HabitModal = forwardRef<{ closeWithValidation: () => void }, HabitM
     estimatedDuration: number | undefined;
     category: string;
   }) => ({
-    title: data.title.trim(),
-    description: data.content,
-    priority: data.priority,
-    status: 'todo' as const,
-    start_date: toDateStringOrNull(data.startDate),
-    due_date: toTimestampStringOrNull(data.dueDate), // TIMESTAMP WITH TIME ZONE型に統一
-    estimated_duration: data.estimatedDuration,
-    category: data.category
+      title: data.title.trim(),
+      description: data.content,
+      priority: data.priority,
+      status: 'todo' as const,
+      start_date: toDateStringOrNull(data.startDate),
+      due_date: toTimestampStringOrNull(data.dueDate), // TIMESTAMP WITH TIME ZONE型に統一
+      estimated_duration: data.estimatedDuration,
+      category: data.category
   });
 
   const handleSave = async (data: any) => {

@@ -1,7 +1,6 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import { EmotionHoverMenu } from './EmotionHoverMenu';
-import { EmotionRecord, TimePeriod } from '@/types/emotion';
 import { getEmotionTimePeriodLabel } from '@/lib/timeUtils';
 import { useEmotionStore } from '@/stores/emotionStore';
 import { useAuth } from '@/contexts/AuthContext';
@@ -29,33 +28,10 @@ interface CharacterProps {
   // モバイル版対応追加props
   isMobile?: boolean;
   onMessageClick?: () => void; // モバイル版用
-  // 感情記録促進用props
-  recordStatus?: {
-    morning: EmotionRecord | null;
-    afternoon: EmotionRecord | null;
-    evening: EmotionRecord | null;
-  };
-  currentTimePeriod?: TimePeriod;
-  // 感情記録の状態をpropsで受け取る（一元管理）
-  emotionLog?: {
-    todayEmotions: any[];
-    recordStatus: {
-      morning: any | null;
-      afternoon: any | null;
-      evening: any | null;
-    };
-    currentTimePeriod: 'morning' | 'afternoon' | 'evening';
-    isComplete: boolean;
-    isLoading: boolean;
-    error: string | null;
-    recordEmotion: (emotionType: any, timePeriod?: any) => Promise<boolean>;
-    refreshTodayEmotions: () => Promise<void>;
-  };
 }
 
 export const Character: React.FC<CharacterProps> = ({ 
   message, 
-  messageParts = [],
   layout = 'vertical',
   isInteractive = false,
   onOptionSelect,
@@ -64,13 +40,9 @@ export const Character: React.FC<CharacterProps> = ({
   isTyping,
   displayedMessage,
   bubblePosition = 'bottom',
-  size,
   onClick,
   isMobile,
-  onMessageClick,
-  recordStatus,
-  currentTimePeriod,
-  emotionLog
+  onMessageClick
 }) => {
   const [showEmotionMenu, setShowEmotionMenu] = useState(false);
   const characterRef = useRef<HTMLDivElement>(null);
@@ -79,26 +51,14 @@ export const Character: React.FC<CharacterProps> = ({
   // ゲストモード時は感情メニューを無効化
   const shouldShowEmotionMenu = showEmotionMenu && !isGuest;
   
-  // メッセージが変更された時にリセット
-  const prevMessage = useRef<string>('');
-  useEffect(() => {
-    if (prevMessage.current !== message) {
-      prevMessage.current = message || '';
-    }
-  }, [message]);
+  // 感情記録の状態を直接storeから取得
+  const { recordStatus, currentTimePeriod } = useEmotionStore();
   
-  // 感情記録促進のロジック（emotionLogを優先、フォールバックとしてrecordStatusを使用）
-  const effectiveRecordStatus = emotionLog?.recordStatus || recordStatus;
-  const effectiveCurrentTimePeriod = emotionLog?.currentTimePeriod || currentTimePeriod;
-  
-  const shouldBlink = effectiveRecordStatus && effectiveCurrentTimePeriod && (
-    effectiveRecordStatus[effectiveCurrentTimePeriod] === null || 
-    (effectiveRecordStatus[effectiveCurrentTimePeriod] && effectiveRecordStatus[effectiveCurrentTimePeriod].id?.toString().startsWith('temp-'))
+  // 感情記録促進のロジック
+  const shouldBlink = recordStatus && currentTimePeriod && (
+    recordStatus[currentTimePeriod] === null || 
+    (recordStatus[currentTimePeriod] && recordStatus[currentTimePeriod].id?.toString().startsWith('temp-'))
   );
-
-  // shouldBlinkの詳細デバッグ（開発環境のみ）
-  
-  // デバッグログ（開発環境のみ）
   
   // クリックハンドラー（useMessageDisplay.tsに統一）
   const handleMessageClick = () => {
@@ -108,19 +68,12 @@ export const Character: React.FC<CharacterProps> = ({
 
   // 感情メニューを閉じるハンドラー
   const handleCloseEmotionMenu = () => {
-    console.log('🔍 Character handleCloseEmotionMenu 実行');
-    console.log('🔍 メニューを閉じる前の状態:', {
-      showEmotionMenu,
-      shouldBlink,
-      effectiveCurrentTimePeriod,
-      recordStatus: effectiveCurrentTimePeriod ? effectiveRecordStatus?.[effectiveCurrentTimePeriod] : null
-    });
     setShowEmotionMenu(false);
   };
 
   // 時間帯ラベル取得（共通関数を使用）
   const getTimePeriodLabel = () => {
-    const timePeriod = effectiveCurrentTimePeriod;
+    const timePeriod = currentTimePeriod;
     if (timePeriod) {
       const labels = { morning: '朝', afternoon: '昼', evening: '晩' };
       return labels[timePeriod];
@@ -128,10 +81,6 @@ export const Character: React.FC<CharacterProps> = ({
     // フォールバック: 現在時刻から判定（共通関数を使用）
     return getEmotionTimePeriodLabel();
   };
-
-
-
-
 
   // ハイブリッドアプローチ: テキスト最適化関数群
   const optimizeText = (text: string, maxLength: number) => {
@@ -158,8 +107,6 @@ export const Character: React.FC<CharacterProps> = ({
 
   const getTextStyles = (text: string, layoutType: string) => {
     const length = text.length;
-    
-    // 2. 動的line-clamp調整（自然な表示を優先）
     let lineClamp = '';
     
     // 200文字（プレミアム）の場合は制限を緩く、100文字（無料）は適度に
@@ -182,14 +129,6 @@ export const Character: React.FC<CharacterProps> = ({
     else if (length > 100) fontSize = 'text-xs sm:text-base';
     
     return { lineClamp, fontSize };
-  };
-
-  // プラン別の最大文字数設定（APIと同じ制限）
-  const getMaxTextLength = (layoutType: string, userPlan: 'guest' | 'free' | 'premium' = 'free') => {
-    // APIの文字数制限に合わせる
-    if (userPlan === 'premium') return 200;
-    if (userPlan === 'free') return 100;
-    return 80; // ゲストユーザーは少し短め
   };
 
   const processedMessage = message || 'メッセージを読み込み中...';

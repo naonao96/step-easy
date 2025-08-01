@@ -1,43 +1,25 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Task } from '@/types/task';
-import { CategoryBadge } from '@/components/atoms/CategoryBadge';
-import { Character } from './Character';
 import { getEmotionTimePeriodLabel } from '@/lib/timeUtils';
 import { isNewHabit } from '@/lib/habitUtils';
-import { isToday, getIncompleteTaskCount, getPlanLimits, generateDateTitle } from '@/lib/commonUtils';
-
+import { isToday, getIncompleteTaskCount, generateDateTitle } from '@/lib/commonUtils';
 import { useAuth } from '@/contexts/AuthContext';
-import { MobileTaskTimer } from './MobileTaskTimer';
-import { MobileTaskHistory } from './MobileTaskHistory';
-
-  import { useEmotionStore } from '@/stores/emotionStore';
-  import { useMessageDisplay } from '@/hooks/useMessageDisplay';
-  import ReactMarkdown from 'react-markdown';
+import { useMessageDisplay } from '@/hooks/useMessageDisplay';
 import { MobileTaskCarousel } from './MobileTaskCarousel';
 import { TaskPreviewModal } from './TaskPreviewModal';
 import { TaskEditModal } from './TaskEditModal';
 import { HabitModal } from './HabitModal';
 import { 
-  FaPlus, 
-  FaCalendarAlt, 
-  FaChartLine, 
   FaChevronRight,
-  FaCheck,
-  FaCircle,
-  FaEdit,
   FaFire,
   FaTasks,
   FaChevronLeft,
-  FaHome,
-  FaTimes,
-  FaTrash,
-  FaChartBar,
   FaCrown
 } from 'react-icons/fa';
 import { EmotionHoverMenu } from '@/components/molecules/EmotionHoverMenu';
+import { useEmotionStore } from '@/stores/emotionStore';
 import Image from 'next/image';
-
 
 interface ModernMobileHomeProps {
   selectedDate: Date;
@@ -60,20 +42,6 @@ interface ModernMobileHomeProps {
   onTabChange?: (tab: 'tasks' | 'habits') => void;
   onTaskUpdate?: () => Promise<void>; // データ更新関数を追加
   onMessageClick?: () => void; // メッセージクリック用
-  emotionLog: {
-    todayEmotions: any[];
-    recordStatus: {
-      morning: any | null;
-      afternoon: any | null;
-      evening: any | null;
-    };
-    currentTimePeriod: 'morning' | 'afternoon' | 'evening';
-    isComplete: boolean;
-    isLoading: boolean;
-    error: string | null;
-    recordEmotion: (emotionType: any, timePeriod?: any) => Promise<boolean>;
-    refreshTodayEmotions: () => Promise<void>;
-  }; // 感情記録の状態をpropsで受け取る
 }
 
 type TabType = 'tasks' | 'habits';
@@ -81,8 +49,6 @@ type TabType = 'tasks' | 'habits';
 export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   selectedDate,
   selectedDateTasks,
-  tasks,
-  statistics,
   characterMessage,
   messageParts = [],
   onCompleteTask,
@@ -91,12 +57,14 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   onDateSelect,
   onTabChange,
   onTaskUpdate,
-  onMessageClick,
-  emotionLog
+  onMessageClick
 }) => {
   const router = useRouter();
-  const { isGuest, isPremium, planType, canAddTaskOnDate, user } = useAuth();
+  const { isGuest, planType, user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('habits');
+
+  // 感情記録の状態を直接storeから取得
+  const { recordStatus, currentTimePeriod } = useEmotionStore();
 
   // タブ変更時の処理
   const handleTabChange = (tab: TabType) => {
@@ -106,15 +74,6 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
       onTabChange(tab);
     }
   };
-  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
-  
-  // 感情記録の状態をpropsから取得（一元管理）
-  const recordStatus = useMemo(() => {
-    return emotionLog.recordStatus;
-  }, [emotionLog.recordStatus]);
-  const currentTimePeriod = useMemo(() => {
-    return emotionLog.currentTimePeriod;
-  }, [emotionLog.currentTimePeriod]);
   
   // タスクプレビュー・編集モーダル関連の状態
   const [selectedTask, setSelectedTask] = useState<any>(null);
@@ -140,12 +99,8 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
     showMessage,
     isTyping,
     displayedMessage,
-    isShowingParts,
-    currentPartIndex,
     handleAutoDisplay,
-    handleManualDisplay,
     handleMessageClick,
-    handleCharacterClick,
     clearMessage
   } = useMessageDisplay({
     characterMessage,
@@ -178,9 +133,6 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
   const regularIncompleteCount = getIncompleteTaskCount(regularTasks);
   const habitIncompleteCount = getIncompleteTaskCount(habitTasks);
 
-  // プラン別習慣制限
-  const { maxHabits } = getPlanLimits(planType);
-
   // 現在のタブに応じたタスクリストを取得
   const getCurrentTasks = () => {
     return activeTab === 'habits' ? habitTasks : regularTasks;
@@ -206,11 +158,6 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
 
   const goToToday = () => {
     onDateSelect(new Date());
-  };
-
-  // タスクの展開/折りたたみ
-  const toggleTaskExpansion = (taskId: string) => {
-    setExpandedTaskId(expandedTaskId === taskId ? null : taskId);
   };
 
   // タスククリック時の処理
@@ -244,13 +191,6 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
       alert('タスクの完了処理に失敗しました');
     }
   };
-
-  // 進捗ページに移動
-  const handleNavigateToProgress = () => {
-    router.push('/progress');
-  };
-
-
 
   // 感情記録メニューを閉じる
   const handleCloseEmotionMenu = () => {
@@ -325,7 +265,6 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
     };
   }, []);
 
-
   return (
     <div className="min-h-screen mt-4">
       {/* Header */}
@@ -362,7 +301,6 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
           </div>
         </div>
       </div>
-
       {/* Tab Navigation */}
       <div className="bg-white border-b border-gray-200">
         <div className="flex">
@@ -384,9 +322,6 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
               )}
             </div>
           </button>
-          
-
-          
           <button
             onClick={() => handleTabChange('tasks')}
             className={`flex-1 py-3 px-4 text-center font-medium transition-colors ${
@@ -407,7 +342,6 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
           </button>
         </div>
       </div>
-
       {/* Task List */}
       <div className="flex-1 p-4">
         {/* 無料ユーザー向け習慣制限表示（習慣タブの時のみ） */}
@@ -445,7 +379,6 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
               }
             </p>
           </div>
-
         ) : (
           <div className="h-56">
             <MobileTaskCarousel
@@ -460,7 +393,6 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
           </div>
         )}
       </div>
-
       {/* Character and Message UI - デスクトップ版と同じ配置 */}
       <div className="px-4 pb-10">
         <div className="character-container relative flex justify-center">
@@ -477,7 +409,6 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
               </div>
             </div>
           )}
-          
           {/* キャラクター（感情メニュー付き）- モバイル版専用デザイン */}
           <div className="relative">
             <div 
@@ -562,11 +493,6 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
           </div>
         </div>
       </div>
-
-
-      
-
-
       {/* タスクプレビュー・編集モーダル */}
       {selectedTask && (
         <>
@@ -581,7 +507,7 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
               if (isNewHabit(task)) {
                 setShowHabitModal(true);
               } else {
-                setShowTaskEditModal(true);
+              setShowTaskEditModal(true);
               }
             }}
             onDelete={handleDeleteTask}

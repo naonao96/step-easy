@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { createNotification } from '@/lib/notifications';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,7 +19,6 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // 管理者キーの検証
-    
     if (adminKey !== process.env.ADMIN_SECRET_KEY) {
       return NextResponse.json({ 
         error: '管理者権限がありません'
@@ -97,17 +95,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '対象ユーザーが見つかりません' }, { status: 404 });
     }
 
-    // 各ユーザーに通知を送信
+    // 各ユーザーに通知を直接データベースに作成
     const results = await Promise.allSettled(
-      targetUserIds.map(userId =>
-        createNotification({
-          type: 'system_info',
-          title,
-          message,
-          priority,
-          category: category as any
-        })
-      )
+      targetUserIds.map(async (userId) => {
+        try {
+          const { data, error } = await supabase
+            .from('notifications')
+            .insert({
+              user_id: userId,
+              type: 'system_info',
+              title,
+              message,
+              priority,
+              category: category as any,
+              is_read: false,
+              created_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+          
+          if (error) {
+            console.error(`通知作成エラー (user: ${userId}):`, error);
+            return { success: false, error: error.message };
+          }
+          
+          return { success: true, data };
+        } catch (err) {
+          console.error(`通知作成エラー (user: ${userId}):`, err);
+          return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+        }
+      })
     );
 
     // 結果を集計

@@ -28,6 +28,37 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
   const [displayedMessage, setDisplayedMessage] = useState('');
   const typewriterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
+  // モーダルの状態管理
+  const [modalData, setModalData] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    icon: React.ReactNode;
+  }>({
+    isOpen: false,
+    title: '',
+    description: '',
+    icon: null
+  });
+  
+  // モーダルを開く関数
+  const openModal = (title: string, description: string, icon: React.ReactNode) => {
+    setModalData({
+      isOpen: true,
+      title,
+      description,
+      icon
+    });
+  };
+  
+  // モーダルを閉じる関数
+  const closeModal = () => {
+    setModalData(prev => ({
+      ...prev,
+      isOpen: false
+    }));
+  };
+  
   // タイプライター効果の関数
   const startTypewriter = useCallback((text: string) => {
     setIsTyping(true);
@@ -84,7 +115,7 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
         startTypewriter(message);
       }, 600); // delay-400 + 200ms の余裕
     }
-  }, [aiMessageAnimation.isVisible, displayedMessage, startTypewriter]);
+  }, [aiMessageAnimation.isVisible, startTypewriter]);
 
   const uiGalleryItems = [
     { title: "感情記録UI", description: "朝・昼・夜の感情を簡単記録", image: "/assets/emotion-ui.png" },
@@ -109,20 +140,16 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
         <div className="text-center space-y-8">
           {/* キャッチフレーズ */}
           <div className="flex flex-col items-center gap-4 mb-6">
-            <div className={`transition-all duration-1000 ${heroAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-              <h1 className="text-4xl sm:text-5xl font-bold leading-tight relative">
-                {/* 背景レイヤー（影効果） */}
-                <div className="absolute inset-0 bg-white/30 rounded-2xl transform translate-x-1 translate-y-1 blur-sm"></div>
-                
-                {/* メインテキスト */}
-                <div className="relative z-10 text-[#4a3728]" 
+            <div className={`fade-in-animation ${heroAnimation.isVisible ? 'animate-fade-in' : ''}`}>
+              <h1 className="text-4xl sm:text-5xl font-bold leading-tight">
+                <div className="text-[#4a3728]" 
                      style={{ 
                        textShadow: '1px 1px 2px rgba(255, 255, 255, 0.8), 2px 2px 4px rgba(139, 69, 19, 0.3)',
                        filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.1))'
                      }}>
                   小鳥の
                   <span className="relative inline-block">
-                    <span className="relative z-20 text-[#8b4513] font-extrabold"
+                    <span className="text-[#8b4513] font-extrabold"
                           style={{ 
                             textShadow: '1px 1px 2px rgba(255, 255, 255, 0.9), 2px 2px 6px rgba(139, 69, 19, 0.4)',
                             filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15))'
@@ -144,37 +171,76 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
                   運んでいく。
                 </div>
             </h1>
-              <p className="text-lg text-[#7c5a2a] leading-relaxed px-4 mt-6">
-                感情・タスク・習慣をひとつの流れで記録し、毎朝9時、AIキャラクターがあなたをやさしく応援します。
-              </p>
+              <div className="text-base text-[#7c5a2a] leading-relaxed px-4 mt-6 max-w-sm mx-auto">
+                <p className="text-sm text-[#7c5a2a]">
+                  感情・タスク・習慣を、ひとつの流れで記録。<br />
+                  毎朝9時、あなたに寄り添う小鳥が、<br />
+                  やさしく応援します。
+                </p>
+                <p className="text-sm text-[#8b4513] font-medium mt-2">
+                  繊細で、頑張りすぎてしまうあなたへ──
+                </p>
+                <p className="text-sm text-[#8b4513] font-medium mt-2">
+                  StepEasyは、「記録」と「応援」の力で、<br />
+                  "つづける"をやさしく支えます。
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* アプリ画面（PCとモバイル） */}
-          <div className={`flex justify-center items-center my-4 relative px-1 mb-8 transition-all duration-1000 delay-200 ${heroAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            {/* PCフレーム（背景） */}
-            <div className="relative">
-            <Image
-                src="/PCFrame.png"
-                alt="StepEasy PC版画面"
-                width={400}
-              height={300}
-                className="drop-shadow-xl w-full max-w-[400px]"
-              />
+            {/* アプリ画面（PCとモバイル） */}
+            <div className={`fade-in-animation ${heroAnimation.isVisible ? 'animate-fade-in' : ''}`} style={{ animationDelay: '0.2s', transform: 'translateY(-6%)', marginBottom: '4rem' }}>
+              <div className="flex justify-center items-center relative w-full">              
+                {/* PCフレーム（背景） */}
+                <div className="relative w-[85%] translate-y-[5%] after:content-[''] after:absolute after:-bottom-3 after:left-1/2 after:translate-x-[-50%] after:w-[60%] after:h-[15px] after:bg-black/10 after:rounded-full after:blur-sm">
+                                                     <Image
+                     src="/PCFrame.png"
+                     alt="StepEasy PC版画面"
+                     width={400}
+                     height={300}
+                                                                 className="w-full h-auto drop-shadow-xl shadow-xl rounded-xl border border-white/30 rounded-lg hover:shadow-2xl transition-all duration-300 object-contain cursor-pointer"
+                      style={{
+                        filter: 'drop-shadow(0 8px 16px rgba(0, 0, 0, 0.25)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15)) drop-shadow(0 20px 40px rgba(0,0,0,0.1))',
+                        boxShadow: '0 15px 30px rgba(0, 0, 0, 0.2), 0 8px 16px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.15)',
+                        transform: 'scale(1.25) translateX(0px)',
+                        transition: 'all 0.3s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.35) translateX(0px)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.25) translateX(0px)';
+                      }}
+                   />
+              </div>
+              
+              {/* モバイルフレーム（前面・左下） */}
+              <div className="absolute left-[5%] bottom-[-8%] z-10 after:content-[''] after:absolute after:-bottom-2 after:left-1/2 after:translate-x-[-50%] after:w-[40%] after:h-[12px] after:bg-black/10 after:rounded-full after:blur-sm">
+                <Image
+                  src="/MobileFrame.png"
+                  alt="StepEasy モバイル版画面"
+                  width={100}
+                  height={200}
+                  className="w-[35%] drop-shadow-2xl shadow-2xl rounded-xl border border-white/30 rounded-lg hover:shadow-2xl transition-all duration-300 object-contain cursor-pointer"
+                  style={{
+                    filter: 'drop-shadow(0 6px 12px rgba(0, 0, 0, 0.2)) drop-shadow(0 3px 6px rgba(0, 0, 0, 0.1)) drop-shadow(0 20px 40px rgba(0,0,0,0.1))',
+                    boxShadow: '0 12px 24px rgba(0, 0, 0, 0.15), 0 6px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
+                    transform: 'scale(1.1) translateX(-20px)',
+                    transition: 'all 0.3s ease',
+                    marginLeft: '80px'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.15) translateX(-20px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.1) translateX(-20px)';
+                  }}
+                />
+              </div>
             </div>
-            {/* モバイルフレーム（前面・右寄り） */}
-            <div className="absolute left-1/2 transform -translate-x-1/2 translate-x-6 top-10 z-10">
-              <Image
-                src="/MobileFrame.png"
-                alt="StepEasy モバイル版画面"
-                width={80}
-                height={160}
-                className="drop-shadow-2xl"
-              />
             </div>
-          </div>
 
-          <div className={`flex flex-col gap-4 px-4 mt-8 transition-all duration-1000 delay-200 ${heroAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <div className={`flex flex-col gap-4 px-4 mt-16 transition-all duration-1000 delay-200 ${heroAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <button
               onClick={onRegister}
               disabled={isLoading}
@@ -197,25 +263,21 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
       <section className="py-16 px-6" ref={featuresAnimation.elementRef}>
         <div className="max-w-2xl mx-auto">
           <div className={`transition-all duration-1000 ${featuresAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <h2 className="text-3xl font-bold text-center mb-12 relative">
-              {/* 背景レイヤー（影効果） */}
-              <div className="absolute inset-0 bg-white/30 rounded-2xl transform translate-x-1 translate-y-1 blur-sm"></div>
-              
-              {/* メインテキスト */}
-              <div className="relative z-10 text-[#4a3728]" 
+            <h2 className="text-3xl font-bold text-center mb-12">
+              <div className="text-[#4a3728]" 
                    style={{ 
                      textShadow: '1px 1px 2px rgba(255, 255, 255, 0.8), 2px 2px 4px rgba(139, 69, 19, 0.3)',
                      filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.1))'
                    }}>
-                <span className="relative z-20 text-[#8b4513] font-extrabold"
+                <span className="text-[#8b4513] font-extrabold"
                       style={{ 
                         textShadow: '1px 1px 2px rgba(255, 255, 255, 0.9), 2px 2px 6px rgba(139, 69, 19, 0.4)',
                         filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15))'
-                      }}>行動</span>も、<span className="relative z-20 text-[#8b4513] font-extrabold"
+                      }}>行動</span>も、<span className="text-[#8b4513] font-extrabold"
                       style={{ 
                         textShadow: '1px 1px 2px rgba(255, 255, 255, 0.9), 2px 2px 6px rgba(139, 69, 19, 0.4)',
                         filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15))'
-                      }}>感情</span>も、<span className="relative z-20 text-[#8b4513] font-extrabold"
+                      }}>感情</span>も、<span className="text-[#8b4513] font-extrabold"
                       style={{ 
                         textShadow: '1px 1px 2px rgba(255, 255, 255, 0.9), 2px 2px 6px rgba(139, 69, 19, 0.4)',
                         filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15))'
@@ -226,81 +288,81 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
           
           <div className={`space-y-6 transition-all duration-1000 delay-200 ${featuresAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             {/* 習慣記録 */}
-            <div className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-[#deb887] hover:shadow-2xl hover:scale-105 hover:border-[#8b4513] transition-all duration-300 cursor-pointer group">
+            <div 
+              className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-[#deb887] hover:shadow-2xl hover:scale-105 hover:border-[#8b4513] transition-all duration-300 cursor-pointer group"
+              onClick={() => openModal('習慣記録', '継続日数・頻度・状態を記録。ストリーク表示で習慣化アプリとしての効果を実感できます。', FaFire({ className: "w-6 h-6 text-[#8b4513]" }))}
+            >
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 bg-[#deb887] group-hover:bg-[#8b4513] rounded-full flex items-center justify-center transition-all duration-300">
                   {(FaFire as any)({ className: "w-6 h-6 text-[#8b4513] group-hover:text-white transition-colors duration-300" })}
                 </div>
                 <h3 className="text-lg font-bold text-[#8b4513] group-hover:text-[#6d3d13] transition-colors duration-300">習慣記録</h3>
               </div>
-              <p className="text-[#7c5a2a] text-sm leading-relaxed group-hover:text-[#5d4037] transition-colors duration-300">
-                継続日数・頻度・状態を記録。ストリーク表示で習慣化アプリとしての効果を実感できます。
-              </p>
             </div>
 
             {/* タスク記録 */}
-            <div className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-[#deb887] hover:shadow-2xl hover:scale-105 hover:border-[#8b4513] transition-all duration-300 cursor-pointer group">
+            <div 
+              className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-[#deb887] hover:shadow-2xl hover:scale-105 hover:border-[#8b4513] transition-all duration-300 cursor-pointer group"
+              onClick={() => openModal('タスク記録', '1日のやることを記録し、完了状況も管理。効率的なタスク管理で生産性向上をサポート。', FaTasks({ className: "w-6 h-6 text-[#8b4513]" }))}
+            >
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 bg-[#deb887] group-hover:bg-[#8b4513] rounded-full flex items-center justify-center transition-all duration-300">
                   {(FaTasks as any)({ className: "w-6 h-6 text-[#8b4513] group-hover:text-white transition-colors duration-300" })}
                 </div>
                 <h3 className="text-lg font-bold text-[#8b4513] group-hover:text-[#6d3d13] transition-colors duration-300">タスク記録</h3>
               </div>
-              <p className="text-[#7c5a2a] text-sm leading-relaxed group-hover:text-[#5d4037] transition-colors duration-300">
-                1日のやることを記録し、完了状況も管理。効率的なタスク管理で生産性向上をサポート。
-              </p>
             </div>
 
             {/* 実行時間記録 */}
-            <div className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-[#deb887] hover:shadow-2xl hover:scale-105 hover:border-[#8b4513] transition-all duration-300 cursor-pointer group">
+            <div 
+              className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-[#deb887] hover:shadow-2xl hover:scale-105 hover:border-[#8b4513] transition-all duration-300 cursor-pointer group"
+              onClick={() => openModal('実行時間記録', '各行動の実施時間を記録し、統計へ活用。時間の使い方を可視化して改善点を発見。', FaClock({ className: "w-6 h-6 text-[#8b4513]" }))}
+            >
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 bg-[#deb887] group-hover:bg-[#8b4513] rounded-full flex items-center justify-center transition-all duration-300">
                   {(FaClock as any)({ className: "w-6 h-6 text-[#8b4513] group-hover:text-white transition-colors duration-300" })}
                 </div>
                 <h3 className="text-lg font-bold text-[#8b4513] group-hover:text-[#6d3d13] transition-colors duration-300">実行時間記録</h3>
               </div>
-              <p className="text-[#7c5a2a] text-sm leading-relaxed group-hover:text-[#5d4037] transition-colors duration-300">
-                各行動の実施時間を記録し、統計へ活用。時間の使い方を可視化して改善点を発見。
-              </p>
             </div>
 
             {/* 感情記録 */}
-            <div className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-[#deb887] hover:shadow-2xl hover:scale-105 hover:border-[#8b4513] transition-all duration-300 cursor-pointer group">
+            <div 
+              className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-[#deb887] hover:shadow-2xl hover:scale-105 hover:border-[#8b4513] transition-all duration-300 cursor-pointer group"
+              onClick={() => openModal('感情記録', '朝・昼・夜に気持ちを簡単記録。感情記録により自分の心の状態を理解し、メンタルヘルスをサポート。', FaHeart({ className: "w-6 h-6 text-[#8b4513]" }))}
+            >
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 bg-[#deb887] group-hover:bg-[#8b4513] rounded-full flex items-center justify-center transition-all duration-300">
                   {(FaHeart as any)({ className: "w-6 h-6 text-[#8b4513] group-hover:text-white transition-colors duration-300" })}
                 </div>
                 <h3 className="text-lg font-bold text-[#8b4513] group-hover:text-[#6d3d13] transition-colors duration-300">感情記録</h3>
               </div>
-              <p className="text-[#7c5a2a] text-sm leading-relaxed group-hover:text-[#5d4037] transition-colors duration-300">
-                朝・昼・夜に気持ちを簡単記録。感情記録により自分の心の状態を理解し、メンタルヘルスをサポート。
-              </p>
             </div>
 
             {/* AIメッセージ */}
-            <div className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-[#deb887] hover:shadow-2xl hover:scale-105 hover:border-[#8b4513] transition-all duration-300 cursor-pointer group">
+            <div 
+              className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-[#deb887] hover:shadow-2xl hover:scale-105 hover:border-[#8b4513] transition-all duration-300 cursor-pointer group"
+              onClick={() => openModal('AI応援メッセージ', '毎朝9時に、前日の感情と行動をもとにした"応援のひとこと"が届く。AI応援メッセージで継続をサポート。', FaBrain({ className: "w-6 h-6 text-[#8b4513]" }))}
+            >
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 bg-[#deb887] group-hover:bg-[#8b4513] rounded-full flex items-center justify-center transition-all duration-300">
                   {(FaBrain as any)({ className: "w-6 h-6 text-[#8b4513] group-hover:text-white transition-colors duration-300" })}
                 </div>
                 <h3 className="text-lg font-bold text-[#8b4513] group-hover:text-[#6d3d13] transition-colors duration-300">AI応援メッセージ</h3>
               </div>
-              <p className="text-[#7c5a2a] text-sm leading-relaxed group-hover:text-[#5d4037] transition-colors duration-300">
-                毎朝9時に、前日の感情と行動をもとにした"応援のひとこと"が届く。AI応援メッセージで継続をサポート。
-              </p>
             </div>
 
             {/* アーカイブ */}
-            <div className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-[#deb887] hover:shadow-2xl hover:scale-105 hover:border-[#8b4513] transition-all duration-300 cursor-pointer group">
+            <div 
+              className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-[#deb887] hover:shadow-2xl hover:scale-105 hover:border-[#8b4513] transition-all duration-300 cursor-pointer group"
+              onClick={() => openModal('アーカイブ', 'すべての記録を保存・検索可能。過去の成長を振り返り、継続のモチベーションを維持。', FaArchive({ className: "w-6 h-6 text-[#8b4513]" }))}
+            >
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 bg-[#deb887] group-hover:bg-[#8b4513] rounded-full flex items-center justify-center transition-all duration-300">
                   {(FaArchive as any)({ className: "w-6 h-6 text-[#8b4513] group-hover:text-white transition-colors duration-300" })}
                 </div>
                 <h3 className="text-lg font-bold text-[#8b4513] group-hover:text-[#6d3d13] transition-colors duration-300">アーカイブ</h3>
               </div>
-              <p className="text-[#7c5a2a] text-sm leading-relaxed group-hover:text-[#5d4037] transition-colors duration-300">
-                すべての記録を保存・検索可能。過去の成長を振り返り、継続のモチベーションを維持。
-              </p>
             </div>
           </div>
         </div>
@@ -310,21 +372,17 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
       <section className="py-16 px-6" ref={statsAnimation.elementRef}>
         <div className="max-w-2xl mx-auto">
           <div className={`transition-all duration-1000 ${statsAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <h2 className="text-3xl font-bold text-center mb-12 relative">
-              {/* 背景レイヤー（影効果） */}
-              <div className="absolute inset-0 bg-white/30 rounded-2xl transform translate-x-1 translate-y-1 blur-sm"></div>
-              
-              {/* メインテキスト */}
-              <div className="relative z-10 text-[#4a3728]" 
+            <h2 className="text-3xl font-bold text-center mb-12">
+              <div className="text-[#4a3728]" 
                    style={{ 
                      textShadow: '1px 1px 2px rgba(255, 255, 255, 0.8), 2px 2px 4px rgba(139, 69, 19, 0.3)',
                      filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.1))'
                    }}>
-                あなたの<span className="relative z-20 text-[#8b4513] font-extrabold"
+                あなたの<span className="text-[#8b4513] font-extrabold"
                       style={{ 
                         textShadow: '1px 1px 2px rgba(255, 255, 255, 0.9), 2px 2px 6px rgba(139, 69, 19, 0.4)',
                         filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15))'
-                      }}>行動</span>が、<br /><span className="relative z-20 text-[#8b4513] font-extrabold"
+                      }}>行動</span>が、<br /><span className="text-[#8b4513] font-extrabold"
                       style={{ 
                         textShadow: '1px 1px 2px rgba(255, 255, 255, 0.9), 2px 2px 6px rgba(139, 69, 19, 0.4)',
                         filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15))'
@@ -398,17 +456,13 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
       <section className="py-16 px-6" ref={aiMessageAnimation.elementRef}>
         <div className="max-w-2xl mx-auto">
           <div className={`transition-all duration-1000 ${aiMessageAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <h2 className="text-3xl font-bold text-center mb-12 relative">
-              {/* 背景レイヤー（影効果） */}
-              <div className="absolute inset-0 bg-white/30 rounded-2xl transform translate-x-1 translate-y-1 blur-sm"></div>
-              
-              {/* メインテキスト */}
-              <div className="relative z-10 text-[#4a3728]" 
+            <h2 className="text-3xl font-bold text-center mb-12">
+              <div className="text-[#4a3728]" 
                    style={{ 
                      textShadow: '1px 1px 2px rgba(255, 255, 255, 0.8), 2px 2px 4px rgba(139, 69, 19, 0.3)',
                      filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.1))'
                    }}>
-                気づいてくれる<span className="relative z-20 text-[#8b4513] font-extrabold"
+                気づいてくれる<span className="text-[#8b4513] font-extrabold"
                       style={{ 
                         textShadow: '1px 1px 2px rgba(255, 255, 255, 0.9), 2px 2px 6px rgba(139, 69, 19, 0.4)',
                         filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15))'
@@ -432,11 +486,25 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
                     alt="StepEasy AIキャラクター"
                     width={60}
                     height={60}
-                    className="rounded-full"
+                    className="rounded-full hover:scale-105 transition-transform duration-300 cursor-pointer"
+                    onClick={() => {
+                      // 既存のタイマーをクリア
+                      if (typewriterTimeoutRef.current) {
+                        clearTimeout(typewriterTimeoutRef.current);
+                        typewriterTimeoutRef.current = null;
+                      }
+                      // 状態をリセット
+                      setDisplayedMessage('');
+                      setIsTyping(false);
+                      // 少し遅延してから新しいタイプライター開始
+                      setTimeout(() => {
+                        startTypewriter("昨日は少しお疲れだったみたいですね😌 でも、習慣は4日も続いていてすごい👏 57%の全体完了率も素晴らしいですよ！");
+                      }, 50);
+                    }}
                   />
                 </div>
                 <div className="flex-1">
-                  <div className="bg-gradient-to-br from-[#f7ecd7] to-[#f5e9da] border border-[#deb887] rounded-2xl p-4 relative shadow-2xl">
+                  <div className="bg-gradient-to-br from-[#f7ecd7] to-[#f5e9da] rounded-2xl p-4 relative shadow-2xl">
                     <div className="absolute -left-2 top-4 w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-r-[8px] border-r-[#f7ecd7]"></div>
                     <div className="text-[#7c5a2a] font-medium leading-relaxed text-sm">
                       "{displayedMessage}"
@@ -516,17 +584,13 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
       <section className="py-16 px-6" ref={targetAudienceAnimation.elementRef}>
         <div className="max-w-2xl mx-auto">
           <div className={`transition-all duration-1000 ${targetAudienceAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <h2 className="text-3xl font-bold text-center mb-12 relative">
-              {/* 背景レイヤー（影効果） */}
-              <div className="absolute inset-0 bg-white/30 rounded-2xl transform translate-x-1 translate-y-1 blur-sm"></div>
-              
-              {/* メインテキスト */}
-              <div className="relative z-10 text-[#4a3728]" 
+            <h2 className="text-3xl font-bold text-center mb-12">
+              <div className="text-[#4a3728]" 
                    style={{ 
                      textShadow: '1px 1px 2px rgba(255, 255, 255, 0.8), 2px 2px 4px rgba(139, 69, 19, 0.3)',
                      filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.1))'
                    }}>
-                このアプリは、<br />こんな<span className="relative z-20 text-[#8b4513] font-extrabold"
+                このアプリは、<br />こんな<span className="text-[#8b4513] font-extrabold"
                       style={{ 
                         textShadow: '1px 1px 2px rgba(255, 255, 255, 0.9), 2px 2px 6px rgba(139, 69, 19, 0.4)',
                         filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15))'
@@ -612,10 +676,10 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
           
           <div className={`space-y-4 transition-all duration-1000 delay-200 ${externalLinksAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <a
-              href="https://note.com/preview/n179346d630b0"
+              href="https://note.com/naosukesan/n/n179346d630b0"
               target="_blank"
               rel="noopener noreferrer"
-              className="block bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-[#deb887] hover:shadow-xl transition-shadow"
+              className="block bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg border border-[#deb887] hover:shadow-xl transition-shadow group"
             >
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-[#deb887] rounded-full flex items-center justify-center">
@@ -742,7 +806,7 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
                   <a href="https://x.com/stepeasyjp" target="_blank" rel="noopener noreferrer" className="text-[#7c5a2a] hover:text-[#8b4513] transition-colors">
                     {(FaTwitter as any)({ className: "w-5 h-5" })}
                   </a>
-                  <a href="https://note.com/preview/n179346d630b0" target="_blank" rel="noopener noreferrer" className="text-[#7c5a2a] hover:text-[#8b4513] transition-colors">
+                  <a href="https://note.com/naosukesan/n/n179346d630b0" target="_blank" rel="noopener noreferrer" className="text-[#7c5a2a] hover:text-[#8b4513] transition-colors">
                     {(FaFileAlt as any)({ className: "w-5 h-5" })}
                   </a>
                 </div>
@@ -755,6 +819,37 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
           </div>
         </div>
       </footer>
+
+      {/* モーダル */}
+      {modalData.isOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div 
+            className="bg-white/95 backdrop-blur rounded-2xl p-6 shadow-2xl border border-[#deb887] max-w-sm w-full mx-4 relative transform transition-all duration-300 scale-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 閉じるボタン */}
+            <button
+              onClick={closeModal}
+              className="absolute top-3 right-3 w-7 h-7 bg-[#deb887] hover:bg-[#8b4513] rounded-full flex items-center justify-center transition-colors duration-300"
+            >
+              <svg className="w-3 h-3 text-[#8b4513] hover:text-white transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* モーダルコンテンツ */}
+            <div className="text-center">
+              <div className="w-12 h-12 bg-[#deb887] rounded-full flex items-center justify-center mx-auto mb-4">
+                {modalData.icon}
+              </div>
+              <h3 className="text-lg font-bold text-[#8b4513] mb-3">{modalData.title}</h3>
+              <p className="text-[#7c5a2a] leading-relaxed text-sm">
+                {modalData.description}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }; 

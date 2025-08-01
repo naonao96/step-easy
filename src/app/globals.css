@@ -558,8 +558,7 @@ body {
 }
 
 /* ヘッダー内のテキストとアイコンの高級感 */
-.wood-grain-header h1,
-.wood-grain-header .text-[#8b4513] {
+.wood-grain-header h1 {
   color: #F5DEB3 !important;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
@@ -576,4 +575,25 @@ body {
   border-color: rgba(212, 175, 55, 0.5);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* フェードインアニメーション */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-animation {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.animate-fade-in {
+  animation: fadeIn 1.2s ease-out forwards;
 }

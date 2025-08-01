@@ -6,36 +6,31 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTaskStore } from '@/stores/taskStore';
 import { Task } from '@/types/task';
 import { useHabitStore } from '@/stores/habitStore';
-import { HabitWithCompletion, Habit } from '@/types/habit';
 import { AppLayout } from '@/components/templates/AppLayout';
 import { Calendar } from '@/components/molecules/Calendar';
 import { Character } from '@/components/molecules/Character';
-
 import { TaskListHome } from '@/components/molecules/TaskListHome';
 import { GuestMigrationModal } from '@/components/molecules/GuestMigrationModal';
 import { ModernMobileHome } from '@/components/molecules/ModernMobileHome';
-
 import { TaskModal } from '@/components/molecules/TaskModal';
 import { HabitModal } from '@/components/molecules/HabitModal';
 import { TaskPreviewModal } from '@/components/molecules/TaskPreviewModal';
 import { TaskEditModal } from '@/components/molecules/TaskEditModal';
-import { HabitCard } from '@/components/molecules/HabitCard';
-
 import { getGuestTasks, migrateGuestTasks, clearGuestTasks } from '@/lib/guestMigration';
 import { useCharacterMessage } from '@/hooks/useCharacterMessage';
-import { useEmotionLog } from '@/hooks/useEmotionLog';
 import { useMessageDisplay } from '@/hooks/useMessageDisplay';
-import { integrateHabitData, convertHabitsToTasks, isNewHabit } from '@/lib/habitUtils';
-import { completeHabit, deleteHabit as deleteHabitOperation, editHabit } from '@/lib/habitOperations';
+import { convertHabitsToTasks, isNewHabit } from '@/lib/habitUtils';
+import { completeHabit, deleteHabit as deleteHabitOperation } from '@/lib/habitOperations';
 import { useEmotionStore } from '@/stores/emotionStore';
+
 // react-responsiveが未インストールの場合は `npm install react-responsive` を実行してください
 const { useMediaQuery } = require('react-responsive');
 
 export default function MenuPage() {
   const router = useRouter();
-  const { user, signOut, shouldShowMigrationModal, setShouldShowMigrationModal, isGuest, planType } = useAuth();
+  const { user, shouldShowMigrationModal, setShouldShowMigrationModal, isGuest, planType } = useAuth();
   const { tasks, fetchTasks, updateTask, deleteTask, resetExpiredStreaks } = useTaskStore();
-  const { habits, habitCompletions, fetchHabits, deleteHabit } = useHabitStore();
+  const { habits, habitCompletions, fetchHabits} = useHabitStore();
   
   // 感情記録の状態を取得（一元管理）
   const emotionStore = useEmotionStore();
@@ -73,14 +68,10 @@ export default function MenuPage() {
   // 状態管理
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [mounted, setMounted] = useState(false);
-  const [greeting, setGreeting] = useState('');
   const [currentMobileTab, setCurrentMobileTab] = useState<'tasks' | 'habits'>(planType === 'guest' ? 'tasks' : 'habits');
   const [currentDesktopTab, setCurrentDesktopTab] = useState<'tasks' | 'habits'>(planType === 'guest' ? 'tasks' : 'habits');
   const [guestTasks, setGuestTasks] = React.useState<Task[]>([]);
   const [migrationError, setMigrationError] = React.useState<string | null>(null);
-  const [contentHeight, setContentHeight] = useState(46); // rem単位（カレンダーと統一）
-  const [speechBubbleVisible, setSpeechBubbleVisible] = useState(false);
-  const [autoHideTimer, setAutoHideTimer] = useState<NodeJS.Timeout | null>(null);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showHabitModal, setShowHabitModal] = useState(false);
   const [showTaskPreviewModal, setShowTaskPreviewModal] = useState(false);
@@ -206,11 +197,6 @@ export default function MenuPage() {
       return false;
     });
   }, [tasks, selectedDate]);
-
-  // 習慣の表示（常に表示）
-  const displayHabits = useMemo(() => {
-    return integrateHabitData(habits, tasks);
-  }, [habits, tasks]);
 
   // 新しい習慣データをTask型に変換（未来日付でも表示する）
   const convertedHabits = useMemo(() => {
@@ -346,12 +332,8 @@ export default function MenuPage() {
     showMessage,
     isTyping,
     displayedMessage,
-    isShowingParts,
-    currentPartIndex,
     handleAutoDisplay,
-    handleManualDisplay,
     handleMessageClick,
-    handleCharacterClick,
     clearMessage
   } = useMessageDisplay({
     characterMessage,
@@ -460,31 +442,11 @@ export default function MenuPage() {
     }
   };
 
-  const handleDeleteHabit = async (id: string) => {
-    if (window.confirm('この習慣を削除してもよろしいですか？')) {
-      const { deleteHabit: deleteHabitFn } = useHabitStore.getState();
-      await deleteHabitOperation(id, habits, tasks, deleteHabitFn, deleteTask);
-      await fetchHabits(); // 習慣データを再取得
-    }
-  };
-
   const handleEditTask = (task: any) => {
     setSelectedTask(task as any);
     setShowEditModal(true);
   };
 
-  const handleEditHabit = (habit: any) => {
-    // 新しい習慣テーブルの習慣の場合
-    if (isNewHabit(habit)) {
-      // 新しい習慣はHabitModalで編集
-      setSelectedTask(habit);
-      setShowHabitModal(true);
-    } else {
-      // 既存のタスクテーブルの習慣はTaskEditModalで編集
-      setSelectedTask(habit);
-      setShowEditModal(true);
-    }
-  };
 
   const handleTaskClick = (task: any) => {
     setSelectedTask(task as any);
@@ -521,20 +483,6 @@ export default function MenuPage() {
     setGuestTasks([]);
     setMigrationError(null);
   };
-
-  // 時間帯による挨拶の設定（日本時間）
-  useEffect(() => {
-    const now = new Date();
-    const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
-    const hour = japanTime.getHours();
-    if (hour >= 6 && hour < 12) {
-      setGreeting('おはようございます');
-    } else if (hour >= 12 && hour < 18) {
-      setGreeting('こんにちは');
-    } else {
-      setGreeting('こんばんは');
-    }
-  }, []);
 
   // FABクリック時の処理（現在のタブに応じて直接モーダル表示）
   const handleFABClick = () => {
@@ -622,7 +570,6 @@ export default function MenuPage() {
             await fetchHabits();
           }} // データ更新関数を追加
           onMessageClick={handleMessageClick} // メッセージクリック用
-          emotionLog={emotionStore}
         />
       </div>
 
@@ -640,7 +587,6 @@ export default function MenuPage() {
               bubblePosition="left"
               size="3cm"
               onClick={handleClick}
-              emotionLog={emotionStore}
             />
           </div>
         )}

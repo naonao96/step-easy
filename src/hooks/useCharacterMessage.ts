@@ -45,16 +45,6 @@ const generateRegistrationMessage = (userName: string, characterName: string = '
 const supabase = createClientComponentClient();
 
 /**
- * 日本時間での日付文字列を取得する関数
- */
-const getJSTDateString = (date?: Date): string => {
-  const targetDate = date ? new Date(date) : new Date();
-  const jstOffset = 9 * 60;
-  const jstTime = new Date(targetDate.getTime() + (jstOffset * 60 * 1000));
-  return jstTime.toISOString().split('T')[0];
-};
-
-/**
  * daily_messagesテーブルから今日のメッセージを取得
  */
 const fetchDailyMessage = async (userId: string): Promise<string | null> => {
@@ -63,22 +53,31 @@ const fetchDailyMessage = async (userId: string): Promise<string | null> => {
     const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
     const hour = japanTime.getHours();
     
-    // 常に今日のメッセージを取得（日本時間）
-    const targetDate = japanTime.toISOString().split('T')[0];
+    // 9時未満は前日、9時以降は今日のメッセージを取得
+    let targetDate = japanTime.toISOString().split('T')[0];
+    
+    if (hour < 9) {
+      // 前日の日付を計算
+      const yesterday = new Date(japanTime);
+      yesterday.setDate(yesterday.getDate() - 1);
+      targetDate = yesterday.toISOString().split('T')[0];
+    }
 
-    const { data: dailyMessage, error } = await supabase
-      .from('daily_messages')
-      .select('message')
-      .eq('user_id', userId)
-      .eq('message_date', targetDate)
-      .eq('scheduled_type', 'morning')
-      .single();
-
-    if (error || !dailyMessage?.message) {
+    // APIエンドポイント経由でメッセージを取得
+    const response = await fetch(`/api/daily-messages?date=${targetDate}`);
+    
+    if (!response.ok) {
+      console.error('Daily message fetch error:', response.status);
       return null;
     }
 
-    return dailyMessage.message;
+    const data = await response.json();
+    
+    if (!data.success || !data.message) {
+      return null;
+    }
+
+    return data.message;
   } catch (error) {
     console.error('Error fetching daily message:', error);
     return null;
@@ -186,7 +185,6 @@ const generatePersonalizedMessage = async (
   // 完了済みタスクの数
   const completedTasks = tasks.filter(task => task.status === 'done');
   const totalTasks = tasks.length;
-  const completionRate = totalTasks > 0 ? (completedTasks.length / totalTasks) * 100 : 0;
 
   // メッセージ生成
   let message = greeting;
@@ -220,31 +218,6 @@ export const useCharacterMessage = ({ userType, userName, tasks, statistics, sel
   const [isNewRegistration, setIsNewRegistration] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [characterName, setCharacterName] = useState<string>('');
-
-  // キャラクター名を取得
-  useEffect(() => {
-    const fetchCharacterName = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        
-        const { data, error } = await supabase
-          .from('users')
-          .select('character_name')
-          .eq('id', user.id)
-          .single();
-        
-        if (!error && data?.character_name) {
-          setCharacterName(data.character_name);
-        }
-      } catch (error) {
-        console.error('Error fetching character name:', error);
-      }
-    };
-
-    fetchCharacterName();
-  }, []);
 
   // メッセージ生成と分割を一度だけ実行
   const generateMessage = useCallback(async () => {
