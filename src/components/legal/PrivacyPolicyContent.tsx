@@ -3,8 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { CloudLayer } from '@/components/CloudLayer';
-import { FaHome, FaShieldAlt, FaFileContract } from 'react-icons/fa';
-import Image from 'next/image';
+import { FaHome, FaFileContract, FaNewspaper } from 'react-icons/fa';
 
 export const PrivacyPolicyContent: React.FC = () => {
   const router = useRouter();
@@ -39,6 +38,13 @@ export const PrivacyPolicyContent: React.FC = () => {
         {/* 右側：ナビゲーションボタン */}
         <div className="flex items-center gap-2 sm:gap-3">
           <button
+            onClick={() => router.push('/release-note')}
+            className="p-2 text-[#7c5a2a] hover:text-[#8b4513] transition-colors duration-200 hover:scale-105"
+            title="リリースノート"
+          >
+            {FaNewspaper({ className: "w-5 h-5" })}
+          </button>
+          <button
             onClick={() => router.push('/terms')}
             className="p-2 text-[#7c5a2a] hover:text-[#8b4513] transition-colors duration-200 hover:scale-105"
             title="利用規約"
@@ -55,7 +61,7 @@ export const PrivacyPolicyContent: React.FC = () => {
         </div>
       </header>
       
-      <div className="relative z-10 py-8 pt-24 md:pt-28">
+      <div className="relative z-20 py-8 pt-24 md:pt-28">
         <div className="max-w-4xl mx-auto px-4">
           <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-8 border border-white/30">
             <div className="mb-8">
