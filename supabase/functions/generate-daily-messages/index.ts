@@ -44,27 +44,15 @@ interface HabitCompletion {
   created_at: string;
 }
 
-// 環境判定（SUPABASE_プレフィックスを削除）
-const isDevelopment = Deno.env.get('ENVIRONMENT') === 'development' || 
-                     Deno.env.get('NODE_ENV') === 'development' ||
-                     Deno.env.get('APP_ENV') === 'development';
-
-const isProduction = Deno.env.get('ENVIRONMENT') === 'production' || 
-                    Deno.env.get('NODE_ENV') === 'production' ||
-                    Deno.env.get('APP_ENV') === 'production';
-
 // デバッグログ関数
 function debugLog(message: string, data?: any) {
+  const isDevelopment = Deno.env.get('ENVIRONMENT') === 'development' || 
+                       Deno.env.get('NODE_ENV') === 'development' ||
+                       Deno.env.get('APP_ENV') === 'development';
+  
   if (isDevelopment) {
     console.log(`[DEV] ${message}`, data || '');
-  } else if (isProduction) {
-    console.log(`[PROD] ${message}`, data || '');
-  }
-}
-
-// 本番環境用のログ関数
-function productionLog(message: string, data?: any) {
-  if (isProduction) {
+  } else {
     console.log(`[PROD] ${message}`, data || '');
   }
 }
@@ -101,58 +89,7 @@ function smartTrim(text: string, targetLength: number): string {
   return text.substring(0, targetLength - 3) + '...';
 }
 
-// 既存の感情分析関数
-function analyzeEmotionalState(data: {
-  recentCompletionRate: number;
-  overallRate: number;
-  overdueCount: number;
-  recentCompletions: number;
-  todayTasks: number;
-  todayCompleted: number;
-}) {
-  const { recentCompletionRate, overallRate, overdueCount, recentCompletions, todayTasks, todayCompleted } = data;
-  
-  // ストレスレベルの判定
-  let stressLevel = 'low';
-  if (overdueCount > 3 || (todayTasks > 0 && todayCompleted / todayTasks < 0.3)) {
-    stressLevel = 'high';
-  } else if (overdueCount > 1 || (todayTasks > 0 && todayCompleted / todayTasks < 0.6)) {
-    stressLevel = 'medium';
-  }
-  
-  // モチベーションの判定
-  let motivation = 'high';
-  if (recentCompletionRate < 30 || overallRate < 40) {
-    motivation = 'low';
-  } else if (recentCompletionRate < 60 || overallRate < 60) {
-    motivation = 'medium';
-  }
-  
-  // 進捗状況の判定
-  let progress = 'good';
-  if (recentCompletions < 2) {
-    progress = 'slow';
-  } else if (recentCompletions > 5) {
-    progress = 'excellent';
-  }
-  
-  // 継続性の判定
-  let consistency = 'stable';
-  if (recentCompletionRate > 80 && overallRate > 70) {
-    consistency = 'improving';
-  } else if (recentCompletionRate < 40) {
-    consistency = 'declining';
-  }
-  
-  return {
-    stressLevel,
-    motivation,
-    progress,
-    consistency,
-    needsEncouragement: motivation === 'low' || stressLevel === 'high',
-    needsRest: stressLevel === 'high' && recentCompletions > 3
-  };
-}
+
 
 // 既存のリトライ付き生成関数
 async function generateWithRetry(model: any, prompt: string, targetLength: number, maxLength: number): Promise<string> {
@@ -334,35 +271,16 @@ async function generateMessage(genAI: GoogleGenerativeAI, userName?: string, tas
 
   // 前日データを取得
   const yesterdayData = getYesterdayData(tasks || [], habits || [], habitCompletions || [], emotions || []);
-
-  // 時間帯と曜日の取得（日本時間）
-  const getTimeBasedGreeting = (): string => {
-    const now = new Date();
-    const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
-    const hour = japanTime.getHours();
-    if (hour >= 6 && hour < 12) return 'morning';
-    if (hour >= 12 && hour < 18) return 'afternoon';
-    return 'evening'; // 18:00-6:00（18:00-24:00 + 0:00-6:00）
-  };
-
-  const getDayOfWeek = (): string => {
-    const days = ['日', '月', '火', '水', '木', '金', '土'];
-    return days[new Date().getDay()];
-  };
-
-  const timeGreeting = getTimeBasedGreeting();
-  const dayOfWeek = getDayOfWeek();
-  
   const userGreeting = userName ? `${userName}さん` : 'ユーザーさん';
-  const birdName = characterName || '小鳥';
+  const birdName = characterName || 'ぼく';
   
   // 朝9時向けの新しいプロンプト
   const prompt = `
-あなたは優しく寄り添うタスク管理アプリのキャラクター「${birdName}」です。
+あなたは優しく寄り添う感情・タスク・習慣を記録するアプリの
+のんびり小鳥のキャラクター「${birdName}」です。
 今日は${today}です。朝9時のメッセージです。
 
-${userName ? `ユーザーの名前は「${userName}」です。` : ''}
-${characterName ? `あなたの名前は「${characterName}」です。` : ''}
+${userName ? `ユーザーの名前は「${userName}」さんです。` : ''}
 
 【前日までのデータ分析】
 📊 タスク達成状況：
@@ -376,24 +294,62 @@ ${characterName ? `あなたの名前は「${characterName}」です。` : ''}
 - 最長記録: ${yesterdayData.maxStreak}日
 
 😊 前日の感情パターン：
-- 朝: ${yesterdayData.morningEmotion} → ${yesterdayData.morningEmotionAnalysis}
-- 昼: ${yesterdayData.afternoonEmotion} → ${yesterdayData.afternoonEmotionAnalysis}
-- 夜: ${yesterdayData.eveningEmotion} → ${yesterdayData.eveningEmotionAnalysis}
-
-【メッセージ生成条件】
-- あなたはデータを「単なる報告」ではなく「寄り添い・共感・応援」の姿勢で語ります。
-- ユーザーの頑張りをほめつつ、「今日どうしたらいいか」を**1つに絞って**提案します。
-- 固有名詞や曜日・季節感を織り交ぜて、生活感のある言葉にします。
-- 全体は200文字以内。絵文字も使いつつ、押しつけがましくならないように。
-- 曜日や季節を考慮します。
-
-【構成例（テンプレではなく“流れ”として）】
-1. 親しみのあるあいさつ（「おはよう！${userName}さん」など）
-2. 昨日の様子への共感・称賛（感情や実績ベース）
-3. 今日へのささやかな提案（習慣 or タスク起点）
-4. 応援・安心させる一言（例：「ぼくはいつも見てるよ🕊️」）
-
+- 朝: ${yesterdayData.morningEmotionAnalysis}
+- 昼: ${yesterdayData.afternoonEmotionAnalysis}
+- 夜: ${yesterdayData.eveningEmotionAnalysis}
 ${promptTrends}
+
+# 🎯 メッセージ生成ルール
+
+以下のルールに従って、**200文字以内**の「親しみ・共感・励まし」に満ちたメッセージを生成してください。
+
+---
+
+## 1. 🌿 語り口とキャラ性
+
+- 「やさしく、すこし眠たげ」な口調で語ります。
+- 小鳥らしい比喩や語尾、軽い独り言を時々交えても◎
+- 押しつけがましくならず、あたたかく寄り添う表現を心がけましょう。
+
+---
+
+## 2. ☀️ 昨日の実績や感情への共感
+
+- データは「単なる報告」ではなく、「寄り添い・共感・応援」の気持ちで語ります。
+- タスク・習慣うち **ひとつに絞って** 共感し、やさしく褒めてください。
+- 前日の感情パターンは「描写」に変換して活用します  
+  （例：「夜は少し疲れてたんだねぇ」など）。
+
+---
+
+## 3. 🌱 今日へのささやかな提案（ひとつだけ）
+
+- 「これをやってみよう」と **ひとつだけ** 具体的に提案してください。
+- 習慣継続状況ベース・タスク達成状況ベースどちらでもOKですが、選択肢ではなく「ひと声の導き」に。
+- 命令ではなく、「〜してみるのはどうかなぁ」といった自然な提案を。
+
+---
+
+## 4. 🕊️ 季節感・曜日・生活との接続
+
+- 曜日・季節・天気などの要素を、さりげなくメッセージに取り入れてください。
+- 例：「水曜日はちょっと疲れやすいかも」「暑い日の朝は、ゆっくり動き出すのもいいかなぁ」など。
+
+---
+
+## 5. 💬 最後は安心を届ける一言で締める
+
+- メッセージの締めには、「見守っている」気持ちを伝えるひとことを添えてください。
+- 例：「ぼくはそばにいるよ」「無理しないでね」「いつでも応援してるよ🕊️」など。
+
+---
+
+## 🎨 補足
+
+- 固有名詞（ユーザー名・キャラ名・曜日など）は可能な範囲で自然に組み込んでください。
+- 感情データが欠けている場合は、一般的な文脈で補完してOKです。
+- 曜日ごとの傾向（例：月曜＝気持ち切り替え、水曜＝中だるみ）を活かすと自然さが増します。
+- **適度に絵文字を使い、読みやすく親しみやすい文にしてください。**
 `;
 
   // デバッグ: プロンプトをログに出力
@@ -424,7 +380,6 @@ serve(async (_req: any) => {
       const jstTime = new Date(now.getTime() + (jstOffset * 60 * 1000));
       return jstTime.toISOString().split('T')[0];
     };
-
     const today = getJSTDateString();
     console.log(`Starting daily message generation for ${today} (JST)`);
 

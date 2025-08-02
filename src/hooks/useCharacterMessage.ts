@@ -47,20 +47,20 @@ const supabase = createClientComponentClient();
 /**
  * daily_messagesテーブルから今日のメッセージを取得
  */
-const fetchDailyMessage = async (userId: string): Promise<string | null> => {
+const fetchDailyMessage = async (_userId: string): Promise<string | null> => {
   try {
-    const now = new Date();
-    const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
-    const hour = japanTime.getHours();
+    const { getJapanTimeNow, toJSTDateString } = await import('@/lib/timeUtils');
+    const japanTime = getJapanTimeNow();
+    const hour = japanTime.hour;
     
     // 9時未満は前日、9時以降は今日のメッセージを取得
-    let targetDate = japanTime.toISOString().split('T')[0];
+    let targetDate = toJSTDateString(japanTime.date);
     
     if (hour < 9) {
       // 前日の日付を計算
-      const yesterday = new Date(japanTime);
+      const yesterday = new Date(japanTime.date);
       yesterday.setDate(yesterday.getDate() - 1);
-      targetDate = yesterday.toISOString().split('T')[0];
+      targetDate = toJSTDateString(yesterday);
     }
 
     // APIエンドポイント経由でメッセージを取得
@@ -126,14 +126,15 @@ const generatePersonalizedMessage = async (
 
   // 新規登録判定（翌日9時まで）
   if (user?.id && user?.created_at) {
+    const { getJapanTimeNow } = await import('@/lib/timeUtils');
     const registrationTime = new Date(user.created_at);
-    const jstRegistrationTime = new Date(registrationTime.getTime() + (9 * 60 * 60 * 1000));
+    const jstRegistrationTime = new Date(registrationTime.toLocaleString("en-US", {timeZone: "Asia/Tokyo"}));
     const nextDay9AM = new Date(jstRegistrationTime);
     nextDay9AM.setDate(nextDay9AM.getDate() + 1);
     nextDay9AM.setUTCHours(0, 0, 0, 0);
     
-    const now = new Date();
-    const isNewRegistration = now < nextDay9AM;
+    const jstNow = getJapanTimeNow();
+    const isNewRegistration = jstNow.date < nextDay9AM;
     
     if (isNewRegistration) {
       // キャラクター名を取得
@@ -165,9 +166,9 @@ const generatePersonalizedMessage = async (
   const isToday = targetDate.getTime() === today.getTime();
 
   // 時間帯の判定（日本時間）
-  const now = new Date();
-  const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
-  const hour = japanTime.getHours();
+  const { getJapanTimeNow } = await import('@/lib/timeUtils');
+  const japanTime = getJapanTimeNow();
+  const hour = japanTime.hour;
   const timeOfDay = hour >= 6 && hour < 12 ? '朝' : hour >= 12 && hour < 18 ? '昼' : '晩';
   
   // ユーザー名の処理

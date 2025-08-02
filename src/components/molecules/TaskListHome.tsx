@@ -2,14 +2,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Task } from '@/types/task';
 import { useAuth } from '@/contexts/AuthContext';
-import { getHabitLimits, getFrequencyLabel, getHabitStatus, isNewHabit } from '@/lib/habitUtils';
+import { getHabitLimits, getHabitStatus, isNewHabit } from '@/lib/habitUtils';
 import { generateDateTitle, getIncompleteTaskCount } from '@/lib/commonUtils';
-
 import { ToggleSwitch } from '../atoms/ToggleSwitch';
 import { SortOption } from '../atoms/SortDropdown';
 import { sortTasks, getSavedSortOption, saveSortOption } from '@/lib/sortUtils';
-import { formatDurationShort } from '@/lib/timeUtils';
-import { FaPlus, FaCheck, FaEdit, FaFilter, FaFire, FaTasks, FaCrown, FaGem } from 'react-icons/fa';
+import { FaCheck, FaEdit, FaFilter, FaFire, FaTasks, FaCrown} from 'react-icons/fa';
 
 interface TaskListHomeProps {
   tasks?: Task[];
@@ -33,13 +31,12 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
   onCompleteTask,
   onTaskClick,
   onEditTask,
-  onViewAll,
   height = 46,
   activeTab: externalActiveTab,
   onTabChange
 }) => {
   const router = useRouter();
-  const { isGuest, isPremium, planType, canAddTaskOnDate, togglePremiumForDev } = useAuth();
+  const { isPremium, planType, canAddTaskOnDate, togglePremiumForDev } = useAuth();
   const [sortOption, setSortOption] = useState<SortOption>('default');
   const [internalActiveTab, setInternalActiveTab] = useState<TabType>('habits');
   
@@ -87,7 +84,7 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
   const regularIncompleteCount = getIncompleteTaskCount(regularTasks);
   const habitIncompleteCount = getIncompleteTaskCount(habitTasks);
 
-  const { maxHabits, maxStreakDays } = getHabitLimits(planType);
+  const { maxHabits } = getHabitLimits(planType);
 
   // タスク詳細表示（モーダル表示方式）
   const handleTaskClick = (task: any) => {
@@ -147,8 +144,6 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
       }
     }
   };
-
-
 
   // タスクカードの共通レンダリング
   const renderTaskCard = (task: any, isHabit = false) => {
@@ -217,12 +212,7 @@ export const TaskListHome: React.FC<TaskListHomeProps> = ({
           }`}>
             {task.title}
           </p>
-          {isHabit && (
-            <span className="text-xs bg-[#deb887] text-[#7c5a2a] px-1.5 py-0.5 rounded flex items-center gap-1">
-              {FaFire({ className: "w-2.5 h-2.5" })}
-              {getFrequencyLabel(task.habit_frequency)}
-            </span>
-          )}
+
         </div>
         
         <div className="flex items-center gap-2 mt-1">

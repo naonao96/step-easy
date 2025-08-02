@@ -175,13 +175,13 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
           >
             {/* メインアイコン */}
             <div className="relative z-10 transition-all duration-300">
-              {isFABHovered ? (
-                React.createElement(FaPlus as React.ComponentType<any>, { 
-                  className: "w-7 h-7 transition-all duration-300 group-hover:rotate-90" 
-                })
-              ) : isModalOpen ? (
+              {isModalOpen ? (
                 React.createElement(FaTimes as React.ComponentType<any>, { 
                   className: "w-7 h-7 transition-all duration-300 group-hover:scale-110" 
+                })
+              ) : isFABHovered ? (
+                React.createElement(FaPlus as React.ComponentType<any>, { 
+                  className: "w-7 h-7 transition-all duration-300 group-hover:rotate-90" 
                 })
               ) : currentTab === 'habits' ? (
                 React.createElement(FaFire as React.ComponentType<any>, { 

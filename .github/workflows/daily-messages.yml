@@ -2,8 +2,8 @@ name: Daily Messages Generation
 
 on:
   schedule:
-    # 毎日午前9時（JST）に実行
-    - cron: '23 0 * * *'  # UTC 00:00 = JST 08:00
+    # 毎日深夜1時（JST）に実行
+    - cron: '0 16 * * *'  # UTC 16:00 = JST 01:00
   workflow_dispatch:  # 手動実行も可能
 
 jobs:

@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Task } from '@/types/task';
 import { CategoryBadge } from '@/components/atoms/CategoryBadge';
-import { FaCheck, FaTrash, FaPlay, FaPause, FaStop, FaClock, FaEdit, FaFire } from 'react-icons/fa';
+import { FaCheck, FaTrash, FaPlay, FaPause, FaStop, FaClock, FaEdit } from 'react-icons/fa';
 import { useExecutionStore } from '@/stores/executionStore';
 
 interface MobileTaskCarouselProps {
@@ -335,16 +335,6 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
     };
   };
 
-  // 習慣の頻度表示
-  const getFrequencyLabel = (frequency?: string) => {
-    switch (frequency) {
-      case 'daily': return '毎日';
-      case 'weekly': return '週1回';
-      case 'monthly': return '月1回';
-      default: return '毎日';
-    }
-  };
-
   // 実行ログ機能のヘルパー関数
   const isCurrentTaskActive = (taskId: string) => activeExecution?.task_id === taskId;
   const isOtherTaskRunning = (taskId: string) => Boolean(activeExecution && !isCurrentTaskActive(taskId));
@@ -509,13 +499,6 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
 
                     {/* 頻度・カテゴリ・優先度を1行にまとめる */}
                     <div className="flex flex-wrap gap-2 mb-2">
-                      {/* 習慣ラベル */}
-                      {isHabit && (
-                        <span className="text-xs bg-[#deb887] text-[#7c5a2a] px-1.5 sm:px-2 py-1 rounded flex items-center gap-1">
-                          {FaFire({ className: "w-2.5 h-2.5" })}
-                          {getFrequencyLabel(task.frequency)}
-                        </span>
-                      )}
                       {/* カテゴリバッジ */}
                       {task.category && (
                         <CategoryBadge category={task.category} />
@@ -535,13 +518,13 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
                     {/* 実行ログ機能（最小限） */}
                     {isCenter && (
                       <div className="flex items-center justify-between mb-2">
-                        {/* 実行時間表示 */}
-                        <div className="flex items-center gap-1">
-                          {FaClock({ className: "w-3 h-3 text-gray-500" })}
-                          <span className="text-xs font-mono text-gray-600">
-                            {getDisplayTime(task.id)}
-                          </span>
-                        </div>
+                         {/* 実行時間表示 */}
+                         <div className="flex items-center gap-2">
+                           {FaClock({ className: "w-4 h-4 text-gray-500" })}
+                           <span className="text-sm font-mono font-medium text-gray-600">
+                             {getDisplayTime(task.id)}
+                           </span>
+                         </div>
                         
                         {/* 実行ボタン */}
                         <div className="flex gap-2 relative z-10">
@@ -552,14 +535,14 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
                                 startExecution(task.id);
                               }}
                               disabled={isOtherTaskRunning(task.id)}
-                              className={`p-2 rounded-md text-sm transition-colors relative z-20 ${
-                                isOtherTaskRunning(task.id)
-                                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                  : 'bg-[#7c5a2a] text-white hover:bg-[#8b4513]'
-                              }`}
-                              title={isOtherTaskRunning(task.id) ? '他のタスクが実行中' : '実行開始'}
-                            >
-                              {FaPlay({ className: "w-3 h-3" })}
+                                 className={`p-2 rounded-md text-sm transition-colors relative z-20 ${
+                                 isOtherTaskRunning(task.id)
+                                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                   : 'bg-[#7c5a2a] text-white hover:bg-[#8b4513]'
+                               }`}
+                               title={isOtherTaskRunning(task.id) ? '他のタスクが実行中' : '実行開始'}
+                             >
+                               {FaPlay({ className: "w-4 h-4" })}
                             </button>
                           ) : (
                             <>
@@ -569,10 +552,10 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
                                     e.stopPropagation();
                                     pauseExecution();
                                   }}
-                                  className="p-2 bg-[#deb887] text-[#7c5a2a] rounded-md hover:bg-[#8b4513] hover:text-white text-sm transition-colors relative z-20"
-                                  title="一時停止"
-                                >
-                                  {FaPause({ className: "w-3 h-3" })}
+                                   className="p-2 bg-[#deb887] text-[#7c5a2a] rounded-md hover:bg-[#8b4513] hover:text-white text-sm transition-colors relative z-20"
+                                   title="一時停止"
+                                 >
+                                   {FaPause({ className: "w-4 h-4" })}
                                 </button>
                               ) : (
                                 <button
@@ -580,10 +563,10 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
                                     e.stopPropagation();
                                     resumeExecution();
                                   }}
-                                  className="p-2 bg-[#7c5a2a] text-white rounded-md hover:bg-[#8b4513] text-sm transition-colors relative z-20"
-                                  title="再開"
-                                >
-                                  {FaPlay({ className: "w-3 h-3" })}
+                                   className="p-2 bg-[#7c5a2a] text-white rounded-md hover:bg-[#8b4513] text-sm transition-colors relative z-20"
+                                   title="再開"
+                                 >
+                                   {FaPlay({ className: "w-4 h-4" })}
                                 </button>
                               )}
                               <button
@@ -591,10 +574,10 @@ export const MobileTaskCarousel: React.FC<MobileTaskCarouselProps> = ({
                                   e.stopPropagation();
                                   stopExecution();
                                 }}
-                                className="p-2 bg-[#8b4513] text-white rounded-md hover:bg-[#7c5a2a] text-sm transition-colors relative z-20"
-                                title="停止・記録"
-                              >
-                                {FaStop({ className: "w-3 h-3" })}
+                                 className="p-2 bg-[#8b4513] text-white rounded-md hover:bg-[#7c5a2a] text-sm transition-colors relative z-20"
+                                 title="停止・記録"
+                               >
+                                 {FaStop({ className: "w-4 h-4" })}
                               </button>
                             </>
                           )}
