@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Task } from '@/types/task';
-import { getEmotionTimePeriodLabel } from '@/lib/timeUtils';
+import { getEmotionTimePeriod, getEmotionTimePeriodLabel } from '@/lib/timeUtils';
 import { isNewHabit } from '@/lib/habitUtils';
 import { isToday, getIncompleteTaskCount, generateDateTitle } from '@/lib/commonUtils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -422,10 +422,13 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
               {/* 半透明の円（半径2cm）- 背面に配置 */}
               <div className={`
                 absolute inset-0 w-32 h-32 rounded-full border-2 transform -translate-x-1/2 -translate-y-1/2
-                ${recordStatus && currentTimePeriod && (
-                  recordStatus[currentTimePeriod] === null || 
-                  (recordStatus[currentTimePeriod] && recordStatus[currentTimePeriod].id?.toString().startsWith('temp-'))
-                ) ? 'background-circle-unrecorded' : 'bg-blue-200/20 border-blue-300/30'}
+                ${(function(){
+                  const live = getEmotionTimePeriod();
+                  return recordStatus && (
+                    recordStatus[live] === null || 
+                    (recordStatus[live] && recordStatus[live].id?.toString().startsWith('temp-'))
+                  );
+                })() ? 'background-circle-unrecorded' : 'bg-blue-200/20 border-blue-300/30'}
               `} style={{ left: '50%', top: '50%', zIndex: -1 }}></div>
               
               <Image
@@ -438,10 +441,13 @@ export const ModernMobileHome: React.FC<ModernMobileHomeProps> = ({
                 style={{ height: '3cm', width: 'auto', objectFit: 'contain', display: 'block' }}
                 className={`
                   transition-transform transition-shadow duration-200 active:scale-110
-                  ${recordStatus && currentTimePeriod && (
-                    recordStatus[currentTimePeriod] === null || 
-                    (recordStatus[currentTimePeriod] && recordStatus[currentTimePeriod].id?.toString().startsWith('temp-'))
-                  ) ? 'character-unrecorded' : ''}
+                  ${(function(){
+                    const live = getEmotionTimePeriod();
+                    return recordStatus && (
+                      recordStatus[live] === null || 
+                      (recordStatus[live] && recordStatus[live].id?.toString().startsWith('temp-'))
+                    );
+                  })() ? 'character-unrecorded' : ''}
                 `}
               />
               

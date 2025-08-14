@@ -21,7 +21,9 @@ export async function GET() {
       }
     });
 
-    const today = new Date().toISOString().split('T')[0];
+    // 日本時間ベースで今日の日付（YYYY-MM-DD）を算出
+    const jstNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
+    const today = jstNow.toISOString().split('T')[0];
 
     // 今日生成されたメッセージを取得
     const { data: messages, error } = await supabase

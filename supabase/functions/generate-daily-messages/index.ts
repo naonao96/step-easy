@@ -160,16 +160,31 @@ function calculateHabitStreak(completions: HabitCompletion[], isCompletedToday: 
   return streak;
 }
 
+// JST現在時刻を取得
+function getJapanTime(): Date {
+  return new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
+}
+
+// 任意の日時をJSTのYYYY-MM-DD文字列に変換
+function toJSTDateString(date: Date | string): string {
+  const base = typeof date === 'string' ? new Date(date) : date;
+  const jst = new Date(base.toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
+  return jst.toISOString().split('T')[0];
+}
+
 // 前日データを取得する関数（既存のタスクベース計算 + 新しい習慣計算）
 function getYesterdayData(tasks: Task[], habits: Habit[], habitCompletions: HabitCompletion[], emotions: any[]) {
-  const yesterday = new Date();
+  const jstNow = getJapanTime();
+  const yesterday = new Date(jstNow);
   yesterday.setDate(yesterday.getDate() - 1);
   const yesterdayStr = yesterday.toISOString().split('T')[0];
   
   // 前日のタスク統計（既存の計算を維持）
-  const yesterdayTasks = tasks?.filter((t: Task) => 
-    t.start_date === yesterdayStr || (t.created_at && t.created_at.startsWith(yesterdayStr))
-  ) || [];
+  const yesterdayTasks = tasks?.filter((t: Task) => {
+    const matchStartDate = t.start_date === yesterdayStr;
+    const matchCreatedAt = t.created_at ? toJSTDateString(t.created_at) === yesterdayStr : false;
+    return matchStartDate || matchCreatedAt;
+  }) || [];
   
   const yesterdayCompleted = yesterdayTasks.filter((t: Task) => t.status === 'done').length;
   const yesterdayTotal = yesterdayTasks.length;
@@ -178,7 +193,8 @@ function getYesterdayData(tasks: Task[], habits: Habit[], habitCompletions: Habi
   // 前日の感情データ（朝昼晩）
   const yesterdayEmotions = emotions?.filter((e: any) => {
     const emotionDate = new Date(e.created_at);
-    const emotionDateStr = emotionDate.toISOString().split('T')[0];
+    const jstEmotionDate = new Date(emotionDate.toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
+    const emotionDateStr = jstEmotionDate.toISOString().split('T')[0];
     return emotionDateStr === yesterdayStr;
   }) || [];
   const morningEmotion = yesterdayEmotions.find((e: any) => e.time_period === 'morning')?.emotion_type || 'none';
@@ -263,7 +279,9 @@ function getYesterdayData(tasks: Task[], habits: Habit[], habitCompletions: Habi
 async function generateMessage(genAI: GoogleGenerativeAI, userName?: string, tasks?: Task[], habits?: Habit[], habitCompletions?: HabitCompletion[], statistics?: any, promptTrends: string = '', emotions?: any[], characterName?: string): Promise<string> {
   const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
   
-  const today = new Date().toLocaleDateString('ja-JP', {
+  // 表示用の日付もJST基準に統一
+  const jstForDisplay = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
+  const today = jstForDisplay.toLocaleDateString('ja-JP', {
     weekday: 'long',
     month: 'long', 
     day: 'numeric'
@@ -508,9 +526,11 @@ serve(async (_req: any) => {
         }
 
         // 統計データの計算（全ユーザーに適用）
-        const todayTasks = tasks?.filter((t: Task) => 
-          t.start_date === today || (t.created_at && t.created_at.startsWith(today))
-        ) || [];
+        const todayTasks = tasks?.filter((t: Task) => {
+          const matchStartDate = t.start_date === today;
+          const matchCreatedAt = t.created_at ? toJSTDateString(t.created_at) === today : false;
+          return matchStartDate || matchCreatedAt;
+        }) || [];
         
         const completedToday = todayTasks.filter((t: Task) => t.status === 'done').length;
         const totalToday = todayTasks.length;

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import { EmotionHoverMenu } from './EmotionHoverMenu';
-import { getEmotionTimePeriodLabel } from '@/lib/timeUtils';
+import { getEmotionTimePeriod, getEmotionTimePeriodLabel } from '@/lib/timeUtils';
 import { useEmotionStore } from '@/stores/emotionStore';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -55,9 +55,11 @@ export const Character: React.FC<CharacterProps> = ({
   const { recordStatus, currentTimePeriod } = useEmotionStore();
   
   // 感情記録促進のロジック
-  const shouldBlink = recordStatus && currentTimePeriod && (
-    recordStatus[currentTimePeriod] === null || 
-    (recordStatus[currentTimePeriod] && recordStatus[currentTimePeriod].id?.toString().startsWith('temp-'))
+  // レンダリング時点の実時間帯で判定（参照キーの遅延を排除）
+  const livePeriod = getEmotionTimePeriod();
+  const shouldBlink = recordStatus && (
+    recordStatus[livePeriod] === null || 
+    (recordStatus[livePeriod] && recordStatus[livePeriod].id?.toString().startsWith('temp-'))
   );
   
   // クリックハンドラー（useMessageDisplay.tsに統一）

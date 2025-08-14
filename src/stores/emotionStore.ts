@@ -151,6 +151,12 @@ export const useEmotionStore = create<EmotionStore>((set, get) => ({
         };
       });
 
+      // 表示側の参照キーも即時同期（昼/晩でのズレ防止）
+      get().setCurrentTimePeriod(result.data.time_period as TimePeriod);
+
+      // サーバー状態とも整合（PWA復帰・境界跨ぎの残留対策）
+      await get().refreshTodayEmotions();
+
       // todayEmotionsも部分更新
       set((state) => {
         const existingIndex = state.todayEmotions.findIndex(e => e.time_period === result.data.time_period);

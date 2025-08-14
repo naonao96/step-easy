@@ -62,7 +62,31 @@ export default function MenuPage() {
       }
     }, 300000); // 5分
 
-    return () => clearInterval(interval);
+    // PWA/タブ復帰時の即時同期（focus/visibilitychange）
+    const handleFocus = () => {
+      const { getEmotionTimePeriod } = require('@/lib/timeUtils');
+      const newTimePeriod = getEmotionTimePeriod();
+      if (newTimePeriod !== emotionStore.currentTimePeriod) {
+        // 参照キーの即時更新とサーバー同期
+        emotionStore.setCurrentTimePeriod(newTimePeriod);
+      }
+      emotionStore.refreshTodayEmotions();
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        handleFocus();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, []); // emotionStoreを依存配列から削除して無限ループを防ぐ
   
   // 状態管理

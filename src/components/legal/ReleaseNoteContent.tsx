@@ -8,6 +8,15 @@ import { FaHome, FaShieldAlt, FaFileContract } from 'react-icons/fa';
 // 仮のリリースノートデータ（今後はDBやMDファイル管理も可）
 const releaseNotes = [
   {
+    date: "2025-08-14",
+    title: "パフォーマンス＆操作性をさらに向上！",
+    items: [
+      "小鳥メッセージの日付ズレを解消",
+      "感情記録の点滅不具合を修正",
+      "アーカイブ実行ログの表示を改善"
+    ]
+  },
+  {
     date: "2025-08-02",
     title: "パフォーマンス＆操作性をさらに向上！",
     items: [

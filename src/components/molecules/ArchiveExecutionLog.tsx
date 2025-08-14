@@ -1,17 +1,19 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { FaHistory, FaClock, FaCheckCircle, FaPlay, FaPause, FaStop } from 'react-icons/fa';
+import { FaHistory, FaClock, FaCheckCircle, FaPlay } from 'react-icons/fa';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useAuth } from '@/contexts/AuthContext';
 
-interface ExecutionLog {
+interface NormalizedExecutionLog {
   id: string;
-  task_id: string;
+  task_id: string | null;
+  habit_id: string | null;
   start_time: string;
-  end_time: string;
+  end_time: string | null;
   duration: number;
-  task_title: string;
+  title: string;
   is_completed: boolean;
   device_type: string;
+  sourceType: 'task' | 'habit' | 'unknown';
 }
 
 interface ArchiveExecutionLogProps {
@@ -23,7 +25,7 @@ export const ArchiveExecutionLog: React.FC<ArchiveExecutionLogProps> = ({
   dateFilter, 
   searchQuery 
 }) => {
-  const [logs, setLogs] = useState<ExecutionLog[]>([]);
+  const [logs, setLogs] = useState<NormalizedExecutionLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'date' | 'duration' | 'task'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -58,52 +60,76 @@ export const ArchiveExecutionLog: React.FC<ArchiveExecutionLogProps> = ({
           startDate = null;
       }
 
-      // クエリ構築
+      // 取りこぼし防止のため LEFT JOIN で tasks/habits のタイトルを取得
       let query = supabase
         .from('execution_logs')
         .select(`
           id,
+          user_id,
           task_id,
+          habit_id,
           start_time,
           end_time,
           duration,
           is_completed,
           device_type,
-          tasks!inner(title)
+          tasks!left(title),
+          habits!left(title)
         `)
         .eq('user_id', user.id)
         .eq('is_completed', true);
 
-      // 日付フィルター適用
       if (startDate) {
         query = query.gte('start_time', startDate.toISOString());
       }
 
-      // 検索フィルター適用
-      if (searchQuery) {
-        query = query.ilike('tasks.title', `%${searchQuery}%`);
-      }
-
-      // ソート適用
-      const sortField = sortBy === 'date' ? 'start_time' : sortBy === 'duration' ? 'duration' : 'tasks.title';
-      query = query.order(sortField, { ascending: sortOrder === 'asc' });
-
-      const { data: logs, error } = await query;
-
+      // ソートは後段で統一キー（title/date/duration）に対してクライアント側で実施
+      const { data, error } = await query.order('start_time', { ascending: false });
       if (error) throw error;
 
-      const formattedLogs: ExecutionLog[] = logs?.map(log => ({
-        id: log.id,
-        task_id: log.task_id,
-        start_time: log.start_time,
-        end_time: log.end_time,
-        duration: log.duration,
-        task_title: (log.tasks as any).title,
-        is_completed: log.is_completed,
-        device_type: log.device_type
-      })) || [];
+      const normalized: NormalizedExecutionLog[] = (data || []).map((row: any) => {
+        const title = row.tasks?.title || row.habits?.title || '（削除済み）';
+        const sourceType: 'task' | 'habit' | 'unknown' = row.task_id ? 'task' : row.habit_id ? 'habit' : 'unknown';
+        return {
+          id: row.id,
+          task_id: row.task_id ?? null,
+          habit_id: row.habit_id ?? null,
+          start_time: row.start_time,
+          end_time: row.end_time ?? null,
+          duration: row.duration,
+          title,
+          is_completed: row.is_completed,
+          device_type: row.device_type,
+          sourceType
+        };
+      });
 
-      setLogs(formattedLogs);
+      // 削除済みログを除外
+      const nonDeleted = normalized.filter(l => l.title !== '（削除済み）');
+
+      // 検索は統一タイトルでクライアント側に適用
+      const searched = searchQuery
+        ? nonDeleted.filter(l => l.title.toLowerCase().includes(searchQuery.toLowerCase()))
+        : nonDeleted;
+
+      // ソートをクライアント側で適用
+      const sorted = [...searched].sort((a, b) => {
+        if (sortBy === 'date') {
+          const delta = new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
+          return sortOrder === 'asc' ? delta : -delta;
+        } else if (sortBy === 'duration') {
+          const delta = a.duration - b.duration;
+          return sortOrder === 'asc' ? delta : -delta;
+        } else {
+          // task名ソート（習慣も含む統一タイトル）
+          const nameA = a.title || '';
+          const nameB = b.title || '';
+          const delta = nameA.localeCompare(nameB, 'ja');
+          return sortOrder === 'asc' ? delta : -delta;
+        }
+      });
+
+      setLogs(sorted);
     } catch (error) {
       console.error('実行履歴取得エラー:', error);
     } finally {
@@ -172,7 +198,7 @@ export const ArchiveExecutionLog: React.FC<ArchiveExecutionLogProps> = ({
     const totalExecutions = logs.length;
     const totalDuration = logs.reduce((sum, log) => sum + log.duration, 0);
     const avgDuration = totalExecutions > 0 ? Math.floor(totalDuration / totalExecutions) : 0;
-    const uniqueTasks = new Set(logs.map(log => log.task_id)).size;
+    const uniqueTasks = new Set(logs.map(log => log.task_id || log.habit_id || log.id)).size;
 
     return {
       totalExecutions,
@@ -336,7 +362,7 @@ export const ArchiveExecutionLog: React.FC<ArchiveExecutionLogProps> = ({
                 
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium text-[#8b4513] truncate">
-                    {log.task_title}
+                    {log.title}
                   </h3>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-sm text-[#7c5a2a]">
