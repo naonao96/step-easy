@@ -187,10 +187,10 @@ export const HomeContent: React.FC<HomeContentProps> = ({ onLogin, onRegister, o
                     alt="StepEasy PC版画面"
                     width={800}
                     height={600}
-                    className="w-full h-auto drop-shadow-xl shadow-xl rounded-xl border border-white/30 rounded-lg hover:shadow-2xl transition-all duration-300 object-contain cursor-pointer"
+                    className="w-full h-auto drop-shadow-xl shadow-xl rounded-xl hover:shadow-2xl transition-all duration-300 object-contain cursor-pointer"
                     style={{
                       filter: 'drop-shadow(0 10px 20px rgba(0, 0, 0, 0.3)) drop-shadow(0 5px 10px rgba(0, 0, 0, 0.2)) drop-shadow(0 20px 40px rgba(0,0,0,0.1))',
-                      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 10px 20px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+                      boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1)',
                       transform: 'scale(1.1) translateX(20px)',
                       transition: 'all 0.3s ease'
                     }}
@@ -210,10 +210,10 @@ export const HomeContent: React.FC<HomeContentProps> = ({ onLogin, onRegister, o
                     alt="StepEasy モバイル版画面"
                     width={150}
                     height={250}
-                    className="w-[35%] drop-shadow-2xl shadow-2xl rounded-xl border border-white/30 rounded-lg hover:shadow-2xl transition-all duration-300 object-contain cursor-pointer"
+                    className="w-[35%] drop-shadow-2xl shadow-2xl rounded-xl hover:shadow-2xl transition-all duration-300 object-contain cursor-pointer"
                     style={{
                       filter: 'drop-shadow(0 8px 16px rgba(0, 0, 0, 0.25)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15)) drop-shadow(0 20px 40px rgba(0,0,0,0.1))',
-                      boxShadow: '0 15px 30px rgba(0, 0, 0, 0.2), 0 8px 16px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                      boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2)',
                       transform: 'scale(1.1) translateX(-20px)',
                       transition: 'all 0.3s ease',
                       marginLeft: '80px'

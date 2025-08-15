@@ -171,16 +171,18 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
                   運んでいく。
                 </div>
             </h1>
-              <div className="text-base text-[#7c5a2a] leading-relaxed px-4 mt-6 max-w-sm mx-auto">
-                <p className="text-sm text-[#7c5a2a]">
+              <div className="px-4 mt-6 max-w-sm mx-auto">
+                <p className="text-sm leading-relaxed text-[#7c5a2a]">
                   感情・タスク・習慣を、ひとつの流れで記録。<br />
                   毎朝9時、あなたに寄り添う小鳥が、<br />
                   やさしく応援します。
                 </p>
-                <p className="text-sm text-[#7c5a2a] font-medium">
+
+                <p className="text-sm leading-relaxed text-[#7c5a2a]">
                   繊細で、頑張りすぎてしまうあなたへ──
                 </p>
-                <p className="text-sm text-[#7c5a2a] font-medium">
+
+                <p className="text-sm leading-relaxed text-[#7c5a2a]">
                   StepEasyは、「記録」と「応援」の力で、<br />
                   "つづける"をやさしく支えます。
                 </p>
@@ -198,10 +200,10 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
                      alt="StepEasy PC版画面"
                      width={400}
                      height={300}
-                                                                 className="w-full h-auto drop-shadow-xl shadow-xl rounded-xl border border-white/30 rounded-lg hover:shadow-2xl transition-all duration-300 object-contain cursor-pointer"
+                                                                 className="w-full h-auto drop-shadow-xl shadow-xl rounded-xl hover:shadow-2xl transition-all duration-300 object-contain cursor-pointer"
                       style={{
                         filter: 'drop-shadow(0 8px 16px rgba(0, 0, 0, 0.25)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15)) drop-shadow(0 20px 40px rgba(0,0,0,0.1))',
-                        boxShadow: '0 15px 30px rgba(0, 0, 0, 0.2), 0 8px 16px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.15)',
+                        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.15)',
                         transform: 'scale(1.25) translateX(0px)',
                         transition: 'all 0.3s ease'
                       }}
@@ -221,10 +223,10 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
                     alt="StepEasy モバイル版画面"
                     width={100}
                     height={200}
-                    className="w-[45%] drop-shadow-2xl shadow-2xl rounded-xl border border-white/30 rounded-lg hover:shadow-2xl transition-all duration-300 object-contain cursor-pointer"
+                    className="w-[45%] drop-shadow-2xl shadow-2xl rounded-xl hover:shadow-2xl transition-all duration-300 object-contain cursor-pointer"
                     style={{
                       filter: 'drop-shadow(0 6px 12px rgba(0, 0, 0, 0.2)) drop-shadow(0 3px 6px rgba(0, 0, 0, 0.1)) drop-shadow(0 20px 40px rgba(0,0,0,0.1))',
-                      boxShadow: '0 12px 24px rgba(0, 0, 0, 0.15), 0 6px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
+                      boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.25)',
                       transform: 'scale(1.1) translateX(-20px)',
                       transition: 'all 0.3s ease',
                       marginLeft: '80px'
@@ -244,14 +246,14 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
             <button
               onClick={onRegister}
               disabled={isLoading}
-              className="w-full px-6 py-4 bg-[#8b4513] hover:bg-[#7c5a2a] text-white rounded-xl font-bold text-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full px-6 py-3 bg-[#8b4513] hover:bg-[#7c5a2a] text-white rounded-xl font-bold text-base transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               無料ではじめる
             </button>
             <button
               onClick={onGuest}
               disabled={isLoading}
-              className="w-full px-6 py-4 bg-transparent hover:bg-[#f5f5dc] text-[#8b4513] border-2 border-[#8b4513] rounded-xl font-bold text-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full px-6 py-3 bg-transparent hover:bg-[#f5f5dc] text-[#8b4513] border-2 border-[#8b4513] rounded-xl font-bold text-base transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               まずは体験
             </button>
@@ -462,7 +464,7 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
                      textShadow: '1px 1px 2px rgba(255, 255, 255, 0.8), 2px 2px 4px rgba(139, 69, 19, 0.3)',
                      filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.1))'
                    }}>
-                気づいてくれる<span className="text-[#8b4513] font-extrabold"
+                気づいてくれる<br /><span className="text-[#8b4513] font-extrabold"
                       style={{ 
                         textShadow: '1px 1px 2px rgba(255, 255, 255, 0.9), 2px 2px 6px rgba(139, 69, 19, 0.4)',
                         filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15))'
@@ -655,21 +657,17 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
       <section className="py-16 px-6" ref={externalLinksAnimation.elementRef}>
         <div className="max-w-2xl mx-auto">
           <div className={`transition-all duration-1000 ${externalLinksAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <h2 className="text-3xl font-bold text-center mb-12 relative">
-              {/* 背景レイヤー（影効果） */}
-              <div className="absolute inset-0 bg-white/30 rounded-2xl transform translate-x-1 translate-y-1 blur-sm"></div>
-              
-              {/* メインテキスト */}
-              <div className="relative z-10 text-[#4a3728]" 
+            <h2 className="text-3xl font-bold text-center mb-12">
+              <div className="text-[#4a3728]" 
                    style={{ 
                      textShadow: '1px 1px 2px rgba(255, 255, 255, 0.8), 2px 2px 4px rgba(139, 69, 19, 0.3)',
                      filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.1))'
                    }}>
-                <span className="relative z-20 text-[#8b4513] font-extrabold"
+                <span className="text-[#8b4513] font-extrabold"
                       style={{ 
                         textShadow: '1px 1px 2px rgba(255, 255, 255, 0.9), 2px 2px 6px rgba(139, 69, 19, 0.4)',
                         filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15))'
-                      }}>もっと詳しく</span>知りたい方へ
+                      }}>もっと詳しく</span><br />知りたい方へ
               </div>
             </h2>
           </div>
@@ -716,17 +714,13 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
       <section className="py-16 px-6 relative" ref={finalCtaAnimation.elementRef}>
         <div className="max-w-2xl mx-auto text-center">
           <div className={`transition-all duration-1000 ${finalCtaAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <h2 className="text-3xl font-bold text-center mb-8 relative">
-              {/* 背景レイヤー（影効果） */}
-              <div className="absolute inset-0 bg-white/30 rounded-2xl transform translate-x-1 translate-y-1 blur-sm"></div>
-              
-              {/* メインテキスト */}
-              <div className="relative z-10 text-[#4a3728]" 
+            <h2 className="text-3xl font-bold text-center mb-8">
+              <div className="text-[#4a3728]" 
                    style={{ 
                      textShadow: '1px 1px 2px rgba(255, 255, 255, 0.8), 2px 2px 4px rgba(139, 69, 19, 0.3)',
                      filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.1))'
                    }}>
-                今日から、<br /><span className="relative z-20 text-[#8b4513] font-extrabold"
+                今日から、<br /><span className="text-[#8b4513] font-extrabold"
                       style={{ 
                         textShadow: '1px 1px 2px rgba(255, 255, 255, 0.9), 2px 2px 6px rgba(139, 69, 19, 0.4)',
                         filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15))'
@@ -743,14 +737,14 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
             <button
               onClick={onRegister}
               disabled={isLoading}
-              className="w-full px-6 py-4 bg-[#8b4513] hover:bg-[#7c5a2a] text-white rounded-xl font-bold text-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full px-6 py-3 bg-[#8b4513] hover:bg-[#7c5a2a] text-white rounded-xl font-bold text-base transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               無料ではじめる
             </button>
             <button
               onClick={onGuest}
               disabled={isLoading}
-              className="w-full px-6 py-4 bg-transparent hover:bg-[#f5f5dc] text-[#8b4513] border-2 border-[#8b4513] rounded-xl font-bold text-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full px-6 py-3 bg-transparent hover:bg-[#f5f5dc] text-[#8b4513] border-2 border-[#8b4513] rounded-xl font-bold text-base transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               まずは体験
             </button>
@@ -783,7 +777,6 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
                   className="h-8 w-auto"
                   quality={100}
                 />
-                <h3 className="text-lg font-bold">StepEasy</h3>
               </div>
               <p className="text-[#7c5a2a] text-sm">
                 小鳥の一声が、あなたの習慣を運んでいく

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { FaBook, FaShieldAlt, FaFileContract, FaQuestionCircle, FaHome, FaGem, FaSignInAlt, FaUserPlus, FaEye } from 'react-icons/fa';
 
-export type ContentSection = 'home' | 'plans' | 'guide' | 'privacy' | 'terms' | 'faq';
+export type ContentSection = 'home' | 'plans' | 'privacy' | 'terms' | 'faq';
 
 interface ModernLPLayoutProps {
   activeSection: ContentSection;
@@ -28,7 +28,6 @@ export const ModernLPLayout: React.FC<ModernLPLayoutProps> = ({
   const sidebarItems = [
     { id: 'home' as ContentSection, label: 'ホーム', icon: FaHome },
     { id: 'plans' as ContentSection, label: 'プラン比較', icon: FaGem },
-    { id: 'guide' as ContentSection, label: '機能ガイド', icon: FaBook },
     { id: 'privacy' as ContentSection, label: 'プライバシーポリシー', icon: FaShieldAlt },
     { id: 'terms' as ContentSection, label: '利用規約', icon: FaFileContract },
     { id: 'faq' as ContentSection, label: 'よくある質問', icon: FaQuestionCircle },

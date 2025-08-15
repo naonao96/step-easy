@@ -168,8 +168,7 @@ function getJapanTime(): Date {
 // 任意の日時をJSTのYYYY-MM-DD文字列に変換
 function toJSTDateString(date: Date | string): string {
   const base = typeof date === 'string' ? new Date(date) : date;
-  const jst = new Date(base.toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
-  return jst.toISOString().split('T')[0];
+  return base.toLocaleDateString('en-CA', { timeZone: 'Asia/Tokyo' });
 }
 
 // 前日データを取得する関数（既存のタスクベース計算 + 新しい習慣計算）

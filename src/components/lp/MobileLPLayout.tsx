@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { FaBook, FaShieldAlt, FaFileContract, FaQuestionCircle, FaHome, FaGem, FaSignInAlt, FaUserPlus, FaEye, FaDownload, FaTimes } from 'react-icons/fa';
 
-export type ContentSection = 'home' | 'plans' | 'guide' | 'privacy' | 'terms' | 'faq';
+export type ContentSection = 'home' | 'plans' | 'privacy' | 'terms' | 'faq';
 
 interface MobileLPLayoutProps {
   activeSection: ContentSection;
@@ -65,7 +65,6 @@ export const MobileLPLayout: React.FC<MobileLPLayoutProps> = ({
   const bottomNavItems = [
     { id: 'home' as ContentSection, label: 'ホーム', icon: FaHome },
     { id: 'plans' as ContentSection, label: 'プラン', icon: FaGem },
-    { id: 'guide' as ContentSection, label: 'ガイド', icon: FaBook },
     { id: 'faq' as ContentSection, label: 'その他', icon: FaQuestionCircle },
   ];
 
@@ -97,7 +96,7 @@ export const MobileLPLayout: React.FC<MobileLPLayoutProps> = ({
               <button
                 onClick={onLogin}
                 disabled={isLoading}
-                className="px-2 py-1 bg-[#8b4513] hover:bg-[#7c5a2a] text-white text-xs rounded-md font-medium transition-colors disabled:opacity-50 flex items-center gap-1"
+                className="px-2.5 py-1.5 bg-[#8b4513] hover:bg-[#7c5a2a] text-white text-xs rounded-md font-medium transition-colors disabled:opacity-50 flex items-center gap-1"
               >
                 {(FaSignInAlt as any)({ className: "w-3 h-3" })}
                 ログイン
@@ -145,7 +144,7 @@ export const MobileLPLayout: React.FC<MobileLPLayoutProps> = ({
 
       {/* ボトムナビゲーション */}
       <nav className="fixed bottom-0 left-0 right-0 bg-gradient-to-b from-[#f7ecd7] to-[#f5e9da] backdrop-blur-sm border-t border-[#deb887]/30 shadow-lg z-40 pb-safe">
-        <div className="grid grid-cols-4 h-16">
+        <div className="grid grid-cols-3 h-16">
           {bottomNavItems.map((item) => {
             const IconComponent = item.icon;
             const isActive = activeSection === item.id;

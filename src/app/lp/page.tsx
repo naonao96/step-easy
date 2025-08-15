@@ -7,11 +7,9 @@ import { ModernLPLayout, ContentSection } from '@/components/lp/ModernLPLayout';
 import { MobileLPLayout } from '@/components/lp/MobileLPLayout';
 import { HomeContent } from '@/components/lp/HomeContent';
 import { MobileHomeContent } from '@/components/lp/MobileHomeContent';
-
 import { PlansContent } from '@/components/lp/PlansContent';
 import { MobilePlansContent } from '@/components/lp/MobilePlansContent';
-import { FeatureGuide } from '@/components/docs/FeatureGuide';
-import { PrivacyPolicyContent, TermsOfServiceContent, FAQContent } from '@/components/lp/StaticContent';
+import { FAQContent } from '@/components/lp/StaticContent';
 import { MobileOthersContent } from '@/components/lp/MobileOthersContent';
 
 export default function ModernLandingPage() {
@@ -85,8 +83,6 @@ export default function ModernLandingPage() {
 
         case 'plans':
           return <MobilePlansContent onLogin={handleLogin} onRegister={handleRegister} onGuest={handleGuest} isLoading={isLoading} />;
-        case 'guide':
-          return <FeatureGuide />;
         case 'privacy':
           // 専用ページにリダイレクト
           window.open('/privacy', '_blank');
@@ -107,8 +103,6 @@ export default function ModernLandingPage() {
 
         case 'plans':
           return <PlansContent onLogin={handleLogin} onRegister={handleRegister} onGuest={handleGuest} isLoading={isLoading} />;
-        case 'guide':
-          return <FeatureGuide />;
         case 'privacy':
           // 専用ページにリダイレクト
           window.open('/privacy', '_blank');

@@ -281,9 +281,8 @@ export function getDayBasedMessage(userName?: string): string {
  * @returns JST基準のYYYY-MM-DD形式文字列
  */
 export function toJSTDateString(date: Date): string {
-  // より正確な日本時間変換（タイムゾーン指定）
-  const jstTime = new Date(date.toLocaleString("en-US", {timeZone: "Asia/Tokyo"}));
-  return jstTime.toISOString().split('T')[0];
+  // 正確な日本時間変換（en-CAロケールでYYYY-MM-DD形式を取得）
+  return date.toLocaleDateString("en-CA", {timeZone: "Asia/Tokyo"});
 }
 
 /**
