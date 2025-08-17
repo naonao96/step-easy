@@ -476,7 +476,6 @@ export default function SettingsPage() {
   if (user?.isGuest) {
     return (
       <AppLayout
-        title="設定"
         showBackButton={true}
         backUrl="/menu"
         backLabel="メニューに戻る"
@@ -524,7 +523,6 @@ export default function SettingsPage() {
 
   return (
     <AppLayout
-      title="設定"
       showBackButton={true}
       backUrl="/menu"
       backLabel="メニューに戻る"

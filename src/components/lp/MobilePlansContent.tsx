@@ -28,9 +28,6 @@ export const MobilePlansContent: React.FC<MobilePlansContentProps> = ({
           <h2 className="text-3xl font-bold text-[#8b4513] mb-4">
             プランを選択
           </h2>
-          <p className="text-lg text-[#7c5a2a]">
-            無料でも十分強力、プレミアムで更なる高みへ
-          </p>
         </div>
 
         {/* プランカード */}

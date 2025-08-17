@@ -303,40 +303,6 @@ export const ArchiveExecutionLog: React.FC<ArchiveExecutionLogProps> = ({
         </div>
       </div>
 
-      {/* ソートコントロール */}
-      <div className="wood-frame rounded-xl p-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-[#8b4513]">実行履歴</h3>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-[#7c5a2a]">並び替え:</span>
-            <div className="flex gap-1">
-              {[
-                { key: 'date', label: '日時' },
-                { key: 'duration', label: '時間' },
-                { key: 'task', label: 'タスク' }
-              ].map(({ key, label }) => (
-                <button
-                  key={key}
-                  onClick={() => handleSort(key as any)}
-                  className={`px-3 py-1 text-xs rounded-full font-medium transition-colors ${
-                    sortBy === key
-                      ? 'bg-[#7c5a2a] text-white'
-                      : 'bg-[#f5f5dc] text-[#7c5a2a] hover:bg-[#deb887]'
-                  }`}
-                >
-                  {label}
-                  {sortBy === key && (
-                    <span className="ml-1">
-                      {sortOrder === 'asc' ? '↑' : '↓'}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* 実行ログリスト */}
       {logs.length === 0 ? (
         <div className="wood-frame rounded-xl p-12 text-center">

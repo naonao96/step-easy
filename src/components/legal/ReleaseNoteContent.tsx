@@ -8,6 +8,16 @@ import { FaHome, FaShieldAlt, FaFileContract } from 'react-icons/fa';
 // 仮のリリースノートデータ（今後はDBやMDファイル管理も可）
 const releaseNotes = [
   {
+    date: "2025-08-17",
+    title: "パフォーマンス＆操作性をさらに向上！",
+    items: [
+      "感情記録がより正しく残るようになりました",
+      "フォールバックメッセージの文章を見直し、もっと自然でやさしいトーンにしました",
+      "タスク削除の操作をシンプルにして、スムーズに使えるようになりました",
+      "一部画面の表示を調整して、レイアウトをすっきり見やすくしました"
+    ]
+  },
+  {
     date: "2025-08-14",
     title: "パフォーマンス＆操作性をさらに向上！",
     items: [
@@ -81,9 +91,6 @@ export const ReleaseNoteContent: React.FC = () => {
               loading="eager"
               decoding="sync"
             />
-            <h1 className="text-lg sm:text-xl font-bold text-[#8b4513] truncate">
-              リリースノート
-            </h1>
           </div>
         </div>
 

@@ -29,9 +29,6 @@ export const TermsOfServiceContent: React.FC = () => {
               loading="eager"
               decoding="sync"
             />
-            <h1 className="text-lg sm:text-xl font-bold text-[#8b4513] truncate">
-              利用規約
-            </h1>
           </div>
         </div>
 

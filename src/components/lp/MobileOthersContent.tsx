@@ -28,19 +28,11 @@ export const MobileOthersContent: React.FC = () => {
     },
     {
       question: 'データの安全性は大丈夫ですか？',
-      answer: 'Supabaseを使用した安全なクラウドストレージでデータを保護しています。詳細はプライバシーポリシーをご確認ください。'
-    },
-    {
-      question: 'プレミアム機能はいつリリースされますか？',
-      answer: '2025年春のリリースを予定しています。事前通知をご希望の方は通知登録をお願いします。'
+      answer: '安全なクラウドストレージでデータを保護しています。詳細はプライバシーポリシーをご確認ください。'
     },
     {
       question: 'AIはどのような情報を分析しますか？',
       answer: 'タスクの完了状況、実行時間、カテゴリ、優先度などから感情状態やモチベーションを分析し、個別化されたメッセージを生成します。'
-    },
-    {
-      question: 'データのエクスポートはできますか？',
-      answer: '現在準備中の機能です。将来的にはタスクデータや統計情報のエクスポート機能を提供予定です。'
     },
     {
       question: 'モバイルアプリはありますか？',
@@ -85,16 +77,6 @@ export const MobileOthersContent: React.FC = () => {
             )}
           </div>
         ))}
-      </div>
-      
-      <div className="mt-6 bg-[#f5f5dc]/60 rounded-lg p-4 border border-[#deb887]/30">
-        <h3 className="font-semibold text-[#8b4513] mb-2 text-sm">他にご質問がありますか？</h3>
-        <p className="text-[#4a3728] mb-3 text-sm">
-          上記以外のご質問やサポートが必要な場合は、お気軽にお問い合わせください。
-        </p>
-        <div className="text-xs text-[#7c5a2a]">
-          <p>※ お問い合わせ機能は今後実装予定です</p>
-        </div>
       </div>
     </div>
   );

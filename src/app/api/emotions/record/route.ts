@@ -1,7 +1,7 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { getEmotionTimePeriod, getJapanTime } from '@/lib/timeUtils';
+import { getEmotionTimePeriod, getJapanTime, toJSTDateString } from '@/lib/timeUtils';
 
 // 動的レンダリングを強制
 export const dynamic = 'force-dynamic';
@@ -43,8 +43,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 今日の日付を取得（日本時間）
-    const today = japanTime.toISOString().split('T')[0];
+    // 今日の日付を取得（日本時間, 安全なJST日付文字列）
+    const today = toJSTDateString(new Date());
 
     // 既存の記録をチェック
     const { data: existingRecord, error: checkError } = await supabase
@@ -65,12 +65,11 @@ export async function POST(request: NextRequest) {
     let insertError;
 
     if (existingRecord) {
-      // 既存記録がある場合は更新（日本時間で保存）
+      // 既存記録がある場合は更新（updated_atはDBトリガーに委譲）
       const { data: updatedRecord, error: updateError } = await supabase
         .from('emotions')
         .update({
-          emotion_type,
-          updated_at: japanTime.toISOString() // 日本時間を明示的に指定
+          emotion_type
         })
         .eq('id', existingRecord.id)
         .select()
@@ -79,7 +78,7 @@ export async function POST(request: NextRequest) {
       emotionRecord = updatedRecord;
       insertError = updateError;
     } else {
-      // 新規記録の場合は挿入（日本時間で保存）
+      // 新規記録の場合は挿入（created_atはDBデフォルトに委譲）
       const { data: newRecord, error: newInsertError } = await supabase
         .from('emotions')
         .insert({
@@ -87,8 +86,7 @@ export async function POST(request: NextRequest) {
           emotion_type,
           time_period,
           intensity: 3, // デフォルト値
-          note: null,
-          created_at: japanTime.toISOString() // 日本時間を明示的に指定
+          note: null
         })
         .select()
         .single();

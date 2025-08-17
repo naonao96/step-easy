@@ -403,19 +403,15 @@ export const BaseTaskModal = forwardRef<{ closeWithValidation: () => void }, Bas
   const handleDelete = async () => {
     if (!isExistingTask || !initialData?.id || !onDelete) return;
     
-    const message = isHabit ? 'この習慣を削除してもよろしいですか？' : 'このタスクを削除してもよろしいですか？';
-    
-    if (window.confirm(message)) {
-      setIsDeleting(true);
-      try {
-        await onDelete(initialData.id);
-        onClose();
-      } catch (error) {
-        console.error('削除エラー:', error);
-        alert('削除に失敗しました');
-      } finally {
-        setIsDeleting(false);
-      }
+    setIsDeleting(true);
+    try {
+      await onDelete(initialData.id);
+      onClose();
+    } catch (error) {
+      console.error('削除エラー:', error);
+      alert('削除に失敗しました');
+    } finally {
+      setIsDeleting(false);
     }
   };
 

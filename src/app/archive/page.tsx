@@ -183,13 +183,12 @@ export default function ArchivePage() {
   }
 
   const tabs = [
-    { id: 'completed', label: '完了タスク', icon: FaCheckCircle },
+    { id: 'completed', label: 'タスク一覧', icon: FaCheckCircle },
     { id: 'execution', label: '実行ログ', icon: FaHistory }
   ];
 
   return (
     <AppLayout
-      title="アーカイブ"
       showBackButton={true}
       backUrl="/menu"
       backLabel="メニューに戻る"

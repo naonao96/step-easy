@@ -284,7 +284,6 @@ export default function ProgressPage() {
 
   return (
     <AppLayout
-      title="進捗管理"
       showBackButton={true}
       backUrl="/menu"
       backLabel="メニューに戻る"

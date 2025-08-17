@@ -20,9 +20,6 @@ export const PlansContent: React.FC<PlansContentProps> = ({ onLogin, onRegister,
           <h2 className="text-4xl font-bold text-[#8b4513] mb-6">
             プランを選択
           </h2>
-          <p className="text-xl text-[#7c5a2a]">
-            無料でも十分強力、プレミアムで更なる高みへ
-          </p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

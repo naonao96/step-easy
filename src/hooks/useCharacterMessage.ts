@@ -158,19 +158,22 @@ const generatePersonalizedMessage = async (
     }
   }
 
-  // 選択された日付が今日かどうか
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const targetDate = selectedDate ? new Date(selectedDate) : today;
-  targetDate.setHours(0, 0, 0, 0);
-  const isToday = targetDate.getTime() === today.getTime();
-
   // 時間帯の判定（日本時間）
   const { getJapanTimeNow } = await import('@/lib/timeUtils');
   const japanTime = getJapanTimeNow();
   const hour = japanTime.hour;
   const timeOfDay = hour >= 6 && hour < 12 ? '朝' : hour >= 12 && hour < 18 ? '昼' : '晩';
-  
+
+  // 対象日（フォールバック時の集計対象）を決定：9時未満は前日、それ以外は当日
+  const jstToday = new Date(japanTime.date);
+  jstToday.setHours(0, 0, 0, 0);
+  const targetBase = new Date(japanTime.date);
+  if (hour < 9) targetBase.setDate(targetBase.getDate() - 1);
+  targetBase.setHours(0, 0, 0, 0);
+
+  // 表示文言のisTodayは対象日に合わせる
+  const isToday = targetBase.getTime() === jstToday.getTime();
+
   // ユーザー名の処理
   const displayName = userName || 'あなた';
   const greeting = `${timeOfDay}の時間、${displayName}さん！`;
@@ -183,30 +186,93 @@ const generatePersonalizedMessage = async (
     return { message, isNewRegistration: false };
   }
 
-  // 完了済みタスクの数
-  const completedTasks = tasks.filter(task => task.status === 'done');
-  const totalTasks = tasks.length;
+  // 対象日に属するかの判定（menu/page.tsx の日付選択ロジックに準拠）
+  const belongsToTargetDate = (task: Task, targetDate: Date, todayMidnight: Date): boolean => {
+    // 期間タスク（開始日と期限日）
+    if (task.start_date && task.due_date) {
+      const taskStartDate = new Date(task.start_date);
+      const taskDueDate = new Date(task.due_date);
+      taskStartDate.setHours(0, 0, 0, 0);
+      taskDueDate.setHours(0, 0, 0, 0);
 
-  // メッセージ生成
+      if (targetDate.getTime() >= taskStartDate.getTime() && targetDate.getTime() <= taskDueDate.getTime()) {
+        if (task.status !== 'done') return true;
+        if (task.status === 'done' && task.completed_at) {
+          const completedDate = new Date(task.completed_at);
+          completedDate.setHours(0, 0, 0, 0);
+          return completedDate.getTime() === targetDate.getTime();
+        }
+      }
+      return false;
+    }
+
+    // 開始日のみ
+    if (task.start_date && !task.due_date) {
+      const taskStartDate = new Date(task.start_date);
+      taskStartDate.setHours(0, 0, 0, 0);
+      if (targetDate.getTime() >= taskStartDate.getTime() && task.status !== 'done') return true;
+      if (task.status === 'done' && task.completed_at) {
+        const completedDate = new Date(task.completed_at);
+        completedDate.setHours(0, 0, 0, 0);
+        return completedDate.getTime() === targetDate.getTime();
+      }
+      return false;
+    }
+
+    // 期限日のみ（未来・当日を対象）
+    if (!task.start_date && task.due_date) {
+      const taskDueDate = new Date(task.due_date);
+      taskDueDate.setHours(0, 0, 0, 0);
+      if (targetDate.getTime() <= taskDueDate.getTime() && targetDate.getTime() >= todayMidnight.getTime() && task.status !== 'done') return true;
+      if (task.status === 'done' && task.completed_at) {
+        const completedDate = new Date(task.completed_at);
+        completedDate.setHours(0, 0, 0, 0);
+        return completedDate.getTime() === targetDate.getTime();
+      }
+      return false;
+    }
+
+    // 開始日も期限日もない
+    if (!task.start_date && !task.due_date) {
+      if (task.status === 'done' && task.completed_at) {
+        const completedDate = new Date(task.completed_at);
+        completedDate.setHours(0, 0, 0, 0);
+        return completedDate.getTime() === targetDate.getTime();
+      }
+      // 未完了タスクは当日のみ（対象日が今日の場合に限る）
+      if (task.status !== 'done') {
+        return targetDate.getTime() === todayMidnight.getTime();
+      }
+    }
+
+    return false;
+  };
+
+  // 対象日ベースでタスクを絞り込む
+  const dayTasks = tasks.filter(task => belongsToTargetDate(task, targetBase, jstToday));
+  const dayCompleted = dayTasks.filter(task => task.status === 'done').length;
+  const dayTotal = dayTasks.length;
+
+  // メッセージ生成（対象日タスクで集計）
   let message = greeting;
 
   if (isToday) {
-    if (completedTasks.length === 0) {
-      message += `今日は${totalTasks}個のタスクがありますね。一つずつ着実に進めていきましょう！`;
-    } else if (completedTasks.length === totalTasks) {
-      message += `素晴らしい！今日のタスクを全て完了しました。お疲れ様でした！`;
+    if (dayCompleted === 0) {
+      message += `今日は${dayTotal}個のタスクだよ！最初のひとつから、一緒に始めてみよっか👍`;
+    } else if (dayCompleted === dayTotal) {
+      message += `すごいや！今日のタスクを全て完了しました。おつかれさま✨`;
     } else {
-      const remaining = totalTasks - completedTasks.length;
-      message += `今日は${completedTasks.length}個のタスクを完了しました。あと${remaining}個頑張りましょう！`;
+      const remaining = dayTotal - dayCompleted;
+      message += `今日は${dayCompleted}個クリアできたね。あと${remaining}個、一緒にがんばろうね！💪`;
     }
   } else {
-    if (completedTasks.length === 0) {
-      message += `選択した日には${totalTasks}個のタスクがありますが、まだ完了していませんね。`;
-    } else if (completedTasks.length === totalTasks) {
-      message += `選択した日のタスクを全て完了しています。素晴らしい成果です！`;
+    if (dayCompleted === 0) {
+      message += `昨日は${dayTotal}個タスクがあったみたいだけど、まだ手をつけてなかったんだね。そんな日もあるよ〜☁️`;
+    } else if (dayCompleted === dayTotal) {
+      message += `昨日のタスクはぜんぶ片付けてるね！僕もびっくりのがんばりだよ✨`;
     } else {
-      const remaining = totalTasks - completedTasks.length;
-      message += `選択した日は${completedTasks.length}個のタスクを完了し、あと${remaining}個が残っています。`;
+      const remaining = dayTotal - dayCompleted;
+      message += `昨日は${dayCompleted}個クリアして、あと${remaining}個残ってたみたい。コツコツ進んでてえらいね🌸`;
     }
   }
 

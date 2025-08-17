@@ -509,7 +509,7 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
                   <div className="bg-gradient-to-br from-[#f7ecd7] to-[#f5e9da] rounded-2xl p-4 relative shadow-2xl">
                     <div className="absolute -left-2 top-4 w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-r-[8px] border-r-[#f7ecd7]"></div>
                     <div className="text-[#7c5a2a] font-medium leading-relaxed text-sm">
-                      "{displayedMessage}"
+                      {displayedMessage}
                       {isTyping && <span className="animate-pulse ml-1">|</span>}
                     </div>
                   </div>
@@ -787,6 +787,7 @@ export const MobileHomeContent: React.FC<MobileHomeContentProps> = ({
               <div>
                 <h4 className="text-sm font-bold mb-2">リンク</h4>
                 <div className="flex flex-wrap justify-center gap-4 text-[#7c5a2a] text-sm">
+                  <a href="/release-note" target="_blank" className="hover:text-[#8b4513] transition-colors">リリースノート</a>
                   <a href="/privacy" target="_blank" className="hover:text-[#8b4513] transition-colors">プライバシーポリシー</a>
                   <a href="/terms" target="_blank" className="hover:text-[#8b4513] transition-colors">利用規約</a>
                   <a href="mailto:stepeasytasks@gmail.com" className="hover:text-[#8b4513] transition-colors">お問い合わせ</a>

@@ -1,7 +1,7 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { getEmotionTimePeriod, getJapanTime } from '@/lib/timeUtils';
+import { getEmotionTimePeriod, toJSTDateString } from '@/lib/timeUtils';
 
 // 動的レンダリングを強制
 export const dynamic = 'force-dynamic';
@@ -16,9 +16,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
 
-    // 今日の日付を取得（日本時間）
-    const japanTime = getJapanTime();
-    const today = japanTime.toISOString().split('T')[0];
+    // 今日の日付を取得（日本時間, 安全なJST日付文字列）
+    const today = toJSTDateString(new Date());
 
     // 今日の感情記録を取得
     const { data: todayEmotions, error: fetchError } = await supabase
@@ -48,8 +47,7 @@ export async function GET(request: NextRequest) {
     if (process.env.NODE_ENV === 'development') {
       console.log('今日の感情記録取得 - 時間帯判定デバッグ:', {
         utcTime: new Date().toISOString(),
-        japanTime: japanTime.toISOString(),
-        currentHour: japanTime.getHours(),
+        jstToday: today,
         currentTimePeriod: currentTimePeriod,
         recordCount: todayEmotions?.length || 0,
         recordStatus: recordStatus
